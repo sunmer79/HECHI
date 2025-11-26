@@ -1,39 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class InquiryTile extends StatelessWidget {
   final String title;
   final String status;
   final String date;
+  final VoidCallback onTap; // 클릭 이벤트 추가됨
 
   const InquiryTile({
     Key? key,
     required this.title,
     required this.status,
     required this.date,
+    required this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // 상세 페이지 로직 (여기서는 간단한 다이얼로그로 대체하거나 라우팅 추가 가능)
-        Get.defaultDialog(
-          title: "상세 내용",
-          middleText: "$title\n\n상태: $status\n날짜: $date",
-          textConfirm: "닫기",
-          confirmTextColor: Colors.white,
-          onConfirm: () => Get.back(),
-          buttonColor: const Color(0xFF4DB56C),
-        );
-      },
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(
-              bottom: BorderSide(color: const Color(0xFFABABAB), width: 0.5)),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -46,7 +44,7 @@ class InquiryTile extends StatelessWidget {
                   style: const TextStyle(
                     color: Color(0xFF3F3F3F),
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -57,16 +55,17 @@ class InquiryTile extends StatelessWidget {
               ],
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: status == '답변완료' ? const Color(0xFF4DB56C) : Colors.grey[200],
-                borderRadius: BorderRadius.circular(15),
+                color: status == '답변완료' ? const Color(0xFF4DB56C) : const Color(0xFFF3F3F3),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 status,
                 style: TextStyle(
-                  color: status == '답변완료' ? Colors.white : Colors.black54,
+                  color: status == '답변완료' ? Colors.white : const Color(0xFF757575),
                   fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
