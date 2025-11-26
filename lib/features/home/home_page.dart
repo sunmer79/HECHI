@@ -4,8 +4,7 @@ import '../notification/pages/notification_page.dart';
 import '../customer_service/pages/customer_service_page.dart';
 
 // ⬇️ 팀원 페이지 import (팀원들은 자기 파일만 추가하면 됨)
-import '../team_pages/sample_1_page.dart';
-import '../team_pages/sample_2_page.dart';
+//import '../team_pages/sample_1_page.dart';
 // 필요한 곳 계속 아래로 추가…
 
 class HomePage extends StatelessWidget {
@@ -113,8 +112,8 @@ class DevMenuPage extends StatelessWidget {
       body: ListView(
         children: [
 
-          _devTile('샘플 페이지 1', () => Get.to(() => const Sample1Page())),
-          _devTile('샘플 페이지 2', () => Get.to(() => const Sample2Page())),
+          // _devTile('샘플 페이지 1', () => Get.to(() => const Sample1Page())),
+
           // 여기도 팀원들이 항목만 추가하면 됨
 
         ],
