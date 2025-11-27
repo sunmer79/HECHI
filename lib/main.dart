@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// 로그인 관련 임포트
 import 'features/login/bindings/login_binding.dart';
 import 'features/login/pages/login_view.dart';
-
-// ✅ [추가됨] 회원가입 관련 임포트
 import 'features/sign_up/bindings/sign_up_binding.dart';
 import 'features/sign_up/pages/sign_up_view.dart';
+
+// ✅ [추가됨] 비밀번호 찾기 관련 임포트
+import 'features/forget_password/bindings/forget_password_binding.dart';
+import 'features/forget_password/pages/forget_password_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,22 +29,25 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // 시작은 로그인 화면
       initialRoute: '/login',
 
       getPages: [
-        // 1. 로그인 화면
         GetPage(
           name: '/login',
           page: () => const LoginView(),
           binding: LoginBinding(),
         ),
-
-        // ✅ [추가됨] 2. 회원가입 화면
         GetPage(
           name: '/sign_up',
           page: () => const SignUpView(),
           binding: SignUpBinding(),
+        ),
+
+        // ✅ [추가됨] 3. 비밀번호 찾기 화면
+        GetPage(
+          name: '/forget_password',
+          page: () => const ForgetPasswordView(),
+          binding: ForgetPasswordBinding(),
         ),
       ],
     );

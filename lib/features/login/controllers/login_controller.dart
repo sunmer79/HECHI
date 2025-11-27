@@ -62,6 +62,6 @@ class LoginController extends GetxController {
   }
 
   void goToForgetPassword() {
-    //Get.toNamed('/forget_password');
+    Get.toNamed('/forget_password');
   }
 }
