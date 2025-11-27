@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'features/home/home_page.dart';
+import 'features/login/bindings/login_binding.dart';
+import 'features/login/pages/login_view.dart';
+// import 'features/home/home_page.dart'; // 홈 화면은 일단 주석 처리하거나 필요시 포함
 
 void main() {
   runApp(const MyApp());
@@ -12,21 +14,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'HECHI App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFF4DB56C),
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Roboto',
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
       ),
-      home: const HomePage(),
+      initialRoute: '/login',
+      getPages: [
+        GetPage(
+          name: '/login',
+          page: () => const LoginView(),
+          binding: LoginBinding(),
+        ),
+      ],
     );
   }
 }
