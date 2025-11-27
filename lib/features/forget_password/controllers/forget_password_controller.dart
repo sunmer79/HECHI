@@ -6,18 +6,18 @@ class ForgetPasswordController extends GetxController {
   final emailController = TextEditingController();
   RxBool isEmailFilled = false.obs;
   RxString emailError = ''.obs;
-  
+
   // --- Step 2: 비밀번호 재설정 ---
   final newPassController = TextEditingController();
   final confirmPassController = TextEditingController();
   RxBool isNewPassFilled = false.obs;
   RxBool isConfirmPassFilled = false.obs;
-  
+
   // 비밀번호 확인란만 눈 모양 기능
-  RxBool isConfirmHidden = true.obs; 
+  RxBool isConfirmHidden = true.obs;
 
   // 현재 단계 (0: 이메일 확인, 1: 재설정)
-  RxInt currentStep = 0.obs; 
+  RxInt currentStep = 0.obs;
 
   @override
   void onInit() {
@@ -44,7 +44,7 @@ class ForgetPasswordController extends GetxController {
   // [1단계] 이메일 존재 확인
   void checkEmailAndMoveStep() {
     String email = emailController.text;
-    
+
     if (email == "HECHI@kmu.ac.kr") {
       // 성공 -> 2단계로 화면 전환
       currentStep.value = 1;
@@ -58,22 +58,41 @@ class ForgetPasswordController extends GetxController {
   void resetPassword() {
     // 1. 빈칸 체크
     if (newPassController.text.isEmpty || confirmPassController.text.isEmpty) {
-       Get.snackbar(
-         "알림", 
-         "비밀번호를 모두 입력해주세요.",
-         snackPosition: SnackPosition.BOTTOM,
-         backgroundColor: Colors.black54,
-         colorText: Colors.white,
-       );
-       return;
+      Get.snackbar(
+        "알림",
+        "비밀번호를 모두 입력해주세요.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.black54,
+        colorText: Colors.white,
+      );
+      return;
     }
-    
+
     // 2. 비밀번호 불일치 체크
     if (newPassController.text != confirmPassController.text) {
       Get.snackbar(
-        "오류", 
-        "비밀번호를 다시 확인해주세요.", 
+        "오류",
+        "비밀번호를 다시 확인해주세요.",
         backgroundColor: const Color(0xFFEA1717), // 빨간색 배경
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
+      return;
+    }
+
+    // 3. 비밀번호 일치 - 성공 메시지 및 이동
+    Get.snackbar(
+      "성공",
+      "비밀번호가 변경되었습니다.",
+      backgroundColor: Colors.black87,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2), // 메시지 표시 시간
+    );
+
+    // 1.5초 뒤에 로그인 화면으로 자동 이동
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      Get.offAllNamed('/login');
+    });
+  }
+}
