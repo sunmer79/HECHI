@@ -13,6 +13,7 @@ class ForgetPasswordController extends GetxController {
   RxBool isNewPassFilled = false.obs;
   RxBool isConfirmPassFilled = false.obs;
 
+  // 비밀번호 확인란만 눈 모양 기능
   RxBool isConfirmHidden = true.obs;
 
   // 현재 단계 (0: 이메일 확인, 1: 재설정)
@@ -21,6 +22,7 @@ class ForgetPasswordController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 리스너: 입력할 때마다 상태 업데이트 및 에러 초기화
     emailController.addListener(() {
       isEmailFilled.value = emailController.text.isNotEmpty;
       if (emailError.isNotEmpty) emailError.value = '';
@@ -69,8 +71,28 @@ class ForgetPasswordController extends GetxController {
     // 2. 비밀번호 불일치 체크
     if (newPassController.text != confirmPassController.text) {
       Get.snackbar(
-          "오류",
-          "비밀번호를 다시 확인해주세요.",
-          backgroundColor: const Color(0xFFEA1717), // 빨간색 배경
-          colorText: Colors.white,
-          snackPosition: SnackPosition.
+        "오류",
+        "비밀번호를 다시 확인해주세요.",
+        backgroundColor: const Color(0xFFEA1717), // 빨간색 배경
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // 3. 비밀번호 일치 - 성공 메시지 및 이동
+    Get.snackbar(
+      "성공",
+      "비밀번호가 변경되었습니다.",
+      backgroundColor: Colors.black87,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2), // 메시지 표시 시간
+    );
+
+    // 1.5초 뒤에 로그인 화면으로 자동 이동
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      Get.offAllNamed('/login');
+    });
+  }
+}
