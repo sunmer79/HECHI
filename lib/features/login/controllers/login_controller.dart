@@ -58,10 +58,10 @@ class LoginController extends GetxController {
   }
 
   void goToSignUp() {
-    Get.toNamed('/sign_up');
+    // Get.toNamed('/sign_up');
   }
 
   void goToForgetPassword() {
-    Get.toNamed('/forget_password');
+    // Get.toNamed('/forget_password');
   }
 }
