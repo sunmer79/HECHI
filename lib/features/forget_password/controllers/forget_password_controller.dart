@@ -6,21 +6,23 @@ class ForgetPasswordController extends GetxController {
   final emailController = TextEditingController();
   RxBool isEmailFilled = false.obs;
   RxString emailError = ''.obs;
-
+  
   // --- Step 2: 비밀번호 재설정 ---
   final newPassController = TextEditingController();
   final confirmPassController = TextEditingController();
   RxBool isNewPassFilled = false.obs;
   RxBool isConfirmPassFilled = false.obs;
-
-  RxBool isConfirmHidden = true.obs;
+  
+  // 비밀번호 확인란만 눈 모양 기능
+  RxBool isConfirmHidden = true.obs; 
 
   // 현재 단계 (0: 이메일 확인, 1: 재설정)
-  RxInt currentStep = 0.obs;
+  RxInt currentStep = 0.obs; 
 
   @override
   void onInit() {
     super.onInit();
+    // 리스너: 입력할 때마다 상태 업데이트 및 에러 초기화
     emailController.addListener(() {
       isEmailFilled.value = emailController.text.isNotEmpty;
       if (emailError.isNotEmpty) emailError.value = '';
@@ -42,7 +44,7 @@ class ForgetPasswordController extends GetxController {
   // [1단계] 이메일 존재 확인
   void checkEmailAndMoveStep() {
     String email = emailController.text;
-
+    
     if (email == "HECHI@kmu.ac.kr") {
       // 성공 -> 2단계로 화면 전환
       currentStep.value = 1;
@@ -56,21 +58,22 @@ class ForgetPasswordController extends GetxController {
   void resetPassword() {
     // 1. 빈칸 체크
     if (newPassController.text.isEmpty || confirmPassController.text.isEmpty) {
-      Get.snackbar(
-        "알림",
-        "비밀번호를 모두 입력해주세요.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.black54,
-        colorText: Colors.white,
-      );
-      return;
+       Get.snackbar(
+         "알림", 
+         "비밀번호를 모두 입력해주세요.",
+         snackPosition: SnackPosition.BOTTOM,
+         backgroundColor: Colors.black54,
+         colorText: Colors.white,
+       );
+       return;
     }
-
+    
     // 2. 비밀번호 불일치 체크
     if (newPassController.text != confirmPassController.text) {
       Get.snackbar(
-          "오류",
-          "비밀번호를 다시 확인해주세요.",
-          backgroundColor: const Color(0xFFEA1717), // 빨간색 배경
-          colorText: Colors.white,
-          snackPosition: SnackPosition.
+        "오류", 
+        "비밀번호를 다시 확인해주세요.", 
+        backgroundColor: const Color(0xFFEA1717), // 빨간색 배경
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
