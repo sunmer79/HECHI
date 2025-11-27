@@ -50,7 +50,7 @@ class HomePage extends StatelessWidget {
               title: '고객센터 문의하기',
               icon: Icons.support_agent,
               color: const Color(0xFF4DB56C),
-              onTap: () => Get.to(() => const CustomerServicePage()),
+              onTap: () => Get.to(() => CustomerServicePage()),
             ),
 
             const SizedBox(height: 40),
