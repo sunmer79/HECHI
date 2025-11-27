@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:hechi/app/routes.dart';
 class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -54,7 +54,7 @@ class LoginController extends GetxController {
     }
 
     // 로그인 성공 -> 홈으로 이동
-    Get.offAllNamed('/home');
+    Get.offAllNamed(Routes.initial);
   }
 
   void goToSignUp() {
