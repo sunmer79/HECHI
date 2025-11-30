@@ -5,21 +5,18 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ForgetPasswordController extends GetxController {
-  // 텍스트 컨트롤러
   final emailController = TextEditingController();
   final newPassController = TextEditingController();
   final confirmPassController = TextEditingController();
 
-  // 상태 변수
   RxBool isEmailFilled = false.obs;
   RxString emailError = ''.obs;
   RxBool isNewPassFilled = false.obs;
   RxBool isConfirmPassFilled = false.obs;
-  RxBool isConfirmHidden = true.obs;
+  RxBool isConfirmHidden = true.obs; // ✅ 이 변수와 연결된 함수가 누락되었습니다.
   RxInt currentStep = 0.obs;
   RxBool isLoading = false.obs;
 
-  // 서버 주소
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
   @override
@@ -41,9 +38,10 @@ class ForgetPasswordController extends GetxController {
     super.onClose();
   }
 
+  // ✅ [추가/복구된 함수] 이 함수가 없어서 에러가 났던 겁니다.
   void toggleConfirmVisibility() => isConfirmHidden.value = !isConfirmHidden.value;
 
-  // 1단계: 비밀번호 재설정 요청
+  // 1단계: 비밀번호 재설정 요청 (API 연동)
   Future<void> requestPasswordReset() async {
     String email = emailController.text;
 
@@ -54,19 +52,24 @@ class ForgetPasswordController extends GetxController {
 
     isLoading.value = true;
     try {
-      final url = Uri.parse('$baseUrl/auth/password-reset/request');
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"email": email}),
-      );
+      final checkUrl = Uri.parse('$baseUrl/auth/email-check?email=$email');
+      final checkResponse = await http.get(checkUrl);
 
-      if (response.statusCode == 200) {
-        print("✅ 요청 성공: ${response.body}");
-        currentStep.value = 1;
+      if (checkResponse.statusCode == 200) {
+        final data = jsonDecode(checkResponse.body);
+        bool exists = data['exists'];
+
+        if (exists) {
+          // 재설정 요청 API 호출 (부수 효과)
+          final requestUrl = Uri.parse('$baseUrl/auth/password-reset/request');
+          await http.post(requestUrl, headers: {"Content-Type": "application/json"}, body: jsonEncode({"email": email}));
+
+          currentStep.value = 1;
+        } else {
+          emailError.value = "가입되지 않은 이메일입니다.";
+        }
       } else {
-        print("❌ 요청 실패: ${response.body}");
-        emailError.value = "가입되지 않은 이메일입니다.";
+        emailError.value = "이메일 확인 중 오류가 발생했습니다.";
       }
     } catch (e) {
       Get.snackbar("오류", "서버 연결 실패", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black, borderColor: Colors.grey[300], borderWidth: 1);
@@ -75,7 +78,7 @@ class ForgetPasswordController extends GetxController {
     }
   }
 
-  // 2단계: 비밀번호 변경 (팝업 적용됨)
+  // 2단계: 비밀번호 변경
   Future<void> confirmPasswordReset() async {
     if (newPassController.text.isEmpty || confirmPassController.text.isEmpty) return;
 
@@ -97,9 +100,7 @@ class ForgetPasswordController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        print("✅ 변경 성공: ${response.body}");
-
-        // ✨ [디자인 적용] 비밀번호 변경 성공 팝업
+        // 성공 팝업
         Get.dialog(
           Dialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -107,10 +108,7 @@ class ForgetPasswordController extends GetxController {
             child: Container(
               width: 300,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -119,25 +117,15 @@ class ForgetPasswordController extends GetxController {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4DB56C),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFF4DB56C), borderRadius: BorderRadius.circular(4)),
                         child: const Icon(Icons.check, color: Colors.white, size: 16),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        '비밀번호 변경 성공!',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F), fontFamily: 'Roboto'),
-                      ),
+                      const Text('비밀번호 변경 성공!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F), fontFamily: 'Roboto')),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    '비밀번호가 변경되었습니다.\n로그인을 진행해주세요.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F), fontFamily: 'Roboto'),
-                  ),
+                  const Text('비밀번호가 변경되었습니다.\n로그인을 진행해주세요.', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F), fontFamily: 'Roboto')),
                   const SizedBox(height: 24),
                   GestureDetector(
                     onTap: () {
@@ -145,15 +133,11 @@ class ForgetPasswordController extends GetxController {
                       Get.offAllNamed(Routes.login);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4DB56C),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Text(
-                        '로그인하러 가기',
-                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                      ),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(color: const Color(0xFF4DB56C), borderRadius: BorderRadius.circular(25)),
+                      alignment: Alignment.center,
+                      child: const Text('로그인하러 가기', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

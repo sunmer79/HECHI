@@ -14,6 +14,7 @@ class LoginController extends GetxController {
   RxString emailError = ''.obs;
   RxString passwordError = ''.obs;
 
+  // 서버 주소
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
   @override
@@ -29,6 +30,7 @@ class LoginController extends GetxController {
 
   void togglePasswordVisibility() => isPasswordHidden.value = !isPasswordHidden.value;
 
+  // 🔐 로그인 로직 (로그인 -> 내 정보 확인 -> 이동)
   Future<void> login() async {
     String email = emailController.text;
     String password = passwordController.text;
@@ -41,9 +43,10 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      final url = Uri.parse('$baseUrl/auth/login');
-      final response = await http.post(
-        url,
+      // 1️⃣ 로그인 요청 (POST /auth/login)
+      final loginUrl = Uri.parse('$baseUrl/auth/login');
+      final loginResponse = await http.post(
+        loginUrl,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": email,
@@ -51,32 +54,47 @@ class LoginController extends GetxController {
         }),
       );
 
-      if (response.statusCode == 200) {
-        print("✅ 로그인 성공: ${response.body}");
-        final responseData = jsonDecode(response.body);
-        bool isTasteAnalyzed = responseData['taste_analyzed'] ?? false;
+      if (loginResponse.statusCode == 200) {
+        final loginData = jsonDecode(loginResponse.body);
+        String accessToken = loginData['access_token'];
+        print("✅ 1. 로그인 성공! 토큰 획득");
 
-        if (isTasteAnalyzed) {
-          Get.offAllNamed(Routes.initial);
+        // 2️⃣ 내 정보 요청 (GET /auth/me) - 취향 분석 여부 확인
+        final meUrl = Uri.parse('$baseUrl/auth/me');
+        final meResponse = await http.get(
+          meUrl,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $accessToken" // 토큰을 헤더에 담아 보냄
+          },
+        );
+
+        if (meResponse.statusCode == 200) {
+          final meData = jsonDecode(meResponse.body);
+          // taste_analyzed 값 확인 (없으면 false)
+          bool isTasteAnalyzed = meData['taste_analyzed'] ?? false;
+          print("✅ 2. 내 정보 확인 완료: 취향분석=$isTasteAnalyzed");
+
+          // 3️⃣ 분기 처리
+          if (isTasteAnalyzed) {
+            Get.offAllNamed(Routes.initial); // 홈으로
+          } else {
+            Get.offAllNamed(Routes.preference); // 취향 분석으로
+          }
         } else {
-          Get.offAllNamed(Routes.preference);
+          print("❌ 내 정보 조회 실패: ${meResponse.body}");
+          // 정보 조회가 안 되면 일단 홈으로 보내거나 에러 표시
+          // 여기선 일단 안전하게 홈으로 보냅니다 (필요시 수정 가능)
+          Get.offAllNamed(Routes.initial);
         }
 
       } else {
-        print("❌ 로그인 실패: ${response.body}");
+        print("❌ 로그인 실패: ${loginResponse.body}");
         passwordError.value = "이메일(아이디) 혹은 비밀번호가 틀렸습니다.";
       }
     } catch (e) {
       print("🚨 통신 오류: $e");
-      // ✅ 스낵바 디자인 변경 (흰 배경, 검은 글씨)
-      Get.snackbar(
-        "오류", "서버와 연결할 수 없습니다.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-        borderColor: Colors.grey[300],
-        borderWidth: 1,
-      );
+      Get.snackbar("오류", "서버와 연결할 수 없습니다.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black, borderColor: Colors.grey[300], borderWidth: 1);
     } finally {
       isLoading.value = false;
     }
