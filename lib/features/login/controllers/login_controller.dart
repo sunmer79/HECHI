@@ -79,7 +79,6 @@ class LoginController extends GetxController {
   }
 
   void goToForgetPassword() {
-    // 3단계에서 연결 예정 (지금은 주석 처리)
-    // Get.toNamed(Routes.forgetPassword);
+    Get.toNamed(Routes.forgetPassword);
   }
 }
