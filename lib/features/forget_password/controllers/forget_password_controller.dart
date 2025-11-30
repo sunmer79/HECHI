@@ -5,29 +5,32 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ForgetPasswordController extends GetxController {
-  // UI 컨트롤러
+  // 텍스트 컨트롤러
   final emailController = TextEditingController();
   final newPassController = TextEditingController();
   final confirmPassController = TextEditingController();
 
   // 상태 변수
+  RxBool isEmailFilled = false.obs;
+  RxString emailError = ''.obs;
+  RxBool isNewPassFilled = false.obs;
+  RxBool isConfirmPassFilled = false.obs;
   RxBool isConfirmHidden = true.obs;
-  RxInt currentStep = 0.obs; // 0: 이메일 입력, 1: 비번 변경
+  RxInt currentStep = 0.obs;
   RxBool isLoading = false.obs;
 
-  // 에러 메시지
-  RxString emailError = ''.obs;
-
-  // ✅ 실제 서버 주소
+  // 서버 주소
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
   @override
   void onInit() {
     super.onInit();
-    // 입력 시 에러 초기화
     emailController.addListener(() {
+      isEmailFilled.value = emailController.text.isNotEmpty;
       if (emailError.isNotEmpty) emailError.value = '';
     });
+    newPassController.addListener(() => isNewPassFilled.value = newPassController.text.isNotEmpty);
+    confirmPassController.addListener(() => isConfirmPassFilled.value = confirmPassController.text.isNotEmpty);
   }
 
   @override
@@ -40,7 +43,7 @@ class ForgetPasswordController extends GetxController {
 
   void toggleConfirmVisibility() => isConfirmHidden.value = !isConfirmHidden.value;
 
-  // 🚀 1단계: 비밀번호 재설정 요청 (이메일 확인)
+  // 1단계: 비밀번호 재설정 요청
   Future<void> requestPasswordReset() async {
     String email = emailController.text;
 
@@ -51,7 +54,6 @@ class ForgetPasswordController extends GetxController {
 
     isLoading.value = true;
     try {
-      // API 호출: POST /auth/password-reset/request
       final url = Uri.parse('$baseUrl/auth/password-reset/request');
       final response = await http.post(
         url,
@@ -61,69 +63,110 @@ class ForgetPasswordController extends GetxController {
 
       if (response.statusCode == 200) {
         print("✅ 요청 성공: ${response.body}");
-        // 성공하면 다음 단계(비번 변경창)로 이동
         currentStep.value = 1;
       } else {
         print("❌ 요청 실패: ${response.body}");
-        // 실패하면 가입되지 않은 이메일로 간주
         emailError.value = "가입되지 않은 이메일입니다.";
       }
     } catch (e) {
-      print("🚨 통신 오류: $e");
-      Get.snackbar("오류", "서버와 연결할 수 없습니다.", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("오류", "서버 연결 실패", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black, borderColor: Colors.grey[300], borderWidth: 1);
     } finally {
       isLoading.value = false;
     }
   }
 
-  // 🚀 2단계: 비밀번호 진짜 변경 (Confirm)
+  // 2단계: 비밀번호 변경 (팝업 적용됨)
   Future<void> confirmPasswordReset() async {
-    if (newPassController.text.isEmpty || confirmPassController.text.isEmpty) {
-      Get.snackbar("알림", "비밀번호를 모두 입력해주세요.", snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
+    if (newPassController.text.isEmpty || confirmPassController.text.isEmpty) return;
 
-    // 비밀번호 일치 확인
     if (newPassController.text != confirmPassController.text) {
-      Get.snackbar(
-          "오류", "비밀번호를 다시 확인해주세요.",
-          backgroundColor: const Color(0xFFEA1717), colorText: Colors.white, snackPosition: SnackPosition.BOTTOM
-      );
+      Get.snackbar("오류", "비밀번호가 일치하지 않습니다.", backgroundColor: Colors.white, colorText: const Color(0xFFEA1717), snackPosition: SnackPosition.BOTTOM, borderColor: Colors.grey[300], borderWidth: 1);
       return;
     }
 
     isLoading.value = true;
     try {
-      // API 호출: POST /auth/password-reset/confirm
       final url = Uri.parse('$baseUrl/auth/password-reset/confirm');
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": emailController.text, // 1단계 이메일 재사용
+          "email": emailController.text,
           "new_password": newPassController.text
         }),
       );
 
       if (response.statusCode == 200) {
         print("✅ 변경 성공: ${response.body}");
-        Get.snackbar(
-            "성공", "비밀번호가 변경되었습니다.",
-            backgroundColor: Colors.black87, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2)
-        );
 
-        // 1.5초 뒤 로그인 화면으로 이동
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          Get.offAllNamed(Routes.login);
-        });
+        // ✨ [디자인 적용] 비밀번호 변경 성공 팝업
+        Get.dialog(
+          Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: Colors.white,
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4DB56C),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(Icons.check, color: Colors.white, size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        '비밀번호 변경 성공!',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F), fontFamily: 'Roboto'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '비밀번호가 변경되었습니다.\n로그인을 진행해주세요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F), fontFamily: 'Roboto'),
+                  ),
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () {
+                      Get.back();
+                      Get.offAllNamed(Routes.login);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4DB56C),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: const Text(
+                        '로그인하러 가기',
+                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          barrierDismissible: false,
+        );
       } else {
-        print("❌ 변경 실패: ${response.body}");
-        Get.snackbar("실패", "비밀번호 변경에 실패했습니다.", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar("실패", "비밀번호 변경에 실패했습니다.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black, borderColor: Colors.grey[300], borderWidth: 1);
       }
     } catch (e) {
-      print("🚨 통신 오류: $e");
-      Get.snackbar("오류", "서버와 연결할 수 없습니다.", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("오류", "서버 연결 실패", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black, borderColor: Colors.grey[300], borderWidth: 1);
     } finally {
       isLoading.value = false;
     }
