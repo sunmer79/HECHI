@@ -1,7 +1,11 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../models/library_book_model.dart';
 
 class BookStorageProvider extends GetConnect {
+
+  final box = GetStorage();
+
   @override
   void onInit() {
     httpClient.baseUrl = 'https://api.43-202-101-63.sslip.io';
@@ -11,8 +15,13 @@ class BookStorageProvider extends GetConnect {
     required String shelf,
     required String sort,
   }) async {
-    // TODO: 로그인 후 저장된 실제 토큰으로 교체 필요
-    String token = "YOUR_ACCESS_TOKEN_HERE";
+
+    String token = box.read('access_token') ?? '';
+
+    if (token.isEmpty) {
+      print("🚨 토큰이 없어 도서 보관함 정보를 가져올 수 없습니다. 로그인이 필요합니다.");
+      return [];
+    }
 
     final response = await get(
       '/library/',
@@ -29,6 +38,7 @@ class BookStorageProvider extends GetConnect {
     );
 
     if (response.status.hasError) {
+      print("❌ 도서 보관함 조회 API 오류: ${response.statusText}");
       return [];
     }
 
