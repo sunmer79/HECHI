@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../notification/pages/notification_page.dart';
 import '../customer_service/pages/customer_service_page.dart';
-
-// ⬇️ 팀원 페이지 import (팀원들은 자기 파일만 추가하면 됨)
-//import '../team_pages/sample_1_page.dart';
-// 필요한 곳 계속 아래로 추가…
+import '../../features/reading_detail/pages/reading_detail_view.dart';
+import '../../features/reading_detail/bindings/reading_detail_binding.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -55,12 +53,24 @@ class HomePage extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // ⭐ 팀원 전용 개발 메뉴 ⭐
             _buildMenuButton(
               title: '[DEV] 팀원 페이지 이동',
               icon: Icons.developer_mode,
               color: Colors.blueAccent,
               onTap: () => Get.to(() => const DevMenuPage()),
+            ),
+
+            // ⬇️ [요청하신 부분] 바로 아래에 독서 상세 페이지 버튼 추가
+            const SizedBox(height: 20),
+
+            _buildMenuButton(
+              title: '독서 상세 페이지',
+              icon: Icons.menu_book,
+              color: Colors.purple,
+              onTap: () => Get.to(
+                    () => const ReadingDetailView(),
+                binding: ReadingDetailBinding(),
+              ),
             ),
           ],
         ),
@@ -107,15 +117,9 @@ class DevMenuPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('DEV 메뉴')),
-
-      // 팀원들이 자기 페이지 path 하나만 추가하면 여기 자동 표시됨
       body: ListView(
         children: [
-
-          // _devTile('샘플 페이지 1', () => Get.to(() => const Sample1Page())),
-
-          // 여기도 팀원들이 항목만 추가하면 됨
-
+          _devTile('샘플 페이지', () {}),
         ],
       ),
     );
