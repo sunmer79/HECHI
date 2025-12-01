@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hechi/app/main_app.dart';
 import 'package:get/get.dart';
-import 'app/routes.dart';        // 라우트 파일
-import 'features/home/home_page.dart';
+import 'package:get_storage/get_storage.dart'; // ✅ 추가
+import 'app/routes.dart';
 import 'app/bindings/app_binding.dart';
-void main() {
 
+void main() async {
+  await GetStorage.init(); // ✅ [필수] 저장소 초기화
   runApp(const MyApp());
 }
 
@@ -34,10 +35,11 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // ⭐ initialRoute + getPages로 라우팅
+      // ✅ 앱 실행 시 AppBinding 실행 (하단바 컨트롤러 등 준비)
+      initialBinding: AppBinding(),
+
       initialRoute: Routes.login,
       getPages: AppPages.pages,
-      home: null, // ⚠️ GetX 라우트 사용 시 home은 제거!
     );
   }
 }
