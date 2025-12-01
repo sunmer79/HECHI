@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/controllers/app_controller.dart';
+import '../../app/routes.dart'; // Routes import 필수
 
 class BottomBar extends GetView<AppController> {
   const BottomBar({super.key});
@@ -15,14 +16,9 @@ class BottomBar extends GetView<AppController> {
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
           ],
         ),
-        // ✅ 글자가 아이콘 영역 밖으로 삐져나가도 잘리지 않게 설정
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -37,62 +33,53 @@ class BottomBar extends GetView<AppController> {
     );
   }
 
-  Widget _buildNavItem(
-      int index,
-      double left,
-      String label,
-      String iconPath,
-      double width,      // 아이콘 기준 너비 (29.93)
-      double textWidth,  // 텍스트 실제 너비 (82.0 등)
-      ) {
+  Widget _buildNavItem(int index, double left, String label, String iconPath, double width, double textWidth) {
     return Positioned(
       left: left,
       top: 0,
       bottom: 0,
       child: GestureDetector(
-        onTap: () => controller.changeIndex(index),
+        onTap: () {
+          // ✅ [수정된 로직]
+          // 1. 인덱스 변경
+          controller.changeIndex(index);
+
+          // 2. 만약 현재 화면이 메인(MainWrapper)이 아니라면 (예: 취향분석 페이지 등)
+          //    강제로 메인 화면으로 돌아가게 합니다!
+          if (Get.currentRoute != Routes.initial) {
+            Get.offAllNamed(Routes.initial);
+          }
+        },
         behavior: HitTestBehavior.translucent,
         child: Container(
-          width: width, // ✅ 컨테이너 크기는 29.93으로 고정 (정렬 기준)
+          width: width,
           alignment: Alignment.center,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 1. 아이콘
               Obx(() {
+                // 인덱스가 맞으면 진한 색, 아니면 연한 색
                 final bool isSelected = controller.currentIndex.value == index;
                 final Color color = isSelected ? const Color(0xFF3F3F3F) : const Color(0xFFABABAB);
 
                 return Container(
-                  width: 30,
-                  height: 30,
+                  width: 30, height: 30,
                   decoration: BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage(iconPath),
                       fit: BoxFit.contain,
-                      colorFilter: ColorFilter.mode(
-                        color,
-                        BlendMode.srcIn,
-                      ),
+                      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
                     ),
                   ),
                 );
               }),
-
               const SizedBox(height: 4),
-
-              // 2. 텍스트
-              // ✅ 여기가 핵심 수정 사항입니다.
-              // SizedBox로 부모에게는 "나는 29.93px이야"라고 보고하고,
-              // OverflowBox로 자식에게는 "너는 82px이어도 돼"라고 허용합니다.
               SizedBox(
-                width: width, // 29.93 (부모 Column 폭에 맞춤 -> 오버플로우 에러 방지)
-                height: 14,   // 텍스트 높이 확보
+                width: width, height: 14,
                 child: OverflowBox(
-                  maxWidth: textWidth, // 82.0 (실제 글자가 뻗어나갈 너비)
-                  minWidth: textWidth,
+                  maxWidth: textWidth, minWidth: textWidth,
                   child: Center(
                     child: Obx(() {
                       final bool isSelected = controller.currentIndex.value == index;
@@ -102,9 +89,7 @@ class BottomBar extends GetView<AppController> {
                         maxLines: 1,
                         softWrap: false,
                         style: TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'Inter',
-                          height: 1.0,
+                          fontSize: 11, fontFamily: 'Inter', height: 1.0,
                           color: isSelected ? const Color(0xFF3F3F3F) : const Color(0xFFABABAB),
                         ),
                       );

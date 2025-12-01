@@ -3,7 +3,7 @@ import 'package:hechi/app/main_app.dart';
 import 'package:get/get.dart';
 import 'app/routes.dart';        // 라우트 파일
 import 'features/home/home_page.dart';
-
+import 'app/bindings/app_binding.dart';
 void main() {
   runApp(const MyApp());
 }
