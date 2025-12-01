@@ -4,7 +4,8 @@ import '../controllers/mainpage_controller.dart';
 import 'popular_list_page.dart';
 import 'trending_list_page.dart';
 import 'book_detail_page.dart';
-
+import '../../taste_analysis/pages/taste_analysis_view.dart';
+import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../notification/pages/notification_page.dart';
 
 class MainpageView extends GetView<MainpageController> {
@@ -123,7 +124,15 @@ class MainpageView extends GetView<MainpageController> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildCategoryItem('캘린더', Icons.calendar_today, const Color(0xFF4DB56C)),
-                  _buildCategoryItem('취향분석', Icons.bar_chart, const Color(0xFF4DB56C)),
+
+                  // ✅ [수정 완료] 취향분석 버튼 (클릭 시 이동 코드 추가)
+                  _buildCategoryItem(
+                    '취향분석',
+                    Icons.bar_chart,
+                    const Color(0xFF4DB56C),
+                    onTap: () => Get.to(() => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
+                  ),
+
                   _buildCategoryItem('보관함', Icons.inventory_2_outlined, const Color(0xFF4DB56C)),
                   _buildCategoryItem('추천', Icons.auto_awesome, const Color(0xFF4DB56C)),
                   _buildCategoryItem('그룹', Icons.people_outline, const Color(0xFF4DB56C)),
@@ -229,22 +238,18 @@ class MainpageView extends GetView<MainpageController> {
 
   // --- 헬퍼 메서드들 ---
 
-  Widget _buildCategoryItem(String label, IconData icon, Color color) {
+  Widget _buildCategoryItem(String label, IconData icon, Color color, {VoidCallback? onTap}) {
     return GestureDetector(
-      onTap: () {
-        // 클릭 시 임시 페이지로 이동
-        Get.to(() => TempCategoryPage(title: label));
-      },
-      // 배경과 그림자가 있던 Container를 제거하고 바로 Icon을 배치합니다.
+      // onTap이 있으면 그걸 실행하고, 없으면 임시 페이지로 이동
+      onTap: onTap ?? () => Get.to(() => TempCategoryPage(title: label)),
       child: Column(
         children: [
-          // Icon 크기를 30 -> 32로 약간 키워 시원하게 보이게 했습니다. (원하시면 조절 가능)
           Icon(icon, size: 32, color: color),
           const SizedBox(height: 8),
           Text(
             label,
             style: TextStyle(
-              color: color, // 텍스트 색상도 아이콘과 맞춤
+              color: color,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
