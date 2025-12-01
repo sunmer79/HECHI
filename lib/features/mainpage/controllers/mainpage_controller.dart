@@ -69,6 +69,7 @@ class MainpageController extends GetxController {
           String rating = (item['google_rating'] ?? 0.0).toString();
 
           return {
+            'id': item['id'],  //  ⭐ 추가
             'rank': index + 1,
             'title': item['title'] ?? '제목 없음',
             'rating': rating,
@@ -112,6 +113,7 @@ class MainpageController extends GetxController {
           String rating = (item['google_rating'] ?? 0.0).toString();
 
           return {
+            'id': item['id'], //  ⭐ 추가
             'rank': index + 1,
             'title': item['title'] ?? '제목 없음',
             'rating': rating,

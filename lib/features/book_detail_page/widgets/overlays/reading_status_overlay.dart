@@ -43,7 +43,7 @@ class ReadingStatusOverlay extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           tile("읽는 중", "reading"),
-          tile("완독함", "finished"),
+          tile("완독함", "completed"),
         ],
       ),
     );

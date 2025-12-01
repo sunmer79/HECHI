@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/mainpage_controller.dart';
-import 'book_detail_page.dart';
+import '../../book_detail_page/pages/book_detail_page.dart'; //  ⭐ 변경
 
 class PopularListPage extends StatelessWidget {
   const PopularListPage({super.key});
@@ -44,12 +44,7 @@ class PopularListPage extends StatelessWidget {
             return GestureDetector(
               onTap: () {
                 // 상세 페이지로 이동하며 데이터 전달
-                Get.to(() => BookDetailPage(
-                  bookTitle: book['title'],
-                  author: book['author'],
-                  imageUrl: book['imageUrl'],
-                  rating: book['rating'],
-                ));
+                Get.toNamed('/book_detail_page', arguments: book['id']); //  ⭐ 변경
               },
               // 기존 Row 코드는 그대로 child로 들어감
               child: Row(
