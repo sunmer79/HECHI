@@ -10,6 +10,7 @@ import '../../features/mainpage/pages/mainpage_view.dart';
 import '../../features/mainpage/controllers/mainpage_controller.dart'; // 컨트롤러 import
 import '../../features/my_read/pages/my_read_page.dart';
 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
