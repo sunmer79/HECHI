@@ -131,28 +131,24 @@ class BookDetailController extends GetxController {
   // 📌 읽고싶어요 토글 (지금은 로컬 상태만)
   // ==========================
   Future<void> onWantToRead() async {
-    final bool newValue = !isWishlisted.value;
+    final newState = readingStatus.value == "wishlist" ? "" : "wishlist";
 
-    // optimistic update
-    isWishlisted.value = newValue;
-    readingStatus.value = newValue ? "wishlist" : "";
+    final prev = readingStatus.value;
+    readingStatus.value = newState;
 
     try {
       final res = await http.post(
         Uri.parse("$baseUrl/reading-status/update"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"book_id": bookId, "status": readingStatus.value}),
+        body: jsonEncode({"book_id": bookId, "status": newState}),
       );
 
       if (res.statusCode != 200) {
-        isWishlisted.value = !newValue;
-        readingStatus.value = "";
+        readingStatus.value = prev; // rollback
         Get.snackbar("오류", "상태 변경 실패");
       }
     } catch (e) {
-      isWishlisted.value = !newValue;
-      readingStatus.value = "";
-      print("❌ Wishlist Error: $e");
+      readingStatus.value = prev;
     }
   }
 
@@ -162,6 +158,10 @@ class BookDetailController extends GetxController {
   //   - 이미 작성 O → 내가 쓴 리뷰 상세로 이동
   // ==========================
   void onWriteReview() {
+    if (!isCommented.value) {
+      readingStatus.value = "reviewed";
+    }
+
     if (isCommented.value && myReviewId != -1) {
       Get.toNamed("/review/detail", arguments: myReviewId);
     } else {
@@ -231,43 +231,24 @@ class BookDetailController extends GetxController {
   // body: { "book_id": int, "status": string }
   // ==========================
   Future<void> updateReadingStatus(String status) async {
-    final previous = readingStatus.value;
-    final newStatus = (previous == status) ? "" : status; // 같은 값이면 해제
-
-    // optimistic update
-    readingStatus.value = newStatus;
-    isWishlisted.value = false;
+    final prev = readingStatus.value;
+    readingStatus.value = status;
 
     try {
       final res = await http.post(
         Uri.parse("$baseUrl/reading-status/update"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "book_id": bookId,
-          "status": newStatus,
-        }),
+        body: jsonEncode({"book_id": bookId, "status": status}),
       );
 
       if (res.statusCode == 200) {
         Get.back();
-        Get.snackbar(
-          "완료",
-          newStatus.isEmpty
-              ? "독서 상태가 해제되었습니다."
-              : "상태가 '${newStatus == "reading" ? "읽는 중" : "완독함"}' 으로 변경되었습니다.",
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        Get.snackbar("완료", "'${status == "reading" ? "읽는 중" : "완독한"}'으로 변경되었습니다.");
       } else {
-        // 실패 시 롤백
-        readingStatus.value = previous;
-        Get.snackbar("오류", "상태 변경에 실패했습니다.",
-            snackPosition: SnackPosition.BOTTOM);
+        readingStatus.value = prev; // rollback
       }
     } catch (e) {
-      readingStatus.value = previous;
-      print("Reading Status Error: $e");
-      Get.snackbar("오류", "네트워크 오류가 발생했습니다.",
-          snackPosition: SnackPosition.BOTTOM);
+      readingStatus.value = prev;
     }
   }
 

@@ -26,8 +26,13 @@ class ActionButtons extends GetView<BookDetailController> {
           ),
           _buildBtn(
             icon: Icons.remove_red_eye,
-            label: controller.readingStatus.value == "finished" ? "완독한" : "읽는 중",
-            isActive: controller.readingStatus.value == "reading",
+            label: controller.readingStatus.value == "finished"
+                ? "완독한"
+                : controller.readingStatus.value == "reading"
+                ? "읽는 중"
+                : "읽는 중",
+            isActive: controller.readingStatus.value == "reading" ||
+                controller.readingStatus.value == "finished",
             onTap: controller.onReadingStatus,
           ),
           _buildBtn(
