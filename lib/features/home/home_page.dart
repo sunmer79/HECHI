@@ -3,9 +3,6 @@ import 'package:get/get.dart';
 import '../notification/pages/notification_page.dart';
 import '../customer_service/pages/customer_service_page.dart';
 
-import '../mainpage/pages/mainpage_view.dart';
-import '../mainpage/bindings/mainpage_binding.dart';
-
 // ⬇️ 팀원 페이지 import (팀원들은 자기 파일만 추가하면 됨)
 //import '../team_pages/sample_1_page.dart';
 // 필요한 곳 계속 아래로 추가…
@@ -115,15 +112,6 @@ class DevMenuPage extends StatelessWidget {
       body: ListView(
         children: [
 
-          _devTile(
-              '메인 페이지 (feature/mainpage)',
-                  () => Get.to(
-                    () => const MainpageView(),
-                binding: MainpageBinding(), // ✨ 중요: Binding을 연결해야 Controller 오류가 안 남
-              )
-          ),
-
-          const Divider(),
           // _devTile('샘플 페이지 1', () => Get.to(() => const Sample1Page())),
 
           // 여기도 팀원들이 항목만 추가하면 됨
