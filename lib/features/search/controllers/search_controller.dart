@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../data/book_model.dart';
 import '../data/search_repository.dart';
 import '../pages/isbn_scan_view.dart';
-import '../pages/book_detail_view.dart'; // 상세 페이지 이동용
 
 enum SearchState { initial, emptyHistory, hasHistory, result }
 
@@ -200,7 +199,8 @@ class BookSearchController extends GetxController {
                     child: InkWell(
                       onTap: () {
                         Get.back(); // 팝업 닫기
-                        Get.to(() => BookDetailView(book: book)); // 상세 이동
+                        print("📖 상세 페이지 연결 예정");
+                        Get.snackbar("알림", "상세 페이지는 준비 중입니다.");
                       },
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
                       child: const Center(

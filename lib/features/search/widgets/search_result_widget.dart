@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/search_controller.dart';
-import '../pages/book_detail_view.dart';
 
 class SearchResultWidget extends GetView<BookSearchController> {
   const SearchResultWidget({super.key});
@@ -48,11 +47,11 @@ class SearchResultWidget extends GetView<BookSearchController> {
                 itemBuilder: (context, index) {
                   final book = controller.searchResults[index];
 
-                  // [수정] InkWell로 감싸서 책 전체 클릭 시 상세페이지 이동
+                  // InkWell로 감싸서 책 전체 클릭 시 상세페이지 이동
                   return InkWell(
                     onTap: () {
-                      // 책을 누르면 바로 상세 페이지로
-                      Get.to(() => BookDetailView(book: book));
+                      print("📖 '${book.title}' 상세 페이지로 이동 (팀원 구현 예정)");
+                      // 나중에 팀원이 만든 페이지로 연결: Get.toNamed('/book/detail', arguments: book);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
