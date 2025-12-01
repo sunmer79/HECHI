@@ -9,15 +9,32 @@ class BookCoverHeader extends GetView<ReadingDetailController> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 200,
+      height: 180,
       child: Stack(
         children: [
           Positioned.fill(
-            child: Obx(() => Image.asset(
-              controller.coverImagePath.value,
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
-            )),
+            child: Obx(() {
+              if (controller.coverImageUrl.value.isNotEmpty) {
+                return Image.network(
+                  controller.coverImageUrl.value,
+                  fit: BoxFit.fitWidth,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      "assets/icons/ex_bookdetailcover.png",
+                      fit: BoxFit.fitWidth,
+                      alignment: Alignment.topCenter,
+                    );
+                  },
+                );
+              } else {
+                return Image.asset(
+                  "assets/icons/ex_bookdetailcover.png",
+                  fit: BoxFit.fitWidth,
+                  alignment: Alignment.topCenter,
+                );
+              }
+            }),
           ),
           Positioned.fill(
             child: Container(
@@ -30,7 +47,7 @@ class BookCoverHeader extends GetView<ReadingDetailController> {
                     Colors.white.withOpacity(0.3),
                     Colors.white.withOpacity(1.0),
                   ],
-                  stops: const [0.0, 0.6, 1.0],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
               ),
             ),

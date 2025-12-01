@@ -60,7 +60,6 @@ class HomePage extends StatelessWidget {
               onTap: () => Get.to(() => const DevMenuPage()),
             ),
 
-            // ⬇️ [요청하신 부분] 바로 아래에 독서 상세 페이지 버튼 추가
             const SizedBox(height: 20),
 
             _buildMenuButton(

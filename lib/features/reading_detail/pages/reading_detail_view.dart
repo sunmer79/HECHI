@@ -16,26 +16,32 @@ class ReadingDetailView extends GetView<ReadingDetailController> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(color: Colors.white),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const CustomAppHeader(),
-                BookCoverHeader(),
-                BookInfoSection(),
-                const SizedBox(height: 20),
-                const ActionButtonsRow(),
-                const SizedBox(height: 20),
-                ReadingStatusCard(),
-              ],
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return SingleChildScrollView(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(color: Colors.white),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CustomAppHeader(),
+                  BookCoverHeader(),
+                  BookInfoSection(),
+                  const SizedBox(height: 20),
+                  const ActionButtonsRow(),
+                  const SizedBox(height: 20),
+                  ReadingStatusCard(),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
       bottomNavigationBar: const BottomBar(),
     );

@@ -17,19 +17,16 @@ class ActionButtonsRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // 북마크
           _buildActionButton(
             '북마크',
             'assets/icons/icon_bookmark.png',
           ),
           _buildDivider(),
-          // 하이라이트
           _buildActionButton(
             '하이라이트',
             'assets/icons/icon_highlight.png',
           ),
           _buildDivider(),
-          // 메모
           _buildActionButton(
             '메모',
             'assets/icons/icon_memo.png',
@@ -78,8 +75,12 @@ class ActionButtonsRow extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage(iconPath), // 로컬 에셋 이미지 사용
+                    image: AssetImage(iconPath),
                     fit: BoxFit.contain,
+                    colorFilter: const ColorFilter.mode(
+                      Color(0xFF4EB56D),
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
