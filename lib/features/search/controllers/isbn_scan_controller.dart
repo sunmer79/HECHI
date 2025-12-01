@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mobile_scanner/mobile_scanner.dart'; // 패키지 import 필수
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../data/search_repository.dart';
 
 class IsbnScanController extends GetxController {
-  // 1. 실제 카메라 컨트롤러 생성
+  // 1. 실제 카메라 컨트롤러 (안드로이드용)
   final MobileScannerController cameraController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates, // 중복 스캔 방지
-    returnImage: false, // 모바일에서는 false가 성능상 유리
-    autoStart: true,    // 페이지 들어오면 바로 시작
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    returnImage: false,
+    autoStart: true,
   );
 
   final SearchRepository _repository = SearchRepository();
-  final RxBool isScanning = false.obs; // API 통신 중복 방지
+  final RxBool isScanning = false.obs;
 
   @override
   void onClose() {
-    // 컨트롤러 해제 (에러 무시 처리 포함)
     try {
       cameraController.dispose();
     } catch (e) {
@@ -25,9 +24,8 @@ class IsbnScanController extends GetxController {
     super.onClose();
   }
 
-  // 2. 바코드 감지 시 실행되는 함수
+  // 2. [안드로이드용] 실제 바코드 감지 함수
   Future<void> onBarcodeDetect(BarcodeCapture capture) async {
-    // 이미 스캔 중(로딩 중)이면 무시
     if (isScanning.value) return;
 
     final List<Barcode> barcodes = capture.barcodes;
@@ -35,35 +33,49 @@ class IsbnScanController extends GetxController {
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
         final String code = barcode.rawValue!;
+        print("📸 스캔 감지됨! 값: [$code], 길이: ${code.length}");
 
-        // ISBN은 보통 10자리 or 13자리
         if (code.length == 10 || code.length == 13) {
-          print("📸 스캔된 ISBN: $code");
-
-          isScanning.value = true; // 로딩 시작
-
-          try {
-            // API 호출
-            final book = await _repository.searchByBarcode(code);
-
-            if (book != null) {
-              Get.back(); // 스캔 화면 닫기
-              Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다. (상세 페이지 연결 예정)");
-              print("📖 스캔된 책: ${book.title}");
-            } else {
-              // 실패 시 알림 띄우고 다시 스캔 가능하게
-              Get.snackbar("알림", "책 정보를 찾을 수 없습니다.");
-              await Future.delayed(const Duration(seconds: 2)); // 2초 뒤 재스캔 허용
-              isScanning.value = false;
-            }
-          } catch (e) {
-            print("API 에러: $e");
-            Get.snackbar("오류", "서버 연결에 실패했습니다.");
-            isScanning.value = false;
-          }
-          break; // 하나만 인식하고 루프 종료
+          print("✅ 유효한 ISBN입니다. 처리 시작."); // (선택) 통과된 경우 확인용
+          await _processIsbn(code);
+          break;
+        } else {
+          // (선택) 스캔은 됐는데 조건에 안 맞아 버려지는 경우 확인용
+          print("⚠️ ISBN 형식이 아님 (길이 불일치)");
         }
       }
+    }
+  }
+
+  // 3. [윈도우용] 테스트 버튼 눌렀을 때 실행되는 함수
+  Future<void> testScan(String virtualCode) async {
+    if (isScanning.value) return;
+    print("⚡ [윈도우 테스트] 가짜 바코드 입력됨: $virtualCode");
+    await _processIsbn(virtualCode); // 공통 처리 함수 호출
+  }
+
+  // 4. [공통 로직] ISBN으로 API 호출 및 이동
+  Future<void> _processIsbn(String isbn) async {
+    isScanning.value = true;
+
+    try {
+      final book = await _repository.searchByBarcode(isbn);
+
+      if (book != null) {
+        Get.back(); // 스캔 화면 닫기
+        print("📖 스캔 성공: ${book.title}");
+        Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다.");
+        // 상세 페이지 연결 (팀원이 만들면 주석 해제)
+        // Get.toNamed('/book/detail', arguments: book);
+      } else {
+        Get.snackbar("알림", "책 정보를 찾을 수 없습니다.");
+        await Future.delayed(const Duration(seconds: 2));
+        isScanning.value = false;
+      }
+    } catch (e) {
+      print("API 에러: $e");
+      Get.snackbar("오류", "서버 연결에 실패했습니다.");
+      isScanning.value = false;
     }
   }
 }
