@@ -46,6 +46,7 @@ class CustomerServiceController extends GetxController {
 
   Future<void> fetchMyTickets() async {
     final response = await _provider.getMyTickets();
+
     if (!response.status.hasError) {
       List<dynamic> data = response.body;
       var list = data.map((json) => TicketModel.fromJson(json)).toList();
@@ -69,7 +70,6 @@ class CustomerServiceController extends GetxController {
     changeView(4);
   }
 
-  // ✅ [수정된 부분] 로그 출력 코드가 추가된 함수
   Future<void> submitInquiry() async {
     if (titleController.text.isEmpty || contentController.text.isEmpty) {
       Get.snackbar('알림', '제목과 내용을 입력해주세요.', snackPosition: SnackPosition.BOTTOM);
@@ -78,20 +78,12 @@ class CustomerServiceController extends GetxController {
 
     isLoading.value = true;
 
-    // API 호출
     final response = await _provider.createTicket(
       titleController.text,
       contentController.text,
     );
 
     isLoading.value = false;
-
-    // 🔥 [이게 필요합니다!] 터미널에 결과 출력
-    print('-------------------------------------------');
-    print('📥 상태 코드: ${response.statusCode}');
-    print('📥 응답 본문: ${response.bodyString}');
-    print('📥 에러 메시지: ${response.statusText}');
-    print('-------------------------------------------');
 
     if (response.status.hasError) {
       Get.snackbar('등록 실패', '코드: ${response.statusCode} / 메시지: ${response.statusText}',

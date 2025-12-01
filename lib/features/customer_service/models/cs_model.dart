@@ -44,7 +44,7 @@ class TicketModel {
       userId: json['user_id'] ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      status: json['status'] ?? '접수완료',
+      status: json['status'] ?? 'open',
       createdAt: json['created_at'] ?? '',
     );
   }
@@ -56,6 +56,17 @@ class TicketModel {
       return "${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}";
     } catch (e) {
       return createdAt.substring(0, 10);
+    }
+  }
+
+  String get displayStatus {
+    switch (status) {
+      case 'answered':
+        return '답변 완료';
+      case 'open':
+        return '답변 안 됨';
+      default:
+        return '접수 완료';
     }
   }
 }

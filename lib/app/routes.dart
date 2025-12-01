@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:hechi/app/main_app.dart';
 import 'package:hechi/features/customer_service/pages/customer_service_page.dart';
-// 기존 import 유지
 import '../features/login/bindings/login_binding.dart';
 import '../features/login/pages/login_view.dart';
 import '../features/sign_up/bindings/sign_up_binding.dart';
@@ -10,6 +9,9 @@ import '../features/forget_password/bindings/forget_password_binding.dart';
 import '../features/forget_password/pages/forget_password_view.dart';
 import '../features/preference/bindings/preference_binding.dart';
 import '../features/preference/pages/preference_view.dart';
+import '../features/search/pages/search_view.dart';
+import '../features/search/pages/isbn_scan_view.dart';
+
 
 // ✅ 추가
 import '../features/book_detail_page/bindings/book_detail_binding.dart';
@@ -22,8 +24,9 @@ abstract class Routes {
   static const signUp = '/sign_up';
   static const forgetPassword = '/forget_password';
   static const preference = '/preference';
-  static const bookDetailPage = '/book_detail_page'; // ✅ 추가
+  static const search = '/search';
 
+  static const bookDetailPage = '/book_detail_page'; // ✅ 추가
 }
 
 class AppPages {
