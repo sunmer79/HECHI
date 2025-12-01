@@ -135,10 +135,10 @@ class CustomerServicePage extends StatelessWidget {
                 Text('작성일: ${inquiry.formattedDate}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(width: 10),
                 Text(
-                  inquiry.status,
+                  inquiry.displayStatus,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: inquiry.status == '답변완료' ? const Color(0xFF4DB56C) : Colors.orange,
+                    color: inquiry.status == 'answered' ? const Color(0xFF4DB56C) : Colors.orange,
                   ),
                 ),
               ],
@@ -239,7 +239,7 @@ class CustomerServicePage extends StatelessWidget {
         final item = controller.myInquiries[index];
         return InquiryTile(
           title: item.title,
-          status: item.status,
+          status: item.displayStatus,
           date: item.formattedDate,
           onTap: () => controller.viewDetail(item),
         );
