@@ -63,8 +63,7 @@ class ReadingDetailController extends GetxController {
   }
 
   Future<void> fetchReadingSessions(int bookId) async {
-    List<ReadingSessionModel> allSessions = await _readingProvider.getSessions();
-    List<ReadingSessionModel> mySessions = allSessions.where((s) => s.bookId == bookId).toList();
+    List<ReadingSessionModel> mySessions = await _readingProvider.getSessions(bookId);
 
     if (mySessions.isNotEmpty) {
       isReading.value = true;
@@ -90,7 +89,5 @@ class ReadingDetailController extends GetxController {
     }
   }
 
-  void toggleBookmark() {
-    print("Bookmark toggled");
-  }
+  void toggleBookmark() {}
 }
