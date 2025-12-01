@@ -47,8 +47,13 @@ class SearchResultWidget extends GetView<BookSearchController> {
                 separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
                 itemBuilder: (context, index) {
                   final book = controller.searchResults[index];
+
+                  // [수정] InkWell로 감싸서 책 전체 클릭 시 상세페이지 이동
                   return InkWell(
-                    onTap: () => Get.to(() => BookDetailView(book: book)),
+                    onTap: () {
+                      // 책을 누르면 바로 상세 페이지로
+                      Get.to(() => BookDetailView(book: book));
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
@@ -77,6 +82,35 @@ class SearchResultWidget extends GetView<BookSearchController> {
                               ],
                             ),
                           ),
+
+                          // [수정] 체크 버튼 영역
+                          // Obx로 감싸서 상태 변화(등록됨/안됨)를 즉시 반영
+                          Obx(() {
+                            final isRegistered = controller.registeredBookIds.contains(book.id);
+
+                            return InkWell(
+                              onTap: () {
+                                if (!isRegistered) {
+                                  // 등록 안 된 상태면 팝업 띄우기
+                                  controller.showRegisterDialog(book);
+                                } else {
+                                  // 이미 등록된 상태라면? (지금은 그냥 안내 메시지)
+                                  Get.snackbar("알림", "이미 등록된 도서입니다.", duration: const Duration(seconds: 1));
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  // 등록되었으면 채워진 원, 아니면 빈 원
+                                  isRegistered ? Icons.check_circle : Icons.check_circle_outline,
+                                  // 등록되었으면 진한 회색, 아니면 연한 회색
+                                  color: isRegistered ? const Color(0xFF555555) : const Color(0xFF888888),
+                                  size: 28,
+                                ),
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),

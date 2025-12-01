@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/search_controller.dart';
+import '../data/search_repository.dart';
 
 class SearchHistoryListWidget extends GetView<BookSearchController> {
   const SearchHistoryListWidget({super.key});
@@ -12,6 +13,7 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
       color: Colors.white,
       child: Column(
         children: [
+          // 헤더
           Container(
             width: 412,
             height: 60,
@@ -33,6 +35,7 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
               ],
             ),
           ),
+          // 리스트
           Expanded(
             child: Obx(() {
               if (controller.recentSearches.isEmpty) return const SizedBox();
@@ -41,8 +44,8 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 itemCount: controller.recentSearches.length,
                 itemBuilder: (context, index) {
-                  final title = controller.recentSearches[index];
-                  return _buildHistoryItem(title, index);
+                  final SearchHistoryItem item = controller.recentSearches[index];
+                  return _buildHistoryItem(item);
                 },
               );
             }),
@@ -52,13 +55,14 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
     );
   }
 
-  Widget _buildHistoryItem(String title, int index) {
+  Widget _buildHistoryItem(SearchHistoryItem item) {
     return Material(
       color: Colors.white,
       child: InkWell(
         onTap: () {
-          controller.searchTextController.text = title;
-          controller.onSubmit(title);
+          // 검색어 클릭 시 검색 실행
+          controller.searchTextController.text = item.query;
+          controller.onSubmit(item.query);
         },
         child: Container(
           width: 412,
@@ -73,17 +77,29 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
                     const Icon(Icons.schedule, size: 18, color: Color(0xFFB0B0B0)),
                     const SizedBox(width: 15),
                     Expanded(
-                      child: Text(title, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF3F3F3F), fontSize: 16)),
+                      child: Text(
+                        item.query, // 검색어 텍스트
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFF3F3F3F), fontSize: 16, fontFamily: 'Roboto'),
+                      ),
                     ),
                   ],
                 ),
               ),
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => controller.deleteOneHistory(index),
-                child: Container(
-                  width: 30, height: 30, alignment: Alignment.center,
-                  child: const Icon(Icons.close, size: 18, color: Color(0xFF3F3F3F)),
+
+              // 개별 삭제 버튼
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    // [핵심] 삭제 함수에 'ID'를 넘겨줍니다.
+                    controller.deleteOneHistory(item.id);
+                  },
+                  child: Container(
+                    width: 30, height: 30, alignment: Alignment.center,
+                    child: const Icon(Icons.close, size: 18, color: Color(0xFF3F3F3F)),
+                  ),
                 ),
               ),
             ],
