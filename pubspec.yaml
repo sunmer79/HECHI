@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   get: ^4.7.3
   http: ^1.6.0
+  intl: ^0.20.2
+  flutter_rating_bar: ^4.0.0
+
 
 dev_dependencies:
   flutter_test:
