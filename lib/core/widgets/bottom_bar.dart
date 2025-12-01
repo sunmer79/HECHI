@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/controllers/app_controller.dart';
-import '../../app/routes.dart'; // Routes import 필수
+import '../../app/routes.dart';
 
 class BottomBar extends GetView<AppController> {
   const BottomBar({super.key});
@@ -40,12 +40,8 @@ class BottomBar extends GetView<AppController> {
       bottom: 0,
       child: GestureDetector(
         onTap: () {
-          // ✅ [수정된 로직]
-          // 1. 인덱스 변경
           controller.changeIndex(index);
 
-          // 2. 만약 현재 화면이 메인(MainWrapper)이 아니라면 (예: 취향분석 페이지 등)
-          //    강제로 메인 화면으로 돌아가게 합니다!
           if (Get.currentRoute != Routes.initial) {
             Get.offAllNamed(Routes.initial);
           }
@@ -60,7 +56,6 @@ class BottomBar extends GetView<AppController> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Obx(() {
-                // 인덱스가 맞으면 진한 색, 아니면 연한 색
                 final bool isSelected = controller.currentIndex.value == index;
                 final Color color = isSelected ? const Color(0xFF3F3F3F) : const Color(0xFFABABAB);
 
