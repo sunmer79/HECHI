@@ -69,6 +69,9 @@ class BookSearchController extends GetxController {
 
   Future<void> onSubmit(String value) async {
     if (value.isEmpty) return;
+    recentSearches.removeWhere((item) => item.query == value);
+    final tempItem = SearchHistoryItem(id: -1, query: value);
+    recentSearches.insert(0, tempItem);
 
     currentKeyword.value = value;
     searchFocusNode.unfocus();
@@ -81,6 +84,8 @@ class BookSearchController extends GetxController {
       searchResults.assignAll(books);
       await loadServerHistory();
 
+    } catch (e) {
+      print("에러 발생: $e");
     } finally {
       isLoading.value = false;
     }

@@ -9,8 +9,8 @@ class SearchHeaderWidget extends GetView<BookSearchController> {
   Widget build(BuildContext context) {
     return Container(
       width: 412,
-      height: 120,
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 60),
+      height: 75,
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 35),
       decoration: const BoxDecoration(color: Colors.white),
       child: Container(
         height: 45,

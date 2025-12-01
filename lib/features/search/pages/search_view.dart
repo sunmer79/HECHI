@@ -34,7 +34,7 @@ class SearchView extends GetView<BookSearchController> {
             ),
             const Positioned(left: 0, top: 0, child: SearchHeaderWidget()),
             Positioned(
-              left: 0, top: 120, bottom: 0,
+              left: 0, top: 90, bottom: 0,
               child: Obx(() {
                 switch (controller.currentView.value) {
                   case SearchState.initial: return const SizedBox();

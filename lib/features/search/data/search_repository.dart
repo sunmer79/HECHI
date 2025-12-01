@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:get_storage/get_storage.dart';
 import 'book_model.dart';
 
 // 히스토리 데이터 모델 (ID와 검색어 저장)
@@ -20,8 +21,7 @@ class SearchHistoryItem {
 class SearchRepository {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
-  // [임시 토큰] 만료되면 로그인해서 새로 받아야 함
-  final String _token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNyIsImlhdCI6MTc2NDU3NTIwOSwiZXhwIjoxNzY0NTc3MDA5LCJ0eXBlIjoiYWNjZXNzIiwianRpIjoiMTk1YTAzNTQ0YThhNDQzNDgxZTU0N2Y1MzA0NWI5OGMifQ.PcxyXhPMiKqc2k3s2kMZbtsFI78bkQyiScXsC6tlmJA";
+  String get _token => GetStorage().read('access_token') ?? "";
 
   Map<String, String> get _headers => {
     "Content-Type": "application/json",
@@ -98,11 +98,25 @@ class SearchRepository {
         final dynamic data = json.decode(decodedBody);
 
         if (data is List) {
-          // 리스트 안의 맵을 SearchHistoryItem 객체로 변환
-          return data.map((json) => SearchHistoryItem.fromJson(json)).toList();
+          final List<SearchHistoryItem> allItems = data
+              .map((json) => SearchHistoryItem.fromJson(json))
+              .toList();
+
+          final Set<String> seen = {};
+          final List<SearchHistoryItem> uniqueItems = [];
+
+          for (var item in allItems) {
+            if (!seen.contains(item.query)) {
+              seen.add(item.query);
+              uniqueItems.add(item);
+            }
+          }
+
+          return uniqueItems;
         }
         return [];
       }
+      print("🚨 히스토리 에러: ${response.body}");
       return [];
     } catch (e) {
       print("🚨 히스토리 실패: $e");
