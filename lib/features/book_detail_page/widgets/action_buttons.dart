@@ -9,40 +9,41 @@ class ActionButtons extends GetView<BookDetailController> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
-      child: Obx(() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildBtn(
-            icon: Icons.add,
-            label: "읽고싶어요",
-            isActive: controller.isWishlisted.value,
-            onTap: controller.onWantToRead,
-          ),
-          _buildBtn(
-            icon: Icons.edit,
-            label: "코멘트",
-            isActive: controller.isCommented.value,
-            onTap: controller.onWriteReview,
-          ),
-          _buildBtn(
-            icon: Icons.remove_red_eye,
-            label: controller.readingStatus.value == "completed"
-                ? "완독한"
-                : controller.readingStatus.value == "reading"
-                ? "읽는 중"
-                : "읽는 중",
-            isActive: controller.readingStatus.value == "reading" ||
-                controller.readingStatus.value == "completed",
-            onTap: controller.onReadingStatus,
-          ),
-          _buildBtn(
-            icon: Icons.more_horiz,
-            label: "더보기",
-            isActive: false,
-            onTap: controller.openMoreMenu,
-          ),
-        ],
-      )),
+      child: Obx(
+            () => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildBtn(
+              icon: Icons.add,
+              label: "읽고싶어요",
+              isActive: controller.readingStatus.value == "wishlist",
+              onTap: controller.onWantToRead,
+            ),
+            _buildBtn(
+              icon: Icons.edit,
+              label: "코멘트",
+              isActive: controller.isCommented.value || controller.readingStatus.value == "rated",
+              onTap: controller.onWriteReview,
+            ),
+            _buildBtn(
+              icon: Icons.remove_red_eye,
+              label: controller.readingStatus.value == "completed"
+                  ? "완독한"
+                  : (controller.readingStatus.value == "reading" ? "읽는 중" : "읽는 중"), // 기본 텍스트
+              // reading이나 completed 상태일 때만 활성화 색상
+              isActive: controller.readingStatus.value == "reading"
+                  || controller.readingStatus.value == "completed",
+              onTap: controller.onReadingStatus,
+            ),
+            _buildBtn(
+              icon: Icons.more_horiz,
+              label: "더보기",
+              isActive: false,
+              onTap: controller.openMoreMenu,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -65,9 +66,13 @@ class ActionButtons extends GetView<BookDetailController> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: 8,
+          spacing: 8, // Flutter 3.10+ 에서 지원 (이전 버전은 SizedBox 사용)
           children: [
-            Icon(icon, size: 25, color: isActive ? activeColor : disabledColor),
+            Icon(
+              icon,
+              size: 25,
+              color: isActive ? activeColor : disabledColor,
+            ),
             Text(
               label,
               textAlign: TextAlign.center,
