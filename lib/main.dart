@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       ),
 
       // ⭐ initialRoute + getPages로 라우팅
-      initialRoute: Routes.initial,
+      initialRoute: Routes.login,
       getPages: AppPages.pages,
       home: null, // ⚠️ GetX 라우트 사용 시 home은 제거!
     );
