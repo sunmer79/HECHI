@@ -10,6 +10,9 @@ import '../features/mainpage/pages/mainpage_view.dart';
 import '../features/mainpage/controllers/mainpage_controller.dart';
 import '../features/my_read/pages/my_read_page.dart';
 
+import '../features/search/pages/search_view.dart';
+import '../features/search/controllers/search_controller.dart';
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -43,6 +46,11 @@ class MainWrapper extends GetView<AppController> {
       Get.put(MainpageController());
     }
 
+    // 3. 검색 컨트롤러 주입
+    if (!Get.isRegistered<BookSearchController>()) {
+      Get.put(BookSearchController());
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -54,11 +62,11 @@ class MainWrapper extends GetView<AppController> {
         child: Obx(() => IndexedStack(
           index: controller.currentIndex.value,
           children: [
-            // Index 0: 홈 (진짜 메인페이지)
+            // Index 0: 홈
             const MainpageView(),
 
-            // Index 1: 검색 (임시)
-            _buildPlaceholder("검색 페이지"),
+            // Index 1: 검색
+            const SearchView(),
 
             // Index 2: 독서 등록 (임시)
             _buildPlaceholder("독서 등록 페이지"),
