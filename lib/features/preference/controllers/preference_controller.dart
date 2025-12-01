@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:hechi/app/routes.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:get_storage/get_storage.dart'; // ✅ 저장소 추가
+import 'package:get_storage/get_storage.dart';
 
 class PreferenceController extends GetxController {
   // 현재 단계 (0: 인트로, 1: 카테고리, 2: 장르)
@@ -23,7 +23,7 @@ class PreferenceController extends GetxController {
 
   // 서버 주소
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
-  final box = GetStorage(); // ✅ 저장소 인스턴스
+  final box = GetStorage();
   RxBool isLoading = false.obs;
 
   @override
@@ -37,12 +37,30 @@ class PreferenceController extends GetxController {
     });
   }
 
-  // 다음 단계로 이동
+  // 다음 단계로 이동 (최소 1개 선택 검증 로직 추가)
   void nextStep() {
+    // 1단계 -> 2단계로 넘어갈 때 (카테고리 선택 검증)
+    if (currentStep.value == 1) {
+      if (selectedCategories.isEmpty) {
+        _showSelectionError("카테고리를 최소 1개 이상 선택해주세요.");
+        return; // 검증 실패 시 다음 단계로 진행하지 않음
+      }
+    }
+    // 2단계 (마지막 단계)
+    else if (currentStep.value == 2) {
+      // 2단계에서 '완료' 버튼을 눌렀을 때 (장르 선택 검증)
+      if (selectedGenres.isEmpty) {
+        _showSelectionError("장르를 최소 1개 이상 선택해주세요.");
+        return; // 검증 실패 시 제출하지 않음
+      }
+
+      submitPreferences(); // 검증 통과 시 취향 정보 제출
+      return;
+    }
+
+    // 0단계에서 1단계로 이동하거나, 검증에 통과했을 때 단계 증가
     if (currentStep.value < 2) {
       currentStep.value++;
-    } else {
-      submitPreferences(); // 마지막 단계면 저장
     }
   }
 
@@ -64,17 +82,31 @@ class PreferenceController extends GetxController {
     }
   }
 
+  // 에러 메시지 스낵바 표시
+  void _showSelectionError(String message) {
+    Get.snackbar(
+      "선택 필요",
+      message,
+      backgroundColor: Colors.redAccent.withOpacity(0.8),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(10),
+      duration: const Duration(seconds: 2),
+    );
+  }
+
   // 🚀 [진짜 API 연결] 취향 정보 제출
   Future<void> submitPreferences() async {
+    // nextStep()에서 이미 검증했으나, 안전을 위해 최종 검증
     if (selectedCategories.isEmpty || selectedGenres.isEmpty) {
-      Get.snackbar("알림", "카테고리와 장르를 최소 1개씩 선택해주세요.", backgroundColor: Colors.white, colorText: Colors.black);
+      _showSelectionError("카테고리와 장르를 최소 1개씩 선택해주세요.");
       return;
     }
 
     isLoading.value = true;
 
     try {
-      // 1. 저장해둔 토큰 꺼내기 (LoginController에서 저장한 것)
+      // 1. 저장해둔 토큰 꺼내기
       String? token = box.read('access_token');
 
       if (token == null) {
@@ -90,7 +122,7 @@ class PreferenceController extends GetxController {
         url,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token" // ✅ 헤더에 토큰 필수!
+          "Authorization": "Bearer $token"
         },
         body: jsonEncode({
           "categories": selectedCategories,
