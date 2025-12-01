@@ -1,93 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/cs_model.dart';
+import '../services/cs_provider.dart';
 
 class CustomerServiceController extends GetxController {
-  // 0: 메인, 1: 문의내역, 2: 문의등록, 3: 문의상세, 4: FAQ상세(New!)
+  final CsProvider _provider = Get.put(CsProvider());
+
   var currentViewIndex = 0.obs;
+  var isLoading = false.obs;
 
-  // 선택된 문의 내역 데이터
-  var selectedInquiry = <String, String>{}.obs;
+  var faqList = <FaqModel>[].obs;
+  var myInquiries = <TicketModel>[].obs;
 
-  // [New] 선택된 FAQ 데이터
-  var selectedFaq = <String, String>{}.obs;
+  var selectedInquiry = Rxn<TicketModel>();
+  var selectedFaq = Rxn<FaqModel>();
 
-  // 입력 필드 컨트롤러
   final titleController = TextEditingController();
   final contentController = TextEditingController();
 
-  // [Modified] FAQ 더미 데이터 (제목 + 내용 구조로 변경)
-  final faqList = <Map<String, String>>[
-    {
-      'title': '배송은 언제 되나요?',
-      'content': '배송은 주문일로부터 영업일 기준 2~3일 소요됩니다. 도서 산간 지역은 추가 소요될 수 있습니다.'
-    },
-    {
-      'title': '교환/반품 신청은 어떻게 하나요?',
-      'content': '마이페이지 > 주문내역에서 교환/반품 신청이 가능합니다. 수령 후 7일 이내에만 가능합니다.'
-    },
-    {
-      'title': '회원 탈퇴는 어디서 하나요?',
-      'content': '설정 > 계정 관리 메뉴 하단에서 회원 탈퇴 버튼을 찾으실 수 있습니다.'
-    },
-    {
-      'title': '결제 수단을 변경하고 싶어요.',
-      'content': '이미 주문이 완료된 건은 결제 수단 변경이 불가능합니다. 취소 후 재주문 부탁드립니다.'
-    },
-  ].obs;
+  @override
+  void onInit() {
+    super.onInit();
+    fetchData();
+  }
 
-  // 문의 내역 더미 데이터
-  final myInquiries = <Map<String, String>>[
-    {
-      'title': '로그인이 안돼요',
-      'status': '답변대기',
-      'date': '2025.11.01',
-      'content': '로그인을 하려고 하는데 비밀번호가 자꾸 틀렸다고 나옵니다. 확인 부탁드립니다.'
-    },
-    {
-      'title': '배송 문의 드립니다.',
-      'status': '답변완료',
-      'date': '2025.10.28',
-      'content': '주문한 상품이 언제 도착하는지 알고 싶습니다. 송장번호는 1234-5678 입니다.'
-    },
-  ].obs;
+  void fetchData() async {
+    isLoading.value = true;
+    try {
+      await Future.wait([
+        fetchFaqs(),
+        fetchMyTickets(),
+      ]);
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
-  // 화면 전환 메서드
+  Future<void> fetchFaqs() async {
+    final response = await _provider.getFaqs();
+    if (!response.status.hasError) {
+      List<dynamic> data = response.body;
+      faqList.value = data.map((json) => FaqModel.fromJson(json)).toList();
+    }
+  }
+
+  Future<void> fetchMyTickets() async {
+    final response = await _provider.getMyTickets();
+    if (!response.status.hasError) {
+      List<dynamic> data = response.body;
+      var list = data.map((json) => TicketModel.fromJson(json)).toList();
+      list.sort((a, b) => b.id.compareTo(a.id));
+      myInquiries.value = list;
+    }
+  }
+
   void changeView(int index) {
+    if (index == 1) fetchMyTickets();
     currentViewIndex.value = index;
   }
 
-  // 문의 상세 페이지 보기
-  void viewDetail(Map<String, String> inquiry) {
+  void viewDetail(TicketModel inquiry) {
     selectedInquiry.value = inquiry;
-    changeView(3); // 3번: 문의 상세
+    changeView(3);
   }
 
-  // [New] FAQ 상세 페이지 보기
-  void viewFaqDetail(Map<String, String> faq) {
+  void viewFaqDetail(FaqModel faq) {
     selectedFaq.value = faq;
-    changeView(4); // 4번: FAQ 상세
+    changeView(4);
   }
 
-  // 문의 등록 메서드
-  void submitInquiry() {
-    if (titleController.text.isNotEmpty && contentController.text.isNotEmpty) {
-      myInquiries.insert(0, {
-        'title': titleController.text,
-        'status': '접수완료',
-        'date': DateTime.now().toString().substring(0, 10),
-        'content': contentController.text,
-      });
+  // ✅ [수정된 부분] 로그 출력 코드가 추가된 함수
+  Future<void> submitInquiry() async {
+    if (titleController.text.isEmpty || contentController.text.isEmpty) {
+      Get.snackbar('알림', '제목과 내용을 입력해주세요.', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    isLoading.value = true;
+
+    // API 호출
+    final response = await _provider.createTicket(
+      titleController.text,
+      contentController.text,
+    );
+
+    isLoading.value = false;
+
+    // 🔥 [이게 필요합니다!] 터미널에 결과 출력
+    print('-------------------------------------------');
+    print('📥 상태 코드: ${response.statusCode}');
+    print('📥 응답 본문: ${response.bodyString}');
+    print('📥 에러 메시지: ${response.statusText}');
+    print('-------------------------------------------');
+
+    if (response.status.hasError) {
+      Get.snackbar('등록 실패', '코드: ${response.statusCode} / 메시지: ${response.statusText}',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+    } else {
+      Get.snackbar('성공', '문의가 등록되었습니다.',
+          backgroundColor: const Color(0xFF4DB56C), colorText: Colors.white);
 
       titleController.clear();
       contentController.clear();
 
-      Get.snackbar('성공', '문의가 등록되었습니다.',
-          backgroundColor: const Color(0xFF4DB56C), colorText: Colors.white);
-
-      changeView(1); // 등록 후 내역 화면으로 이동
-    } else {
-      Get.snackbar('알림', '제목과 내용을 입력해주세요.',
-          snackPosition: SnackPosition.BOTTOM);
+      await fetchMyTickets();
+      changeView(1);
     }
   }
 

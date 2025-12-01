@@ -15,12 +15,16 @@ class CustomerServicePage extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB56C)));
+        }
+
         switch (controller.currentViewIndex.value) {
-          case 0: return _buildMainView();     // 메인
-          case 1: return _buildHistoryView();  // 문의 내역 리스트
-          case 2: return _buildRegisterView(); // 문의 등록
-          case 3: return _buildDetailView();   // 문의 상세 (수정됨)
-          case 4: return _buildFaqDetailView();// FAQ 상세
+          case 0: return _buildMainView();
+          case 1: return _buildHistoryView();
+          case 2: return _buildRegisterView();
+          case 3: return _buildDetailView();
+          case 4: return _buildFaqDetailView();
           default: return _buildMainView();
         }
       }),
@@ -35,25 +39,23 @@ class CustomerServicePage extends StatelessWidget {
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black),
         onPressed: () {
-          if (controller.currentViewIndex.value == 3 || controller.currentViewIndex.value == 4) {
-            if (controller.currentViewIndex.value == 4) {
-              controller.changeView(0);
-            } else {
-              controller.changeView(1); // 문의상세(3)는 내역목록(1)으로
-            }
+          if (controller.currentViewIndex.value == 3) {
+            controller.changeView(1);
+          } else if (controller.currentViewIndex.value == 4) {
+            controller.changeView(0);
           } else if (controller.currentViewIndex.value != 0) {
-            controller.changeView(0); // 리스트/등록 -> 메인으로 복귀
+            controller.changeView(0);
           } else {
-            Get.back(); // 앱 종료 or 이전 화면
+            Get.back();
           }
         },
       ),
       title: Obx(() {
         String title = '고객센터';
-        if (controller.currentViewIndex.value == 1) title = '문의내역';
-        if (controller.currentViewIndex.value == 2) title = '문의등록';
-        if (controller.currentViewIndex.value == 3) title = '문의내역'; // 상세 페이지 타이틀
-        if (controller.currentViewIndex.value == 4) title = '자주 묻는 질문';
+        int index = controller.currentViewIndex.value;
+        if (index == 1 || index == 3) title = '문의내역';
+        if (index == 2) title = '문의등록';
+        if (index == 4) title = '자주 묻는 질문';
         return Text(
           title,
           style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
@@ -62,9 +64,9 @@ class CustomerServicePage extends StatelessWidget {
     );
   }
 
-  // --- FAQ 상세 화면 ---
   Widget _buildFaqDetailView() {
-    final faq = controller.selectedFaq;
+    final faq = controller.selectedFaq.value;
+    if (faq == null) return const SizedBox();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -84,7 +86,7 @@ class CustomerServicePage extends StatelessWidget {
                 const Text("Q.", style: TextStyle(color: Color(0xFF4DB56C), fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Text(
-                  faq['title'] ?? '',
+                  faq.question,
                   style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -103,7 +105,7 @@ class CustomerServicePage extends StatelessWidget {
                 const Text("A.", style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 15),
                 Text(
-                  faq['content'] ?? '',
+                  faq.answer,
                   style: const TextStyle(color: Color(0xFF555555), fontSize: 16, height: 1.6),
                 ),
               ],
@@ -114,112 +116,29 @@ class CustomerServicePage extends StatelessWidget {
     );
   }
 
-  // --- [수정됨] 문의 상세 화면 ---
-  // 사용자님이 요청하신 Cshistorydetailpage 디자인 반영
   Widget _buildDetailView() {
-    final inquiry = controller.selectedInquiry;
+    final inquiry = controller.selectedInquiry.value;
+    if (inquiry == null) return const SizedBox();
 
     return SingleChildScrollView(
       child: Column(
         children: [
-          // 상단 여백 등은 필요에 따라 추가
           const SizedBox(height: 20),
+          _buildDetailSection('제목', inquiry.title),
+          _buildDetailSection('설명', inquiry.description, minHeight: 247),
 
-          // 1. 제목 섹션
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 7),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, // [수정] 왼쪽 정렬 추가
-              children: [
-                const Text(
-                  '제목',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 15,
-                    fontFamily: 'Roboto',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  // height: 57, // 텍스트 길이에 따라 유동적으로 늘어나도록 높이 제한 해제
-                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                  decoration: ShapeDecoration(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      side: const BorderSide(width: 1, color: Color(0xFFABABAB)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    inquiry['title'] ?? '',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFF717171),
-                      fontSize: 16,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // 2. 설명 섹션
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 7),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, // [수정] 왼쪽 정렬 추가
-              children: [
-                const Text(
-                  '설명',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 15,
-                    fontFamily: 'Roboto',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(minHeight: 247), // 최소 높이 설정
-                  padding: const EdgeInsets.all(15),
-                  decoration: ShapeDecoration(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      side: const BorderSide(width: 1, color: Color(0xFFABABAB)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    inquiry['content'] ?? '',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontFamily: 'Roboto',
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // 날짜 및 상태 표시 (추가 정보)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text('작성일: ${inquiry['date']}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('작성일: ${inquiry.formattedDate}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(width: 10),
                 Text(
-                  inquiry['status'] ?? '',
+                  inquiry.status,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: inquiry['status'] == '답변완료' ? const Color(0xFF4DB56C) : Colors.orange,
+                    color: inquiry.status == '답변완료' ? const Color(0xFF4DB56C) : Colors.orange,
                   ),
                 ),
               ],
@@ -230,7 +149,35 @@ class CustomerServicePage extends StatelessWidget {
     );
   }
 
-  // --- 기존 뷰들 ---
+  Widget _buildDetailSection(String label, String content, {double? minHeight}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.black, fontSize: 15)),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            constraints: minHeight != null ? BoxConstraints(minHeight: minHeight) : null,
+            padding: const EdgeInsets.all(15),
+            decoration: ShapeDecoration(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(width: 1, color: Color(0xFFABABAB)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              content,
+              style: const TextStyle(color: Color(0xFF717171), fontSize: 16, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildMainView() {
     return SingleChildScrollView(
@@ -253,10 +200,7 @@ class CustomerServicePage extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             height: 45,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F3),
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFFF3F3F3), borderRadius: BorderRadius.circular(20)),
             child: Row(children: const [Icon(Icons.search, color: Color(0xFFABABAB)), SizedBox(width: 10), Text('검색', style: TextStyle(color: Color(0xFFABABAB)))]),
           ),
           const SizedBox(height: 30),
@@ -270,31 +214,37 @@ class CustomerServicePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Obx(() => Column(
+
+          controller.faqList.isEmpty
+              ? const Padding(padding: EdgeInsets.all(20), child: Text("등록된 FAQ가 없습니다."))
+              : Column(
             children: controller.faqList.map((faq) => FaqTile(
-              title: faq['title']!,
+              title: faq.question,
               onTap: () => controller.viewFaqDetail(faq),
             )).toList(),
-          )),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildHistoryView() {
-    return Obx(() => ListView.builder(
+    if (controller.myInquiries.isEmpty) {
+      return const Center(child: Text("문의 내역이 없습니다."));
+    }
+    return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: controller.myInquiries.length,
       itemBuilder: (context, index) {
         final item = controller.myInquiries[index];
         return InquiryTile(
-          title: item['title']!,
-          status: item['status']!,
-          date: item['date']!,
+          title: item.title,
+          status: item.status,
+          date: item.formattedDate,
           onTap: () => controller.viewDetail(item),
         );
       },
-    ));
+    );
   }
 
   Widget _buildRegisterView() {
@@ -325,7 +275,6 @@ class CustomerServicePage extends StatelessWidget {
     );
   }
 
-  // Helpers
   Widget _buildInputLabel(String text) => Text(text, style: const TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500));
 
   InputDecoration _inputDeco(String hint) => InputDecoration(
