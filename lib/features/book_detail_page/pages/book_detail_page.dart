@@ -71,51 +71,40 @@ class BookDetailPage extends GetView<BookDetailController> {
   Widget _buildInteractiveRatingBar() {
     return Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(
-          left: 17,
-          right: 17,
-          top: 12,
-          bottom: 15,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
         alignment: Alignment.center,
         child: Container(
-          constraints: const BoxConstraints(minWidth: 300), // 최소 너비
+          constraints: const BoxConstraints(minWidth: 300),
           alignment: Alignment.center,
 
-          child: RatingBar(
-            initialRating: controller.myRating.value,
-            // 초기값 연결
-            minRating: 0,
-            // ⭐ 중요: 최소 0.5점부터 시작 (0점 선택 불가)
-            direction: Axis.horizontal,
-            allowHalfRating: true,
-            // 0.5 단위 허용
-            itemCount: 5,
-            // 별의 총 개수
-            itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
-            // 별 사이 간격
+          // ✨ Obx와 KeyedSubtree 조합 (완벽합니다)
+          child: Obx(() => KeyedSubtree(
+            key: ValueKey(controller.myRating.value), // 값이 바뀌면 강제 리빌드
+            child: RatingBar(
+              initialRating: controller.myRating.value,
+              minRating: 0.5,
+              direction: Axis.horizontal,
+              allowHalfRating: true,
+              itemCount: 5,
+              itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+              // updateOnDrag: true, // 필요 시 주석 해제 (메인화면 수정 방지하려면 false)
 
-            updateOnDrag: true,
-            // 드래그 지원
-            unratedColor: const Color(0xFFD4D4D4),
-            // 빈 별 색상
-
-            ratingWidget: RatingWidget(
-              full: const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
-              half: Stack(
-                alignment: Alignment.center,
-                children: const [
-                  Icon(Icons.star_border, color: Color(0xFFD4D4D4)), // 회색 테두리
-                  Icon(Icons.star_half, color: Color(0xFFFFD700)), // 금색 반쪽
-                ],
+              ratingWidget: RatingWidget(
+                full: const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
+                half: Stack(
+                  alignment: Alignment.center,
+                  children: const [
+                    Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)), // 배경 회색
+                    Icon(Icons.star_half_rounded, color: Color(0xFFFFD700)), // 앞면 금색
+                  ],
+                ),
+                empty: const Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)),
               ),
-              empty: const Icon(Icons.star, color: Color(0xFFD4D4D4)),
+              onRatingUpdate: (rating) {
+                controller.updateMyRating(rating);
+              },
             ),
-
-            onRatingUpdate: (rating) {
-              controller.updateMyRating(rating);
-            },
-          ),
+          )),
         )
     );
   }
