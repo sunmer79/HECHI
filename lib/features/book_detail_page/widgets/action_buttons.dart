@@ -1,0 +1,92 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/book_detail_controller.dart';
+
+class ActionButtons extends GetView<BookDetailController> {
+  const ActionButtons({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+      child: Obx(
+            () => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildBtn(
+              icon: Icons.add,
+              label: "읽고싶어요",
+              isActive: controller.readingStatus.value == "wishlist",
+              onTap: controller.onWantToRead,
+            ),
+            _buildBtn(
+              icon: Icons.edit,
+              label: "코멘트",
+              isActive: controller.isCommented.value || controller.readingStatus.value == "rated",
+              onTap: controller.onWriteReview,
+            ),
+            _buildBtn(
+              icon: Icons.remove_red_eye,
+              label: controller.readingStatus.value == "completed"
+                  ? "완독한"
+                  : (controller.readingStatus.value == "reading" ? "읽는 중" : "읽는 중"), // 기본 텍스트
+              // reading이나 completed 상태일 때만 활성화 색상
+              isActive: controller.readingStatus.value == "reading"
+                  || controller.readingStatus.value == "completed",
+              onTap: controller.onReadingStatus,
+            ),
+            _buildBtn(
+              icon: Icons.more_horiz,
+              label: "더보기",
+              isActive: false,
+              onTap: controller.openMoreMenu,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBtn({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    final Color activeColor = const Color(0xFF4EB56D);
+    final Color disabledColor = const Color(0xFFABABAB);
+    final Color disabledTextColor = const Color(0xFF717171);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 70, minHeight: 51),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8, // Flutter 3.10+ 에서 지원 (이전 버전은 SizedBox 사용)
+          children: [
+            Icon(
+              icon,
+              size: 25,
+              color: isActive ? activeColor : disabledColor,
+            ),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isActive ? activeColor : disabledTextColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                height: 1.33,
+                letterSpacing: 0.25,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/mainpage_controller.dart';
-import 'book_detail_page.dart'; // 상세 페이지 이동을 위해 필요
+import '../../book_detail_page/pages/book_detail_page.dart'; //  ⭐ 변경
 
 class TrendingListPage extends StatelessWidget {
   const TrendingListPage({super.key});
@@ -35,12 +35,7 @@ class TrendingListPage extends StatelessWidget {
 
             return GestureDetector(
               onTap: () {
-                Get.to(() => BookDetailPage(
-                  bookTitle: book['title'],
-                  author: book['author'],
-                  imageUrl: book['imageUrl'],
-                  rating: book['rating'],
-                ));
+                Get.toNamed('/book_detail_page', arguments: book['id']); //  ⭐ 변경
               },
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
