@@ -12,7 +12,7 @@ class TrendingListPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('검색 순위 도서', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text('검색 순위', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
