@@ -50,8 +50,8 @@ class SearchResultWidget extends GetView<BookSearchController> {
                   // InkWell로 감싸서 책 전체 클릭 시 상세페이지 이동
                   return InkWell(
                     onTap: () {
-                      print("📖 '${book.title}' 상세 페이지로 이동 (팀원 구현 예정)");
-                      // 나중에 팀원이 만든 페이지로 연결: Get.toNamed('/book/detail', arguments: book);
+                      print("📖 '${book.title}' 상세 페이지로 이동");
+                      Get.toNamed('/book_detail_page', arguments: book.id); //  ⭐ 변경
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
