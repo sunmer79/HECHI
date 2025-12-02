@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/reading_session_model.dart';
 
+
 class ReadingProvider extends GetConnect {
   final box = GetStorage();
 
