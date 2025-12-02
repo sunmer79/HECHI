@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/mainpage_controller.dart';
 import 'popular_list_page.dart';
 import 'trending_list_page.dart';
-import 'book_detail_page.dart';
+import '../../book_detail_page/pages/book_detail_page.dart'; //  ⭐ 변경
 import '../../taste_analysis/pages/taste_analysis_view.dart';
 import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../notification/pages/notification_page.dart';
@@ -55,12 +55,7 @@ class MainpageView extends GetView<MainpageController> {
               padding: const EdgeInsets.symmetric(horizontal: 17),
               child: GestureDetector(
                 onTap: () {
-                  Get.to(() => BookDetailPage(
-                    bookTitle: controller.highlightBookTitle.value,
-                    author: controller.highlightAuthor.value,
-                    imageUrl: controller.highlightImageUrl.value,
-                    rating: controller.highlightRating.value,
-                  ));
+                  Get.toNamed('/book_detail_page', arguments: 10); //  ⭐ 변경(하드코딩)
                 },
                 child: Container(
                   width: double.infinity,
@@ -262,12 +257,7 @@ class MainpageView extends GetView<MainpageController> {
   Widget _buildBookItem(Map<String, dynamic> book) {
     return GestureDetector(
       onTap: () {
-        Get.to(() => BookDetailPage(
-          bookTitle: book['title'],
-          author: book['author'],
-          imageUrl: book['imageUrl'],
-          rating: book['rating'],
-        ));
+        Get.toNamed('/book_detail_page', arguments: book['id']); //  ⭐ 변경
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
