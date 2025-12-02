@@ -168,50 +168,55 @@ class _BookGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: const Color(0xFFE0E0E0), width: 0.5),
-              image: book.thumbnail.isNotEmpty
-                  ? DecorationImage(
-                image: NetworkImage(book.thumbnail),
-                fit: BoxFit.cover,
-              )
+    return GestureDetector(
+      onTap: () {
+        Get.find<BookStorageController>().goToBookDetails(book.id);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 0.5),
+                image: book.thumbnail.isNotEmpty
+                    ? DecorationImage(
+                  image: NetworkImage(book.thumbnail),
+                  fit: BoxFit.cover,
+                )
+                    : null,
+              ),
+              child: book.thumbnail.isEmpty
+                  ? const Icon(Icons.book, color: Colors.grey)
                   : null,
             ),
-            child: book.thumbnail.isEmpty
-                ? const Icon(Icons.book, color: Colors.grey)
-                : null,
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          book.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        if (book.myRating != null)
+          const SizedBox(height: 8),
           Text(
-            '평가함 ★${book.myRating}',
-            style: const TextStyle(color: Color(0xFFFF7F00), fontSize: 12, fontWeight: FontWeight.bold),
-          )
-        else if (book.avgRating != null && book.avgRating! > 0)
-          Text(
-            '예상 ★${book.avgRating}',
-            style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 12, fontWeight: FontWeight.bold),
+            book.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
+            ),
           ),
-      ],
+          const SizedBox(height: 4),
+          if (book.myRating != null)
+            Text(
+              '평가함 ★${book.myRating}',
+              style: const TextStyle(color: Color(0xFFFF7F00), fontSize: 12, fontWeight: FontWeight.bold),
+            )
+          else if (book.avgRating != null && book.avgRating! > 0)
+            Text(
+              '예상 ★${book.avgRating}',
+              style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+        ],
+      ),
     );
   }
 }

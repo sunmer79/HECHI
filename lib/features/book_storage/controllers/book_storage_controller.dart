@@ -50,6 +50,16 @@ class BookStorageController extends GetxController {
     }
   }
 
+  void goToBookDetails(int bookId) {
+    const String detailRoute = '/reading_detail';
+
+    Get.toNamed(
+      detailRoute,
+      arguments: {'bookId': bookId},
+    );
+    print('도서 ID $bookId 를 가지고 $detailRoute 라우트로 이동');
+  }
+
   void showSortBottomSheet() {
     Get.bottomSheet(
       Container(

@@ -15,34 +15,49 @@ class ReadingDetailView extends GetView<ReadingDetailController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
-          return SingleChildScrollView(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(color: Colors.white),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const CustomAppHeader(),
-                  BookCoverHeader(),
-                  BookInfoSection(),
-                  const SizedBox(height: 20),
-                  const ActionButtonsRow(),
-                  const SizedBox(height: 20),
-                  ReadingStatusCard(),
-                ],
-              ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        toolbarHeight: 60,
+
+        leading: Row(
+          children: [
+            IconButton(
+              onPressed: () => Get.back(),
+              icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
             ),
-          );
-        }),
+          ],
+        ),
+        title: const SizedBox.shrink(),
       ),
+
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SingleChildScrollView(
+          child: Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(color: Colors.white),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BookCoverHeader(),
+                BookInfoSection(),
+                const SizedBox(height: 20),
+                const ActionButtonsRow(),
+                const SizedBox(height: 20),
+                ReadingStatusCard(),
+              ],
+            ),
+          ),
+        );
+      }),
       bottomNavigationBar: const BottomBar(),
     );
   }
