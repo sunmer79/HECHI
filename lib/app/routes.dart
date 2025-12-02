@@ -11,11 +11,10 @@ import '../features/preference/bindings/preference_binding.dart';
 import '../features/preference/pages/preference_view.dart';
 import '../features/search/pages/search_view.dart';
 import '../features/search/pages/isbn_scan_view.dart';
-
-
-// ✅ 추가
 import '../features/book_detail_page/bindings/book_detail_binding.dart';
 import '../features/book_detail_page/pages/book_detail_page.dart';
+import '../features/reading_detail/bindings/reading_detail_binding.dart';
+import '../features/reading_detail/pages/reading_detail_view.dart';
 
 abstract class Routes {
   static const initial = '/';
@@ -25,8 +24,8 @@ abstract class Routes {
   static const forgetPassword = '/forget_password';
   static const preference = '/preference';
   static const search = '/search';
-
-  static const bookDetailPage = '/book_detail_page'; // ✅ 추가
+  static const bookDetailPage = '/book_detail_page';
+  static const readingDetail = '/reading_detail';
 }
 
 class AppPages {
@@ -37,8 +36,7 @@ class AppPages {
     GetPage(name: Routes.signUp, page: () => const SignUpView(), binding: SignUpBinding()),
     GetPage(name: Routes.forgetPassword, page: () => const ForgetPasswordView(), binding: ForgetPasswordBinding()),
     GetPage(name: Routes.preference, page: () => const PreferenceView(), binding: PreferenceBinding()),
-
-    // ✅ 추가
     GetPage(name: Routes.bookDetailPage, page: () => const BookDetailPage(), binding:BookDetailBinding()),
+    GetPage(name: Routes.readingDetail, page: () => const ReadingDetailView(), binding: ReadingDetailBinding()),
   ];
 }

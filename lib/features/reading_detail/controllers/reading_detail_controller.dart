@@ -4,10 +4,12 @@ import '../data/models/book_detail_model.dart';
 import '../data/models/reading_session_model.dart';
 import '../data/providers/book_provider.dart';
 import '../data/providers/reading_provider.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ReadingDetailController extends GetxController {
   final BookProvider _bookProvider = BookProvider();
   final ReadingProvider _readingProvider = ReadingProvider();
+  final box = GetStorage();
 
   final isLoading = true.obs;
 
@@ -28,8 +30,26 @@ class ReadingDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final int bookId = Get.arguments ?? 1;
-    _loadAllData(bookId);
+
+    final arguments = Get.arguments;
+    int bookId = 0;
+
+    if (arguments != null && arguments is Map && arguments.containsKey('bookId')) {
+      final dynamic receivedId = arguments['bookId'];
+
+      if (receivedId is int) {
+        bookId = receivedId;
+      } else if (receivedId is num) {
+        bookId = receivedId.toInt();
+      }
+    }
+
+    if (bookId > 0) {
+      _loadAllData(bookId);
+    } else {
+      isLoading(false);
+      print('⚠️ 수신된 bookId가 유효하지 않습니다: $bookId. 데이터 로드 건너뜀.');
+    }
   }
 
   void _loadAllData(int bookId) async {
