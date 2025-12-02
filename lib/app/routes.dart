@@ -1,20 +1,28 @@
 import 'package:get/get.dart';
 import 'package:hechi/app/main_app.dart';
 import 'package:hechi/features/customer_service/pages/customer_service_page.dart';
+
 import '../features/login/bindings/login_binding.dart';
 import '../features/login/pages/login_view.dart';
 import '../features/sign_up/bindings/sign_up_binding.dart';
 import '../features/sign_up/pages/sign_up_view.dart';
 import '../features/forget_password/bindings/forget_password_binding.dart';
 import '../features/forget_password/pages/forget_password_view.dart';
+
 import '../features/preference/bindings/preference_binding.dart';
 import '../features/preference/pages/preference_view.dart';
-import '../features/search/pages/search_view.dart';
-import '../features/search/pages/isbn_scan_view.dart';
+import '../features/taste_analysis/bindings/taste_analysis_binding.dart';
+import '../features/taste_analysis/pages/taste_analysis_view.dart';
+
+import '../features/search/pages/search_view.dart'; // 예시로 추가
+import '../features/search/pages/isbn_scan_view.dart'; // 예시로 추가
 import '../features/book_detail_page/bindings/book_detail_binding.dart';
 import '../features/book_detail_page/pages/book_detail_page.dart';
 import '../features/reading_detail/bindings/reading_detail_binding.dart';
 import '../features/reading_detail/pages/reading_detail_view.dart';
+import '../features/book_storage/pages/book_storage_view.dart';
+import '../features/book_storage/bindings/book_storage_binding.dart';
+
 
 abstract class Routes {
   static const initial = '/';
@@ -22,21 +30,34 @@ abstract class Routes {
   static const login = '/login';
   static const signUp = '/sign_up';
   static const forgetPassword = '/forget_password';
+
   static const preference = '/preference';
+
   static const search = '/search';
   static const bookDetailPage = '/book_detail_page';
   static const readingDetail = '/reading_detail';
+
+  static const tasteAnalysis = '/taste_analysis';
+
+  static const bookStorage = '/book_storage';
 }
 
 class AppPages {
   static final pages = [
     GetPage(name: Routes.initial, page: () => const MainWrapper()),
     GetPage(name: Routes.customer, page: () => CustomerServicePage()),
+
     GetPage(name: Routes.login, page: () => const LoginView(), binding: LoginBinding()),
     GetPage(name: Routes.signUp, page: () => const SignUpView(), binding: SignUpBinding()),
     GetPage(name: Routes.forgetPassword, page: () => const ForgetPasswordView(), binding: ForgetPasswordBinding()),
+
     GetPage(name: Routes.preference, page: () => const PreferenceView(), binding: PreferenceBinding()),
-    GetPage(name: Routes.bookDetailPage, page: () => const BookDetailPage(), binding:BookDetailBinding()),
+
+    GetPage(name: Routes.bookDetailPage, page: () => const BookDetailPage(), binding: BookDetailBinding()),
     GetPage(name: Routes.readingDetail, page: () => const ReadingDetailView(), binding: ReadingDetailBinding()),
+
+    GetPage(name: Routes.tasteAnalysis, page: () => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
+
+    GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
   ];
 }

@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+// ⚠️ 이 파일이 없으면 에러가 날 수 있습니다. 실제 경로로 수정하거나 파일 생성 필요
 import '../data/search_repository.dart';
 
 class IsbnScanController extends GetxController {
-  // 1. 실제 카메라 컨트롤러 (안드로이드용)
+  // 1. 실제 카메라 컨트롤러 (EAN-13 포맷으로 고정하여 정확도 높임)
   final MobileScannerController cameraController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     returnImage: false,
     autoStart: true,
+    // ✅ 충돌 해결: EAN-13 포맷 유지
     formats: const [BarcodeFormat.ean13],
   );
 
+  // ⚠️ SearchRepository 경로가 맞는지 확인해주세요.
   final SearchRepository _repository = SearchRepository();
   final RxBool isScanning = false.obs;
 
@@ -37,11 +40,10 @@ class IsbnScanController extends GetxController {
         print("📸 스캔 감지됨! 값: [$code], 길이: ${code.length}");
 
         if (code.length == 10 || code.length == 13) {
-          print("✅ 유효한 ISBN입니다. 처리 시작."); // (선택) 통과된 경우 확인용
+          print("✅ 유효한 ISBN입니다. 처리 시작.");
           await _processIsbn(code);
           break;
         } else {
-          // (선택) 스캔은 됐는데 조건에 안 맞아 버려지는 경우 확인용
           print("⚠️ ISBN 형식이 아님 (길이 불일치)");
         }
       }
@@ -60,14 +62,17 @@ class IsbnScanController extends GetxController {
     isScanning.value = true;
 
     try {
+      // ⚠️ book 타입이 정의되어 있어야 합니다. (모델 필요)
       final book = await _repository.searchByBarcode(isbn);
 
       if (book != null) {
         Get.back(); // 스캔 화면 닫기
-        print("📖 스캔 성공: ${book.title}");
-        Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다.");
-        // 상세 페이지 연결 (팀원이 만들면 주석 해제)
+        // Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다."); // book.title이 없다면 에러남
         // Get.toNamed('/book/detail', arguments: book);
+
+        // ✨ 임시 스낵바 (빌드 에러 방지)
+        Get.snackbar("스캔 성공", "책 정보를 찾았습니다.");
+
       } else {
         Get.snackbar("알림", "책 정보를 찾을 수 없습니다.");
         await Future.delayed(const Duration(seconds: 2));

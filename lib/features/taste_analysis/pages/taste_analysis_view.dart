@@ -76,7 +76,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
-  // ✅ [수정 1] 평가 수: 전체 패딩 17, 아이템 사이 간격 8 (좌4 + 우4)
+
   Widget _buildCountSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 17), // 전체 패딩 17
@@ -88,11 +88,11 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           Row(
             children: [
               _buildExpandedCountItem('소설', controller.countStats['소설']!),
-              const SizedBox(width: 8), // 좌4 + 우4 = 8
+              const SizedBox(width: 4),
               _buildExpandedCountItem('시', controller.countStats['시']!),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               _buildExpandedCountItem('에세이', controller.countStats['에세이']!),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               _buildExpandedCountItem('만화', controller.countStats['만화']!),
             ],
           ),
@@ -114,19 +114,24 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
   }
 
   // ✅ [수정 2] 별점 분포: 하단 통계 패딩 17, 간격 16 (좌8 + 우8)
+  // [수정된 함수]
   Widget _buildStarSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 24), // 전체 세로 패딩만 남김
+      child: Obx(() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 제목 (좌우 패딩 24)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24), // 제목은 기존 패딩 유지
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: const Text("별점 분포", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
           ),
-          const SizedBox(height: 15),
 
-          // 그래프 영역 (여기는 기존 패딩 유지)
+          // Summary 중앙 정렬
+          const Center(child: Text("Summary", style: TextStyle(fontSize: 12, color: Colors.grey))),
+          const SizedBox(height: 10),
+
+          // 1. 그래프 + 요약 데이터 영역 (좌우 패딩 24)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -136,15 +141,12 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                   flex: 3,
                   child: Column(
                     children: [
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 22), // 4.5 별점 줄과 높이 맞추기 위해 여백 추가
                       ...controller.starRatingDistribution.map((d) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            SizedBox(
-                                width: 12,
-                                child: Text("${d['score']}", style: const TextStyle(color: Colors.grey, fontSize: 12))
-                            ),
+                            SizedBox(width: 12, child: Text("${d['score']}", style: const TextStyle(color: Colors.grey, fontSize: 12))),
                             const SizedBox(width: 8),
                             Expanded(
                               child: ClipRRect(
@@ -164,21 +166,16 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                   ),
                 ),
                 const SizedBox(width: 20),
+
+                // 오른쪽 요약 정보 영역
                 Expanded(
                   flex: 1,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Summary", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      const SizedBox(height: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSummaryItem("${controller.averageRating}", "${controller.totalReviews} Reviews", isLarge: true, showStar: true),
-                          const SizedBox(height: 20),
-                          _buildSummaryItem(controller.readingRate, "Reading rate", isLarge: true),
-                        ],
-                      ),
+                      _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} Reviews", isLarge: true, showStar: true),
+                      const SizedBox(height: 20),
+                      _buildSummaryItem(controller.readingRate.value, "Reading rate", isLarge: true),
                     ],
                   ),
                 ),
@@ -188,21 +185,22 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
 
           const SizedBox(height: 30),
 
-          // 🔻 여기가 요청하신 하단 통계 수정 부분!
+          // 2. 하단 통계 (별점 평균 / 개수 / 많이 준 별점)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 17), // 컨테이너 패딩 17
+            padding: const EdgeInsets.symmetric(horizontal: 17), // 요청하신 패딩 17
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildExpandedBottomStat("4.2", "별점 평균"),
-                const SizedBox(width: 16), // 좌8 + 우8 = 16
-                _buildExpandedBottomStat("30", "별점 개수"),
-                const SizedBox(width: 16), // 좌8 + 우8 = 16
-                _buildExpandedBottomStat("4.0", "많이 준 별점"),
+                _buildExpandedBottomStat(controller.averageRating.value, "별점 평균"),
+                const SizedBox(width: 10), // ✅ 간격 10
+                _buildExpandedBottomStat(controller.totalReviews.value, "별점 개수"),
+                const SizedBox(width: 10), // ✅ 간격 10
+                _buildExpandedBottomStat(controller.mostGivenRating.value, "많이 준 별점"),
               ],
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

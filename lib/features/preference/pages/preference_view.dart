@@ -9,7 +9,6 @@ class PreferenceView extends GetView<PreferenceController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // ✅ Obx를 최상위가 아닌, 단계별 화면 함수 안에서 필요한 곳에만 쓰도록 구조 변경
       body: Obx(() {
         switch (controller.currentStep.value) {
           case 0:
@@ -25,7 +24,6 @@ class PreferenceView extends GetView<PreferenceController> {
     );
   }
 
-  // [Step 0] 인트로 화면
   Widget _buildIntroStep() {
     return Container(
       width: double.infinity,
@@ -35,18 +33,9 @@ class PreferenceView extends GetView<PreferenceController> {
         child: Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: '독서 ',
-                style: TextStyle(color: Color(0xFFD1ECD9), fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.bold),
-              ),
-              TextSpan(
-                text: '취향',
-                style: TextStyle(color: Colors.white, fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.w900),
-              ),
-              TextSpan(
-                text: '\n알아보기',
-                style: TextStyle(color: Color(0xFFD1ECD9), fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.bold),
-              ),
+              TextSpan(text: '독서 ', style: TextStyle(color: Color(0xFFD1ECD9), fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.bold)),
+              TextSpan(text: '취향', style: TextStyle(color: Colors.white, fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.w900)),
+              TextSpan(text: '\n알아보기', style: TextStyle(color: Color(0xFFD1ECD9), fontSize: 28, fontFamily: 'Roboto', fontWeight: FontWeight.bold)),
             ],
           ),
           textAlign: TextAlign.center,
@@ -55,7 +44,7 @@ class PreferenceView extends GetView<PreferenceController> {
     );
   }
 
-  // [Step 1] 카테고리 선택 화면
+  // [Step 1] 카테고리
   Widget _buildCategoryStep() {
     return SafeArea(
       child: Padding(
@@ -64,8 +53,11 @@ class PreferenceView extends GetView<PreferenceController> {
           children: [
             _buildTopBar(text: '다음', onTap: controller.nextStep),
             const SizedBox(height: 40),
-            _buildTitle(highlight: '카테고리'),
-            const SizedBox(height: 60),
+
+            // ✅ [수정] 문구 변경 (최대 개수 제한 언급 삭제)
+            _buildTitle(highlight: '카테고리', subText: "하나 이상 선택해주세요."),
+
+            const SizedBox(height: 40),
             Expanded(
               child: GridView.builder(
                 itemCount: controller.categories.length,
@@ -76,9 +68,7 @@ class PreferenceView extends GetView<PreferenceController> {
                   childAspectRatio: 1.0,
                 ),
                 itemBuilder: (context, index) {
-                  final item = controller.categories[index];
-                  // ✅ 여기서 개별 아이템만 Obx로 감쌈!
-                  return _buildCircleItem(item);
+                  return _buildCircleItem(controller.categories[index]);
                 },
               ),
             ),
@@ -88,7 +78,7 @@ class PreferenceView extends GetView<PreferenceController> {
     );
   }
 
-  // [Step 2] 장르 선택 화면 (세로 스크롤 & Column)
+  // [Step 2] 장르 (세로 리스트)
   Widget _buildGenreStep() {
     return SafeArea(
       child: Padding(
@@ -97,25 +87,23 @@ class PreferenceView extends GetView<PreferenceController> {
           children: [
             _buildTopBar(text: '완료', onTap: controller.nextStep),
             const SizedBox(height: 40),
-            _buildTitle(highlight: '장르'),
+            _buildTitle(highlight: '장르', subText: "선호하는 장르를 선택해주세요."),
             const SizedBox(height: 40),
 
-            // ✅ 스크롤 가능하도록 Expanded + SingleChildScrollView 적용
+            // ✅ [핵심] 세로 리스트 구현 (Wrap -> Column)
             Expanded(
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.only(bottom: 40),
                   child: Center(
-                    // ✅ Wrap 대신 Column으로 세로 정렬 + 여기서 Obx 사용
                     child: Obx(() => Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (int i = 0; i < controller.genres.length; i++) ...[
-                          _buildChipItem(controller.genres[i]),
-                          if (i < controller.genres.length - 1)
-                            const SizedBox(height: 12),
-                        ],
-                      ],
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: controller.genres.map((g) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16), // 아이템 간 간격
+                        child: _buildChipItem(g),
+                      )).toList(),
                     )),
                   ),
                 ),
@@ -127,7 +115,6 @@ class PreferenceView extends GetView<PreferenceController> {
     );
   }
 
-  // 상단 버튼
   Widget _buildTopBar({required String text, required VoidCallback onTap}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -140,30 +127,31 @@ class PreferenceView extends GetView<PreferenceController> {
               color: const Color(0xFF4DB56C),
               borderRadius: BorderRadius.circular(25),
             ),
-            child: Text(
-              text,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
     );
   }
 
-  // 제목
-  Widget _buildTitle({required String highlight}) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          const TextSpan(text: '내가 좋아하는 ', style: TextStyle(color: Colors.black, fontSize: 20)),
-          TextSpan(text: highlight, style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 24, fontWeight: FontWeight.bold)),
-          const TextSpan(text: '는?', style: TextStyle(color: Colors.black, fontSize: 20)),
-        ],
-      ),
+  Widget _buildTitle({required String highlight, required String subText}) {
+    return Column(
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(text: '내가 좋아하는 ', style: TextStyle(color: Colors.black, fontSize: 20)),
+              TextSpan(text: highlight, style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 24, fontWeight: FontWeight.bold)),
+              const TextSpan(text: '는?', style: TextStyle(color: Colors.black, fontSize: 20)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(subText, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+      ],
     );
   }
 
-  // 카테고리 아이템 (Obx 적용됨)
   Widget _buildCircleItem(String item) {
     return Obx(() {
       final isSelected = controller.selectedCategories.contains(item);
@@ -200,13 +188,14 @@ class PreferenceView extends GetView<PreferenceController> {
     });
   }
 
-  // 장르 아이템 (Obx는 상위에서 처리함 -> 여기선 제거해도 되지만 안전하게 유지)
   Widget _buildChipItem(String item) {
     final isSelected = controller.selectedGenres.contains(item);
     return GestureDetector(
       onTap: () => controller.toggleGenre(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        // 세로 리스트에 어울리는 너비 조정
+        constraints: const BoxConstraints(minWidth: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF3F3F3),
           borderRadius: BorderRadius.circular(30),
