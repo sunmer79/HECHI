@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 // ⚠️ 이 파일이 없으면 에러가 날 수 있습니다. 실제 경로로 수정하거나 파일 생성 필요
 import '../data/search_repository.dart';
+import '../../book_detail_page/pages/book_detail_page.dart';
+import '../../book_detail_page/bindings/book_detail_binding.dart';
 
 class IsbnScanController extends GetxController {
   // 1. 실제 카메라 컨트롤러 (EAN-13 포맷으로 고정하여 정확도 높임)
@@ -62,17 +64,17 @@ class IsbnScanController extends GetxController {
     isScanning.value = true;
 
     try {
-      // ⚠️ book 타입이 정의되어 있어야 합니다. (모델 필요)
       final book = await _repository.searchByBarcode(isbn);
 
       if (book != null) {
         Get.back(); // 스캔 화면 닫기
-        // Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다."); // book.title이 없다면 에러남
-        // Get.toNamed('/book/detail', arguments: book);
+        print("📖 스캔 성공: ${book.title} (ID: ${book.id})");
 
-        // ✨ 임시 스낵바 (빌드 에러 방지)
-        Get.snackbar("스캔 성공", "책 정보를 찾았습니다.");
-
+        Get.off(
+          () => const BookDetailPage(),
+          binding: BookDetailBinding(),
+          arguments: book.id,
+        );
       } else {
         Get.snackbar("알림", "책 정보를 찾을 수 없습니다.");
         await Future.delayed(const Duration(seconds: 2));
