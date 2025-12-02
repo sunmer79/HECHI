@@ -9,6 +9,7 @@ class IsbnScanController extends GetxController {
     detectionSpeed: DetectionSpeed.noDuplicates,
     returnImage: false,
     autoStart: true,
+    formats: const [BarcodeFormat.ean13],
   );
 
   final SearchRepository _repository = SearchRepository();

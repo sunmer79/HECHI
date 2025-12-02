@@ -7,6 +7,8 @@ import '../../book_detail_page/pages/book_detail_page.dart'; //  ⭐ 변경
 import '../../taste_analysis/pages/taste_analysis_view.dart';
 import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../notification/pages/notification_page.dart';
+import '../../book_storage/pages/book_storage_view.dart';
+import '../../book_storage/bindings/book_storage_binding.dart';
 
 class MainpageView extends GetView<MainpageController> {
   const MainpageView({super.key});
@@ -128,7 +130,12 @@ class MainpageView extends GetView<MainpageController> {
                     onTap: () => Get.to(() => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
                   ),
 
-                  _buildCategoryItem('보관함', Icons.inventory_2_outlined, const Color(0xFF4DB56C)),
+                  _buildCategoryItem(
+                    '보관함',
+                    Icons.inventory_2_outlined,
+                    const Color(0xFF4DB56C),
+                    onTap: () => Get.to(() => const BookStorageView(), binding: BookStorageBinding()),
+                  ),
                   _buildCategoryItem('추천', Icons.auto_awesome, const Color(0xFF4DB56C)),
                   _buildCategoryItem('그룹', Icons.people_outline, const Color(0xFF4DB56C)),
                 ],
@@ -192,7 +199,7 @@ class MainpageView extends GetView<MainpageController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: const [
                     Text(
-                      '급상승 검색 도서',
+                      '검색 순위',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                     Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black),
@@ -203,7 +210,7 @@ class MainpageView extends GetView<MainpageController> {
 
             const SizedBox(height: 20),
 
-            // 6. 급상승 검색 도서 가로 스크롤
+            // 6. 검색 순위 도서 가로 스크롤
             SizedBox(
               height: 240,
               child: Obx(() {
