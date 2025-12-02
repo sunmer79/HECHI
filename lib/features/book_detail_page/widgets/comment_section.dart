@@ -217,14 +217,14 @@ Widget _bar(double score, int count, int maxCount) {
 // --------------------------------------------------------------------
 class ReviewItemDisplay extends StatelessWidget {
   final Map<String, dynamic> review;
-  ReviewItemDisplay({super.key, required this.review});
+  ReviewItemDisplay({super.key, required this.review})
+      : likeCount = RxInt(review["like_count"] is int ? review["like_count"] : 0);
 
   // 로컬 상태를 Rx로 선언 (StatelessWidget 내부에 final로 선언)
   final RxBool isExpanded = false.obs;          // ✅ [수정] maxLines 확장에 사용 (5 -> 20)
   final RxBool isSpoilerVisible = false.obs;    // ✅ [유지] 스포일러 보기 상태
   final RxBool isLiked = false.obs;
-  late final RxInt likeCount =
-      (review["like_count"] ?? 0).obs; // 로컬 좋아요 카운트
+  late final RxInt likeCount;
 
   static const int maxInitialLines = 5;
   static const int maxExpandedLines = 20;

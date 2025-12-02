@@ -12,48 +12,32 @@ class BookDetailController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
   final box = GetStorage();
 
-  // 라우트에서 전달받는 bookId (없으면 1)
   final int bookId = Get.arguments ?? 1;
 
-  // ====== 공통 상태 ======
   final RxBool isLoading = true.obs;
-
-  // 책 정보
   final RxMap book = {}.obs;
-
-  // 리뷰 리스트
   final RxList<Map<String, dynamic>> reviews = <Map<String, dynamic>>[].obs;
-
-  // 평점 히스토그램 최대값
   final RxInt maxRatingCount = 1.obs;
-
-  // 화면 상단 별점(내 별점)
   final RxDouble myRating = 0.0.obs;
 
-  // 버튼 상태
-  bool get isWishlisted => readingStatus.value == 'wishlist';
-  bool get isReadingOrCompleted => ['reading', 'completed'].contains(readingStatus.value);
+  final RxBool isWishlisted = false.obs;
   final RxBool isCommented = false.obs;
 
-  // "", "reading", "finished" 등
-  final RxString readingStatus = "".obs;
+  final RxString readingStatus = "PENDING".obs;
 
-  // 내가 방금/예전에 쓴 리뷰의 id (상세 페이지 이동용)
   int myReviewId = -1;
+
+  bool get isReadingOrCompleted =>
+      ["READING", "COMPLETED"].contains(readingStatus.value);
 
   @override
   void onInit() {
     super.onInit();
-    fetchBookDetail();
-    fetchReviews();
-    fetchReadingStatus();
-  }
-
-// 서버로 보낼 shelf key 변환
-  String _convertToShelfKey(String status) {
-    // none일 경우 API 스펙에 맞게 빈 문자열이나 "none" 등을 전송 (API 문서 확인 필요)
-    // 여기서는 예시로 status 그대로 전송하되, 로직에 따라 매핑
-    return status;
+    Future.microtask(() async {
+      await fetchBookDetail();
+      await fetchReviews();
+      await fetchReadingStatus();
+    });
   }
 
   // ==========================
@@ -89,17 +73,23 @@ class BookDetailController extends GetxController {
   Future<void> fetchReviews() async {
     try {
       final res = await http.get(Uri.parse("$baseUrl/reviews/books/$bookId"));
-
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
         reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
-        isCommented.value = reviews.any((e) => e["is_my_review"] == true);
-      } else {
-        print("리뷰 불러오기 실패: ${res.body}");
+        final mine = reviews.firstWhereOrNull((e) => e["is_my_review"] == true);
+
+        if (mine != null) {
+          isCommented.value = true;
+          myReviewId = mine["id"];
+          myRating.value = (mine["rating"] as num).toDouble();
+        } else {
+          isCommented.value = false;
+          myRating.value = 0.0;
+        }
       }
     } catch (e) {
-      print("Review API Error: $e");
+      print("Review error: $e");
     }
   }
 
@@ -108,11 +98,8 @@ class BookDetailController extends GetxController {
   // ==========================
   Future<void> fetchReadingStatus() async {
     try {
-      final token = box.read('access_token') ?? '';
-      if (token.isEmpty) {
-        print("토큰 발급 실패");
-        return;
-      }
+      final token = box.read('access_token');
+      if (token == null) return;
 
       final res = await http.get(
         Uri.parse("$baseUrl/reading-status/summary/$bookId"),
@@ -121,8 +108,7 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
-        // 서버에서 오는 상태값을 그대로 적용
-        readingStatus.value = decoded["status"] ?? "none";
+        readingStatus.value = decoded["status"] ?? "NONE";
       }
     } catch (e) {
       print("❌ Reading-Status GET Error: $e");
@@ -139,24 +125,10 @@ class BookDetailController extends GetxController {
   // ==========================
   // 📌 공통 상태 업데이트 함수 (핵심 로직)
   // ==========================
-  Future<void> _changeStatus(String targetStatus) async {
-    final token = box.read('access_token') ?? '';
-    if (token.isEmpty) {
-      Get.snackbar("오류", "로그인이 필요합니다.");
-      return;
-    }
+  Future<void> updateReadingStatus(String status) async {
+    final token = box.read("access_token");
+    if (token == null) return;
 
-    final String prevStatus = readingStatus.value;
-    String newStatus = targetStatus;
-
-    // ✅ 토글 로직: 이미 해당 상태라면 'none'으로 해제
-    if (prevStatus == targetStatus) {
-      newStatus = "none";
-    }
-
-    readingStatus.value = newStatus;
-
-    // 2. 서버 통신
     try {
       final res = await http.post(
         Uri.parse("$baseUrl/reading-status/update"),
@@ -164,76 +136,105 @@ class BookDetailController extends GetxController {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({
-          "book_id": bookId,
-          "status": newStatus // none, wishlist, reading, completed 등
-        }),
+        body: jsonEncode({"book_id": bookId, "status": status}),
       );
 
       if (res.statusCode == 200 || res.statusCode == 201) {
-        String msg = "";
-        switch (newStatus) {
-          case "wishlist": msg = "'읽고싶어요'에 등록되었습니다."; break;
-          case "reading": msg = "'읽는 중'으로 변경되었습니다."; break;
-          case "completed": msg = "완독 처리되었습니다."; break;
-          case "none": msg = "상태가 해제되었습니다."; break;
-        }
-        if (msg.isNotEmpty) {
-          Get.snackbar("완료", msg, snackPosition: SnackPosition.TOP);
-        }
+        readingStatus.value = status;
+        Get.back(); // 오버레이 닫기
+        Get.snackbar("완료", "서가 상태가 변경되었습니다.");
       } else {
-        throw Exception("Status code: ${res.statusCode}");
+        Get.snackbar("오류", "상태 변경 실패: ${res.statusCode}");
       }
     } catch (e) {
-      // 실패 시 롤백
-      readingStatus.value = prevStatus;
-      Get.snackbar("오류", "상태 변경 실패: $e");
+      print("❌ Status Update Error: $e");
     }
   }
 
   // ==========================
-  // 📌 읽고싶어요 토글
+  // 📌 읽고싶어요
   // ==========================
-  Future<void> onWantToRead() async{
-    await _changeStatus("wishlist");
+  Future<void> onWantToRead() async {
+    final token = box.read("access_token");
+    if (token == null) {
+      Get.snackbar("알림", "로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      if (isWishlisted.value) {
+        // [삭제] DELETE 요청
+        // API 명세에 따라 Query Param 혹은 Path Variable 확인 필요
+        // 여기서는 Query Param 방식(?book_id=...)을 가정
+        final res = await http.delete(
+          Uri.parse("$baseUrl/wishlist?book_id=$bookId"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+
+        if (res.statusCode == 200 || res.statusCode == 204) {
+          isWishlisted.value = false;
+          Get.snackbar("완료", "읽고싶어요에서 제거되었습니다.");
+        }
+      } else {
+        // [추가] POST 요청
+        final res = await http.post(
+          Uri.parse("$baseUrl/wishlist?book_id=$bookId"), // 이미지 명세 참고: Query Param
+          headers: {"Authorization": "Bearer $token"},
+        );
+
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          isWishlisted.value = true;
+          Get.snackbar("완료", "읽고싶어요에 추가되었습니다.");
+        }
+      }
+    } catch (e) {
+      Get.snackbar("오류", "네트워크 오류가 발생했습니다.");
+    }
   }
 
   // ==========================
   // 📌 코멘트 등록 함수
   // ==========================
   Future<void> submitComment(String content) async {
-    if (content.trim().isEmpty) {
-      Get.snackbar("오류", "내용을 입력해주세요.", snackPosition: SnackPosition.TOP);
+    if (myRating.value == 0) {
+      Get.snackbar("오류", "별점을 먼저 선택해주세요");
       return;
     }
 
     try {
-      final token = box.read('access_token') ?? '';
+      final token = box.read("access_token") ?? "";
       final res = await http.post(
-        Uri.parse("$baseUrl/reviews/"),
+        Uri.parse("$baseUrl/reviews/"), // 또는 /upsert
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
         body: jsonEncode({
           "book_id": bookId,
-          "rating": myRating.value.toInt(),
+          "rating": myRating.value,
           "content": content,
           "is_spoiler": false,
         }),
       );
 
       if (res.statusCode == 200 || res.statusCode == 201) {
+        // ✅ 1. UI 상태 즉시 변경 (낙관적 업데이트)
         isCommented.value = true;
-        await fetchReviews(); // 목록 갱신
+
+        // ⚠️ 문제의 원인: fetchReviews가 내 점수를 0으로 초기화하지 않도록 주의
+        // fetchReviews(); <--- 이걸 바로 호출하면 서버 타이밍 이슈로 0점이 될 수 있음
+
         Get.back(); // 오버레이 닫기
-        Get.snackbar("완료", "코멘트가 등록되었습니다.");
+        Get.snackbar("완료", "리뷰가 등록되었습니다.");
+
+        // ✅ 2. 약간의 딜레이 후 서버 데이터 갱신 (선택 사항)
+        // Future.delayed(const Duration(milliseconds: 500), () => fetchReviews());
+
       } else {
-        Get.snackbar("오류", "코멘트 등록 실패: ${res.statusCode}");
+        Get.snackbar("오류", "등록 실패 : ${res.statusCode}");
       }
     } catch (e) {
-      print("❌ Review POST Error: $e");
-      Get.snackbar("오류", "네트워크 오류가 발생했습니다.");
+      print("Error: $e");
     }
   }
 
@@ -269,14 +270,6 @@ class BookDetailController extends GetxController {
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
     );
-  }
-
-  // ==========================
-  // 📌 독서 상태 오버레이 선택 (Overlay에서 호출)
-  // ==========================
-  Future<void> updateReadingStatus(String status) async {
-    Get.back(); // 오버레이 닫기
-    await _changeStatus(status);
   }
 
   // ==========================

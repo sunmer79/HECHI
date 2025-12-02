@@ -6,10 +6,7 @@ import '../../controllers/book_detail_controller.dart';
 class ReadingStatusOverlay extends StatelessWidget {
   final Function(String) onSelect;
 
-  const ReadingStatusOverlay({
-    super.key,
-    required this.onSelect
-  });
+  const ReadingStatusOverlay({super.key, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +59,8 @@ class ReadingStatusOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          tile("읽는 중", "reading"),
-          tile("완독함", "completed"),
+          tile("읽는 중", "READING"),
+          tile("완독함", "COMPLETED"),
         ],
       ),
     );

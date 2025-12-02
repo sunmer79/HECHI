@@ -16,23 +16,22 @@ class ActionButtons extends GetView<BookDetailController> {
             _buildBtn(
               icon: Icons.add,
               label: "읽고싶어요",
-              isActive: controller.readingStatus.value == "wishlist",
+              isActive: controller.isWishlisted.value,
               onTap: controller.onWantToRead,
             ),
             _buildBtn(
               icon: Icons.edit,
               label: "코멘트",
-              isActive: controller.isCommented.value || controller.readingStatus.value == "rated",
+              isActive: controller.isCommented.value,
               onTap: controller.onWriteReview,
             ),
             _buildBtn(
               icon: Icons.remove_red_eye,
-              label: controller.readingStatus.value == "completed"
-                  ? "완독한"
-                  : (controller.readingStatus.value == "reading" ? "읽는 중" : "읽는 중"), // 기본 텍스트
-              // reading이나 completed 상태일 때만 활성화 색상
-              isActive: controller.readingStatus.value == "reading"
-                  || controller.readingStatus.value == "completed",
+              label: controller.readingStatus.value == "COMPLETED"
+                  ? "완독함"
+                  : "읽는 중",
+              isActive: controller.readingStatus.value == "READING" ||
+                  controller.readingStatus.value == "COMPLETED",
               onTap: controller.onReadingStatus,
             ),
             _buildBtn(
