@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../data/search_repository.dart';
+import '../../book_detail_page/pages/book_detail_page.dart';
+import '../../book_detail_page/bindings/book_detail_binding.dart';
 
 class IsbnScanController extends GetxController {
   // 1. 실제 카메라 컨트롤러 (안드로이드용)
@@ -64,10 +66,13 @@ class IsbnScanController extends GetxController {
 
       if (book != null) {
         Get.back(); // 스캔 화면 닫기
-        print("📖 스캔 성공: ${book.title}");
-        Get.snackbar("스캔 성공", "'${book.title}'을(를) 찾았습니다.");
-        // 상세 페이지 연결 (팀원이 만들면 주석 해제)
-        // Get.toNamed('/book/detail', arguments: book);
+        print("📖 스캔 성공: ${book.title} (ID: ${book.id})");
+
+        Get.off(
+          () => const BookDetailPage(),
+          binding: BookDetailBinding(),
+          arguments: book.id,
+        );
       } else {
         Get.snackbar("알림", "책 정보를 찾을 수 없습니다.");
         await Future.delayed(const Duration(seconds: 2));

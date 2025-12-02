@@ -36,7 +36,7 @@ class IsbnScanView extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               ElevatedButton.icon(
-                onPressed: () => controller.testScan("9791190090018"),
+                onPressed: () => controller.testScan("9788936439743"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4CAF50), // 초록색 버튼
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
