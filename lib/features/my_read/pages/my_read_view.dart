@@ -7,14 +7,12 @@ import '../../book_storage/pages/book_storage_view.dart';
 import '../../book_storage/bindings/book_storage_binding.dart';
 
 import '../controllers/my_read_controller.dart';
-import '../models/my_read_model.dart';
 
 class MyReadView extends StatelessWidget {
   const MyReadView({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final controller = Get.put(MyReadController(), permanent: true);
 
     return Scaffold(
@@ -23,7 +21,6 @@ class MyReadView extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // 설정 아이콘만 남김
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.black54),
             onPressed: () => Get.to(() => CustomerServicePage()),
@@ -34,10 +31,10 @@ class MyReadView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileHeader(controller), // controller 전달
+            _buildProfileHeader(controller),
             const SizedBox(height: 20),
 
-            _buildActivityStats(controller), // controller 전달
+            _buildActivityStats(controller),
 
             const SizedBox(height: 20),
 
@@ -49,9 +46,9 @@ class MyReadView extends StatelessWidget {
             Container(height: 8, color: const Color(0xFFF5F5F5)),
 
             _buildSectionHeader("취향 분석"),
-            _buildTasteAnalysisPreview(controller), // controller 전달
+            _buildTasteAnalysisPreview(controller),
 
-            _buildInsightTagCloud(controller), // controller 전달
+            _buildInsightTagCloud(controller),
 
             _buildSeeAllTasteButton(),
 
@@ -84,7 +81,7 @@ class MyReadView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              profile['nickname'] ?? '',
+              profile['nickname'] ?? 'HECHI',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -194,8 +191,12 @@ class MyReadView extends StatelessWidget {
 
   Widget _buildTasteAnalysisPreview(MyReadController controller) {
     return Obx(() {
-      if (controller.analyticsData.isEmpty) return const SizedBox();
-      final summary = controller.analyticsData['rating_summary'];
+      if (controller.ratingDistData.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text("아직 취향 분석 데이터가 충분하지 않습니다.", style: TextStyle(color: Colors.grey)),
+        );
+      }
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -221,28 +222,28 @@ class MyReadView extends StatelessWidget {
                 Expanded(
                   flex: 5,
                   child: Column(
-                    children: [5, 4, 3, 2, 1].map((score) {
+                    children: controller.ratingDistData.map((d) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Row(
                           children: [
                             SizedBox(
                               width: 12,
-                              child: Text("$score",
+                              child: Text("${d['score']}",
                                   style: const TextStyle(
                                       color: Colors.grey, fontSize: 11)),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
+                                // ✅ [수정] 모서리 반경 4 -> 7로 변경 (TasteAnalysis와 통일)
+                                borderRadius: BorderRadius.circular(7),
                                 child: LinearProgressIndicator(
-                                  value: controller.getRatingRatio(score),
+                                  value: (d['ratio'] as num).toDouble(),
                                   backgroundColor: const Color(0xFFF5F5F5),
-                                  color: score >= 4
-                                      ? const Color(0xFF43A047)
-                                      : const Color(0xFFA5D6A7),
-                                  minHeight: 8,
+                                  color: Color(d['color'] as int),
+                                  // ✅ [수정] 두께 8 -> 12로 변경 (TasteAnalysis와 통일)
+                                  minHeight: 12,
                                 ),
                               ),
                             ),
@@ -261,7 +262,7 @@ class MyReadView extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            "${summary['average_5']}",
+                            controller.averageRating.value,
                             style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -273,13 +274,13 @@ class MyReadView extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        "${summary['total_reviews']} Reviews",
+                        "${controller.totalReviews.value} Reviews",
                         style:
                         const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "${(summary['average_100'] as double).toInt()}%",
+                        controller.readingRate.value,
                         style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -299,7 +300,6 @@ class MyReadView extends StatelessWidget {
       );
     });
   }
-
 
   Widget _buildInsightTagCloud(MyReadController controller) {
     return Padding(

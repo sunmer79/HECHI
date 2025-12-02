@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
+import '../../../data/models/user_stats_model.dart';
 
 class TasteAnalysisController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
@@ -10,10 +11,13 @@ class TasteAnalysisController extends GetxController {
 
   RxBool isLoading = true.obs;
 
-  // 1. 평가 수 (API 데이터로 갱신)
+  // 0. 사용자 정보 (닉네임 표시용)
+  RxMap<String, dynamic> userProfile = <String, dynamic>{}.obs;
+
+  // 1. 평가 수
   RxMap<String, int> countStats = {'소설': 0, '시': 0, '에세이': 0, '만화': 0}.obs;
 
-  // 2. 별점 분포 (API 데이터로 갱신)
+  // 2. 별점 분포
   RxList<Map<String, dynamic>> starRatingDistribution = <Map<String, dynamic>>[
     {'score': 5, 'ratio': 0.0, 'color': 0xFF43A047},
     {'score': 4, 'ratio': 0.0, 'color': 0xFF66BB6A},
@@ -22,26 +26,26 @@ class TasteAnalysisController extends GetxController {
     {'score': 1, 'ratio': 0.0, 'color': 0xFFC8E6C9},
   ].obs;
 
-  // 요약 정보
+  // 요약
   RxString averageRating = "0.0".obs;
   RxString totalReviews = "0".obs;
-  RxString readingRate = "0%".obs; // 초기값 0%
+  RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
   RxString totalReadingTime = "0".obs;
 
-  // 3. 선호 태그
-  final List<Map<String, dynamic>> tags = [
-    {'text': '힐링', 'size': 32.0, 'color': 0xFF4DB56C, 'align': Alignment.center},
-    {'text': '스릴 넘친', 'size': 26.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.5, 0.5)},
-    {'text': '절망', 'size': 16.0, 'color': 0xFFAAD1B6, 'align': const Alignment(-0.6, -0.5)},
-    {'text': '블랙 코미디', 'size': 16.0, 'color': 0xFFAAD1B6, 'align': const Alignment(-0.8, 0.2)},
-    {'text': '감동적인', 'size': 14.0, 'color': 0xFF89C99C, 'align': const Alignment(-0.3, 0.6)},
-    {'text': '깊이 있는', 'size': 14.0, 'color': 0xFF89C99C, 'align': const Alignment(0.8, 0.8)},
-    {'text': '소설', 'size': 14.0, 'color': 0xFF89C99C, 'align': const Alignment(0.7, -0.6)},
-  ];
+  // 3. 선호 태그 (더미)
+  RxList<Map<String, dynamic>> tags = <Map<String, dynamic>>[
+    {'text': '힐링', 'size': 32.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.0, -0.3)},
+    {'text': '스릴', 'size': 26.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.4, 0.4)},
+    {'text': '코미디', 'size': 18.0, 'color': 0xFFAAD1B6, 'align': const Alignment(-0.5, -0.6)},
+    {'text': '추리', 'size': 18.0, 'color': 0xFFAAD1B6, 'align': const Alignment(-0.6, 0.1)},
+    {'text': '감동', 'size': 16.0, 'color': 0xFF89C99C, 'align': const Alignment(-0.2, 0.5)},
+    {'text': '깊이', 'size': 16.0, 'color': 0xFF89C99C, 'align': const Alignment(0.7, 0.7)},
+    {'text': '성장', 'size': 14.0, 'color': 0xFF89C99C, 'align': const Alignment(0.6, -0.4)},
+  ].obs;
 
   // 4. 선호 장르
-  RxList<Map<String, dynamic>> genreRankings = <Map<String, dynamic>>[].obs;
+  RxList<GenreStat> genreRankings = <GenreStat>[].obs;
 
   @override
   void onInit() {
@@ -52,83 +56,111 @@ class TasteAnalysisController extends GetxController {
   Future<void> fetchData() async {
     isLoading.value = true;
     String? token = box.read('access_token');
-
     if (token == null) {
-      // Get.offAllNamed(Routes.login); // 라우트 없어서 주석 처리
+      isLoading.value = false;
       return;
     }
 
     try {
-      final url = Uri.parse('$baseUrl/analytics/my-stats');
-      final response = await http.get(
-        url,
-        headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _parseData(data);
-      }
+      await Future.wait([
+        _fetchUserProfile(token),   // [추가] 닉네임 가져오기
+        _fetchCategoryCounts(token),
+        _fetchMyStats(token),
+      ]);
     } catch (e) {
-      print("통신 에러: $e");
+      print("Error fetching data: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
-  void _parseData(Map<String, dynamic> data) {
-    // 1. 별점 요약
-    final summary = data['rating_summary'] ?? {};
-    averageRating.value = (summary['average_5'] ?? 0).toStringAsFixed(1);
-    totalReviews.value = (summary['total_reviews'] ?? 0).toString();
-    mostGivenRating.value = (summary['most_frequent_rating'] ?? 0).toStringAsFixed(1);
+  // [API] 유저 정보 가져오기 (닉네임)
+  Future<void> _fetchUserProfile(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: {"Authorization": "Bearer $token"});
+      if (response.statusCode == 200) {
+        userProfile.value = jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("User Profile Error: $e");
+    }
+  }
 
-    // ✅ [수정] average_100을 ReadingRate로 사용 (없거나 0이면 0%로 표시)
-    int readingRateInt = (summary['average_100'] ?? 0).toInt();
-    readingRate.value = "$readingRateInt%";
+  Future<void> _fetchCategoryCounts(String token) async {
+    // API에 요청하는 카테고리 문자열이 DB와 정확히 일치해야 0이 안 나옴
+    final categories = ['소설', '시', '에세이', '만화'];
+    final newCounts = <String, int>{};
 
-    // 2. 독서 시간
-    final time = data['reading_time'] ?? {};
-    totalReadingTime.value = (time['human'] ?? "0").toString().replaceAll("시간", "").trim();
+    final futures = categories.map((category) async {
+      try {
+        final encodedCategory = Uri.encodeComponent(category);
+        final url = Uri.parse('$baseUrl/library/?shelf=rated&categories_in=$encodedCategory&limit=1');
 
-    // 3. 별점 분포 그래프
-    final distribution = (data['rating_distribution'] as List? ?? []);
+        final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          return MapEntry(category, data['total'] as int);
+        }
+      } catch (e) {
+        print("카테고리 조회 실패 ($category): $e");
+      }
+      return MapEntry(category, 0);
+    });
+
+    final results = await Future.wait(futures);
+    for (var entry in results) {
+      newCounts[entry.key] = entry.value;
+    }
+    countStats.value = newCounts;
+  }
+
+  Future<void> _fetchMyStats(String token) async {
+    final url = Uri.parse('$baseUrl/analytics/my-stats');
+    final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
+      final stats = UserStatsResponse.fromJson(json);
+
+      averageRating.value = stats.ratingSummary.average5.toStringAsFixed(1);
+      totalReviews.value = stats.ratingSummary.totalReviews.toString();
+      readingRate.value = "${stats.ratingSummary.average100}%";
+      mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
+
+      String timeText = stats.readingTime.human;
+      totalReadingTime.value = timeText.replaceAll("시간", "").trim();
+
+      _updateDistribution(stats.ratingDistribution);
+
+      // [변경] 장르 데이터: subGenres(로맨스, 추리 등)가 있으면 우선 사용, 없으면 topLevel(소설 등) 사용
+      if (stats.subGenres.isNotEmpty) {
+        genreRankings.value = stats.subGenres;
+      } else {
+        genreRankings.value = stats.topLevelGenres;
+      }
+      // 점수 높은 순 정렬
+      genreRankings.sort((a, b) => b.average5.compareTo(a.average5));
+    }
+  }
+
+  void _updateDistribution(List<RatingDist> distData) {
     int maxCount = 0;
-    for (var d in distribution) {
-      if ((d['count'] ?? 0) > maxCount) maxCount = d['count'];
+    for (var d in distData) {
+      if (d.count > maxCount) maxCount = d.count;
     }
 
     var newDist = <Map<String, dynamic>>[];
     for (var item in starRatingDistribution) {
       int score = item['score'];
-      var apiData = distribution.firstWhere((d) => d['rating'] == score, orElse: () => {'rating': score, 'count': 0});
-      int count = apiData['count'];
-      double ratio = maxCount > 0 ? count / maxCount : 0.0;
+      var apiData = distData.firstWhere(
+            (d) => d.rating == score,
+        orElse: () => RatingDist(rating: score, count: 0),
+      );
 
+      double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
       newDist.add({'score': score, 'ratio': ratio, 'color': item['color']});
     }
     starRatingDistribution.value = newDist;
-
-
-    // 4. 선호 장르 & 카테고리 (평가 수)
-    final genres = (data['top_level_genres'] as List? ?? []);
-    var tempCounts = {'소설': 0, '시': 0, '에세이': 0, '만화': 0};
-
-    for (var g in genres) {
-      String name = g['name'] ?? '';
-      int count = g['review_count'] ?? 0;
-      double score = (g['average_100'] ?? 0).toDouble();
-
-      // 카테고리 매핑 (이름이 일치하면 카운트)
-      if (tempCounts.containsKey(name)) {
-        tempCounts[name] = count;
-      }
-    }
-    genreRankings.value = genres.map((g) => {
-      'genre': g['name'] ?? '',
-      'score': (g['average_100'] ?? 0).toInt(),
-      'count': g['review_count'] ?? 0
-    }).toList();
-    countStats.value = tempCounts;
   }
 }

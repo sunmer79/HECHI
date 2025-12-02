@@ -1,25 +1,30 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../models/my_read_model.dart';
-import 'dart:math';
+import '../../../data/models/user_stats_model.dart';
 
 class MyReadController extends GetxController {
+  final box = GetStorage();
+  final String baseUrl = "https://api.43-202-101-63.sslip.io";
+
   // 1. User Profile Data
   final RxMap<String, dynamic> userProfile = <String, dynamic>{}.obs;
 
   // 2. Activity Stats (평가/코멘트)
-  final RxMap<String, int> activityStats = <String, int>{}.obs;
+  final RxMap<String, int> activityStats = <String, int>{'evaluations': 0, 'comments': 0}.obs;
 
-  // 3. Analytics Data (JSON Map으로 유지 - API 연동 전까지)
-  final RxMap<String, dynamic> analyticsData = <String, dynamic>{}.obs;
+  // 3. Analytics Data (별점 분포 그래프용)
+  RxList<Map<String, dynamic>> ratingDistData = <Map<String, dynamic>>[].obs;
 
-  // 4. User Insights (나의 독서 - 취향 분석 데이터)
-  final RxMap<String, dynamic> userInsights = <String, dynamic>{}.obs;
+  // 요약 정보
+  RxString averageRating = "0.0".obs;
+  RxString totalReviews = "0".obs;
+  RxString readingRate = "0%".obs;
 
-  // 5. 독서 선호 태그 (위치 및 크기 조정)
+  // 4. 독서 선호 태그
   final List<Map<String, dynamic>> insightTags = [
-    // ✅ [수정] 태그 내용: 카테고리(소설) 대신 장르/느낌 태그(코미디, 추리) 사용
-    // ✅ [수정] Alignment: 간격을 줄이기 위해 좌표를 0.5 이내로 조정하여 중앙에 밀집시킴
     {'text': '힐링', 'size': 32.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.0, -0.3)},
     {'text': '스릴', 'size': 26.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.4, 0.4)},
     {'text': '코미디', 'size': 18.0, 'color': 0xFFAAD1B6, 'align': const Alignment(-0.5, -0.6)},
@@ -29,7 +34,6 @@ class MyReadController extends GetxController {
     {'text': '성장', 'size': 14.0, 'color': 0xFF89C99C, 'align': const Alignment(0.6, -0.4)},
   ];
 
-
   @override
   void onInit() {
     super.onInit();
@@ -37,77 +41,73 @@ class MyReadController extends GetxController {
   }
 
   void fetchMyReadData() async {
-    // 실제 API 호출 로직이 들어갈 곳
-    _loadDummyData();
+    String? token = box.read('access_token');
+    if (token == null) return;
+
+    await Future.wait([
+      _fetchUserProfile(token),
+      _fetchStats(token),
+    ]);
   }
 
-  void _loadDummyData() {
-    // [API] GET /auth/me
-    userProfile.value = {
-      "nickname": "HECHI",
-      "email": "user@example.com",
-    };
-
-    // [API] GET /analytics/my-stats
-    // 데이터가 없는 상태를 가정하여 모든 count를 0으로 설정
-    List<Map<String, dynamic>> distribution = [
-      {"rating": 5, "count": 0},
-      {"rating": 4, "count": 0},
-      {"rating": 3, "count": 0},
-      {"rating": 2, "count": 0},
-      {"rating": 1, "count": 0},
-    ];
-
-    int totalReviews = distribution.fold(0, (sum, item) => sum + item['count'] as int);
-
-    // ✅ [수정] Reading Rate (average_100) 및 모든 통계 수정
-    // 총 리뷰 개수(totalReviews)가 0이면 모든 비율/평균을 0으로 설정하여 일관성을 맞춥니다.
-    double readingRate = (totalReviews > 0) ? 88.0 : 0.0;
-
-    Map<String, dynamic> statsResponse = {
-      "rating_distribution": distribution,
-      "rating_summary": {
-        "average_5": (totalReviews > 0) ? 4.5 : 0.0,
-        "average_100": readingRate, // ➡️ 데이터가 0이므로 0.0%로 표시
-        "total_reviews": totalReviews,
-        "most_frequent_rating": (totalReviews > 0) ? 5 : 0,
-      },
-      "reading_time": {
-        "total_seconds": 0,
-        "human": "0시간",
-      },
-    };
-
-    analyticsData.value = statsResponse;
-
-    // [API 매핑] 활동 요약
-    activityStats.value = {
-      "evaluations": totalReviews,
-      "comments": 0,
-    };
-
-    userInsights.value = {
-      "analysis": "분석 데이터가 부족하여 취향 분석이 어렵습니다.",
-      "tags": []
-    };
+  Future<void> _fetchUserProfile(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: {"Authorization": "Bearer $token"});
+      if (response.statusCode == 200) {
+        userProfile.value = jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("User Profile Error: $e");
+    }
   }
 
-  // 별점 비율 계산 Helper (MyReadView의 그래프에 사용됨)
-  double getRatingRatio(int rating) {
-    // ✅ [수정] total이 0일 때 나누기 오류 방지
-    if (analyticsData.isEmpty) return 0.0;
+  Future<void> _fetchStats(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/analytics/my-stats'), headers: {"Authorization": "Bearer $token"});
+      if (response.statusCode == 200) {
+        final json = jsonDecode(utf8.decode(response.bodyBytes));
+        final stats = UserStatsResponse.fromJson(json);
 
-    List distribution = analyticsData['rating_distribution'] ?? [];
-    Map<String, dynamic>? summary = analyticsData['rating_summary'];
-    int total = summary?['total_reviews'] ?? 1;
+        activityStats['evaluations'] = stats.ratingSummary.totalReviews;
+        activityStats['comments'] = stats.ratingSummary.totalReviews;
 
-    if (total == 0) return 0.0;
+        averageRating.value = stats.ratingSummary.average5.toStringAsFixed(1);
+        totalReviews.value = stats.ratingSummary.totalReviews.toString();
+        readingRate.value = "${stats.ratingSummary.average100}%";
 
-    var target = distribution.firstWhere(
-          (e) => e['rating'] == rating,
-      orElse: () => {"count": 0},
-    );
+        int maxCount = 0;
+        for (var d in stats.ratingDistribution) {
+          if (d.count > maxCount) maxCount = d.count;
+        }
 
-    return (target['count'] as int) / total;
+        // ✅ [수정] 5점부터 1점까지 고정 색상 적용 (TasteAnalysis와 동일하게)
+        // 5점: 가장 진함(0xFF43A047) ~ 1점: 가장 연함(0xFFC8E6C9)
+        final colorMap = {
+          5: 0xFF43A047,
+          4: 0xFF66BB6A,
+          3: 0xFF81C784,
+          2: 0xFFA5D6A7,
+          1: 0xFFC8E6C9,
+        };
+
+        List<Map<String, dynamic>> tempDist = [];
+        for (int i = 5; i >= 1; i--) {
+          var apiData = stats.ratingDistribution.firstWhere(
+                (d) => d.rating == i,
+            orElse: () => RatingDist(rating: i, count: 0),
+          );
+          double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
+
+          tempDist.add({
+            "score": i,
+            "ratio": ratio,
+            "color": colorMap[i] // 점수별 고정 색상 사용
+          });
+        }
+        ratingDistData.value = tempDist;
+      }
+    } catch (e) {
+      print("My Stats Error: $e");
+    }
   }
 }
