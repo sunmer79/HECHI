@@ -37,8 +37,7 @@ class MyApp extends StatelessWidget {
 
       // ✅ 앱 실행 시 AppBinding 실행 (하단바 컨트롤러 등 준비)
       initialBinding: AppBinding(),
-
-      initialRoute: Routes.login,
+      initialRoute: Routes.splash,
       getPages: AppPages.pages,
     );
   }

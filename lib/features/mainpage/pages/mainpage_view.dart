@@ -3,12 +3,13 @@ import 'package:get/get.dart';
 import '../controllers/mainpage_controller.dart';
 import 'popular_list_page.dart';
 import 'trending_list_page.dart';
-import '../../book_detail_page/pages/book_detail_page.dart'; //  ⭐ 변경
+import '../../book_detail_page/pages/book_detail_page.dart';
 import '../../taste_analysis/pages/taste_analysis_view.dart';
 import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../notification/pages/notification_page.dart';
 import '../../book_storage/pages/book_storage_view.dart';
 import '../../book_storage/bindings/book_storage_binding.dart';
+
 
 class MainpageView extends GetView<MainpageController> {
   const MainpageView({super.key});
@@ -27,7 +28,7 @@ class MainpageView extends GetView<MainpageController> {
           style: const TextStyle(
             color: Color(0xFF4DB56C),
             fontSize: 28,
-            fontFamily: 'Sedgwick Ave Display',
+            fontFamily: 'Sedgwick Ave Display', // 기존 방식 유지
             fontWeight: FontWeight.bold,
           ),
         )),
@@ -57,7 +58,7 @@ class MainpageView extends GetView<MainpageController> {
               padding: const EdgeInsets.symmetric(horizontal: 17),
               child: GestureDetector(
                 onTap: () {
-                  Get.toNamed('/book_detail_page', arguments: 10); //  ⭐ 변경(하드코딩)
+                  Get.toNamed('/book_detail_page', arguments: 10);
                 },
                 child: Container(
                   width: double.infinity,
@@ -122,7 +123,6 @@ class MainpageView extends GetView<MainpageController> {
                 children: [
                   _buildCategoryItem('캘린더', Icons.calendar_today, const Color(0xFF4DB56C)),
 
-                  // ✅ [수정 완료] 취향분석 버튼 (클릭 시 이동 코드 추가)
                   _buildCategoryItem(
                     '취향분석',
                     Icons.bar_chart,
@@ -242,7 +242,6 @@ class MainpageView extends GetView<MainpageController> {
 
   Widget _buildCategoryItem(String label, IconData icon, Color color, {VoidCallback? onTap}) {
     return GestureDetector(
-      // onTap이 있으면 그걸 실행하고, 없으면 임시 페이지로 이동
       onTap: onTap ?? () => Get.to(() => TempCategoryPage(title: label)),
       child: Column(
         children: [
@@ -264,7 +263,7 @@ class MainpageView extends GetView<MainpageController> {
   Widget _buildBookItem(Map<String, dynamic> book) {
     return GestureDetector(
       onTap: () {
-        Get.toNamed('/book_detail_page', arguments: book['id']); //  ⭐ 변경
+        Get.toNamed('/book_detail_page', arguments: book['id']);
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

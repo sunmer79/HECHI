@@ -12,6 +12,9 @@ class LoginController extends GetxController {
   RxBool isPasswordHidden = true.obs;
   RxBool isLoading = false.obs;
 
+  // ✅ [신규] 자동 로그인 체크박스 상태
+  RxBool isAutoLogin = false.obs;
+
   RxString emailError = ''.obs;
   RxString passwordError = ''.obs;
 
@@ -31,6 +34,9 @@ class LoginController extends GetxController {
 
   void togglePasswordVisibility() => isPasswordHidden.value = !isPasswordHidden.value;
 
+  // ✅ [신규] 체크박스 토글 함수
+  void toggleAutoLogin() => isAutoLogin.value = !isAutoLogin.value;
+
   // 🔐 로그인 로직
   Future<void> login() async {
     String email = emailController.text.trim();
@@ -48,7 +54,6 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      // 1. 로그인 요청
       final loginUrl = Uri.parse('$baseUrl/auth/login');
       final loginResponse = await http.post(
         loginUrl,
@@ -56,23 +61,25 @@ class LoginController extends GetxController {
         body: jsonEncode({
           "email": email,
           "password": password,
+          "remember_me": isAutoLogin.value, // API에 상태 전달
         }),
       );
 
       if (loginResponse.statusCode == 200) {
-        final loginData = jsonDecode(loginResponse.body);
+        final loginData = jsonDecode(utf8.decode(loginResponse.bodyBytes));
         String accessToken = loginData['access_token'];
+        String refreshToken = loginData['refresh_token']; // 있으면 저장
 
-        // ✅ 토큰 저장
+        // ✅ [핵심] 토큰 및 자동 로그인 설정 저장
         await box.write('access_token', accessToken);
+        await box.write('refresh_token', refreshToken);
+        await box.write('is_auto_login', isAutoLogin.value); // 체크박스 상태 저장
 
-        // ✅ [중요] 새 사용자로 로그인했으므로, 이전 사용자의 '로컬 취향 분석 기록'은 삭제합니다.
-        // 이것 때문에 계속 메인으로 넘어갔던 것입니다.
+        // 이전 로컬 데이터 정리
         await box.remove('is_taste_analyzed_local');
 
-        print("✅ 1. 로그인 성공 (이전 로컬 기록 삭제 완료)");
+        print("✅ 로그인 성공 (자동 로그인 설정: ${isAutoLogin.value})");
 
-        // 2. 내 정보 확인 및 라우팅 (서버 데이터 기준)
         await _checkTasteAnalysisAndRedirect(accessToken);
 
       } else {
@@ -81,18 +88,13 @@ class LoginController extends GetxController {
       }
     } catch (e) {
       print("🚨 통신 오류: $e");
-      Get.snackbar(
-        "오류",
-        "서버와 연결할 수 없습니다.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.white,
-      );
+      Get.snackbar("오류", "서버와 연결할 수 없습니다.");
     } finally {
       isLoading.value = false;
     }
   }
 
-  // 🚀 라우팅 분기 처리
+  // 라우팅 로직 (기존 동일)
   Future<void> _checkTasteAnalysisAndRedirect(String token) async {
     try {
       final meUrl = Uri.parse('$baseUrl/auth/me');
@@ -105,38 +107,22 @@ class LoginController extends GetxController {
       );
 
       if (meResponse.statusCode == 200) {
-        final meData = jsonDecode(meResponse.body);
-        print("✅ 2. 내 정보 조회 결과: $meData");
-
-        // ✅ [핵심 수정] 오직 서버 데이터(taste_analyzed)만 신뢰합니다.
-        // 로컬 변수(|| box.read...)를 제거하여 꼬임을 방지합니다.
+        final meData = jsonDecode(utf8.decode(meResponse.bodyBytes));
         bool isAnalyzed = meData['taste_analyzed'] ?? false;
 
-        print("🧐 서버 판단: 취향 분석 여부 = $isAnalyzed");
-
         if (isAnalyzed) {
-          print("🚀 -> 메인으로 이동 (Routes.initial)");
           Get.offAllNamed(Routes.initial);
         } else {
-          print("🚀 -> 취향 분석으로 이동 (Routes.preference)");
           Get.offAllNamed(Routes.preference);
         }
-
       } else {
-        print("❌ 내 정보 조회 실패, 안전하게 취향 분석 페이지로 이동");
         Get.offAllNamed(Routes.preference);
       }
     } catch (e) {
-      print("🚨 오류 발생: $e, 취향 분석 페이지로 이동");
       Get.offAllNamed(Routes.preference);
     }
   }
 
-  void goToSignUp() {
-    Get.toNamed(Routes.signUp);
-  }
-
-  void goToForgetPassword() {
-    Get.toNamed(Routes.forgetPassword);
-  }
+  void goToSignUp() => Get.toNamed(Routes.signUp);
+  void goToForgetPassword() => Get.toNamed(Routes.forgetPassword);
 }

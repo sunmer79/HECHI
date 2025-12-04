@@ -23,14 +23,17 @@ import '../features/reading_detail/pages/reading_detail_view.dart';
 import '../features/book_storage/pages/book_storage_view.dart';
 import '../features/book_storage/bindings/book_storage_binding.dart';
 
-
+import '../features/splash/pages/splash_view.dart';
+import '../features/settings/pages/settings_view.dart';
+import '../features/settings/bindings/settings_binding.dart';
 abstract class Routes {
+  static const splash = '/splash';
   static const initial = '/';
   static const customer = '/customer';
   static const login = '/login';
   static const signUp = '/sign_up';
   static const forgetPassword = '/forget_password';
-
+  static const settings = '/settings';
   static const preference = '/preference';
 
   static const search = '/search';
@@ -44,6 +47,7 @@ abstract class Routes {
 
 class AppPages {
   static final pages = [
+    GetPage(name: Routes.splash, page: () => const SplashView()),
     GetPage(name: Routes.initial, page: () => const MainWrapper()),
     GetPage(name: Routes.customer, page: () => CustomerServicePage()),
 
@@ -57,7 +61,8 @@ class AppPages {
     GetPage(name: Routes.readingDetail, page: () => const ReadingDetailView(), binding: ReadingDetailBinding()),
 
     GetPage(name: Routes.tasteAnalysis, page: () => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
-
+    GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()
+    ),
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
   ];
 }
