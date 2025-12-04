@@ -21,7 +21,7 @@ class MyReadView extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // ✅ [수정 완료] 설정 아이콘 클릭 시 -> Settings 페이지로 이동
+          
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.black54),
             onPressed: () => Get.toNamed(Routes.settings),
@@ -288,7 +288,7 @@ class MyReadView extends StatelessWidget {
                             color: Color(0xFF3F3F3F)),
                       ),
                       const Text(
-                        "Reading rate",
+                        "완독률",
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],

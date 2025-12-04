@@ -11,7 +11,7 @@ class TasteAnalysisController extends GetxController {
 
   RxBool isLoading = true.obs;
 
-  // 0. 사용자 정보 (닉네임 표시용)
+  // 0. 사용자 정보
   RxMap<String, dynamic> userProfile = <String, dynamic>{}.obs;
 
   // 1. 평가 수
@@ -26,14 +26,14 @@ class TasteAnalysisController extends GetxController {
     {'score': 1, 'ratio': 0.0, 'color': 0xFFC8E6C9},
   ].obs;
 
-  // 요약
+  // 요약 정보
   RxString averageRating = "0.0".obs;
   RxString totalReviews = "0".obs;
   RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
   RxString totalReadingTime = "0".obs;
 
-  // 3. 선호 태그 (더미)
+  // 3. 선호 태그
   RxList<Map<String, dynamic>> tags = <Map<String, dynamic>>[
     {'text': '힐링', 'size': 32.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.0, -0.3)},
     {'text': '스릴', 'size': 26.0, 'color': 0xFF4DB56C, 'align': const Alignment(0.4, 0.4)},
@@ -63,8 +63,7 @@ class TasteAnalysisController extends GetxController {
 
     try {
       await Future.wait([
-        _fetchUserProfile(token),   // [추가] 닉네임 가져오기
-        _fetchCategoryCounts(token),
+        _fetchUserProfile(token),
         _fetchMyStats(token),
       ]);
     } catch (e) {
@@ -74,7 +73,6 @@ class TasteAnalysisController extends GetxController {
     }
   }
 
-  // [API] 유저 정보 가져오기 (닉네임)
   Future<void> _fetchUserProfile(String token) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: {"Authorization": "Bearer $token"});
@@ -84,35 +82,6 @@ class TasteAnalysisController extends GetxController {
     } catch (e) {
       print("User Profile Error: $e");
     }
-  }
-
-  Future<void> _fetchCategoryCounts(String token) async {
-    // API에 요청하는 카테고리 문자열이 DB와 정확히 일치해야 0이 안 나옴
-    final categories = ['소설', '시', '에세이', '만화'];
-    final newCounts = <String, int>{};
-
-    final futures = categories.map((category) async {
-      try {
-        final encodedCategory = Uri.encodeComponent(category);
-        final url = Uri.parse('$baseUrl/library/?shelf=rated&categories_in=$encodedCategory&limit=1');
-
-        final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(utf8.decode(response.bodyBytes));
-          return MapEntry(category, data['total'] as int);
-        }
-      } catch (e) {
-        print("카테고리 조회 실패 ($category): $e");
-      }
-      return MapEntry(category, 0);
-    });
-
-    final results = await Future.wait(futures);
-    for (var entry in results) {
-      newCounts[entry.key] = entry.value;
-    }
-    countStats.value = newCounts;
   }
 
   Future<void> _fetchMyStats(String token) async {
@@ -133,13 +102,59 @@ class TasteAnalysisController extends GetxController {
 
       _updateDistribution(stats.ratingDistribution);
 
-      // [변경] 장르 데이터: subGenres(로맨스, 추리 등)가 있으면 우선 사용, 없으면 topLevel(소설 등) 사용
-      if (stats.subGenres.isNotEmpty) {
-        genreRankings.value = stats.subGenres;
-      } else {
-        genreRankings.value = stats.topLevelGenres;
+      // --- 평가 수 매핑 (스마트 분류) ---
+      var newCounts = {'소설': 0, '시': 0, '에세이': 0, '만화': 0};
+
+      print("🔍 [DEBUG] 실제 API 장르 목록:");
+      for (var genre in stats.topLevelGenres) {
+        print(" - ${genre.name} (${genre.reviewCount})");
+
+        if (genre.name.contains('소설') || genre.name.contains('Novel') || genre.name.contains('Fiction')) {
+          newCounts['소설'] = (newCounts['소설'] ?? 0) + genre.reviewCount;
+        }
+        else if (genre.name.contains('시') || genre.name.contains('Poetry')) {
+          newCounts['시'] = (newCounts['시'] ?? 0) + genre.reviewCount;
+        }
+        else if (genre.name.contains('에세이') || genre.name.contains('산문') || genre.name.contains('Essay')) {
+          newCounts['에세이'] = (newCounts['에세이'] ?? 0) + genre.reviewCount;
+        }
+        else if (genre.name.contains('만화') || genre.name.contains('웹툰') || genre.name.contains('Comics')) {
+          newCounts['만화'] = (newCounts['만화'] ?? 0) + genre.reviewCount;
+        }
       }
-      // 점수 높은 순 정렬
+      countStats.value = newCounts;
+
+      // --- [핵심 수정] 경제/경영 합치기 및 장르 리스트 정리 ---
+      List<GenreStat> sourceList = stats.subGenres.isNotEmpty ? stats.subGenres : stats.topLevelGenres;
+      List<GenreStat> mergedList = [];
+
+      int bizEcoCount = 0;
+      double bizEcoTotalScore = 0.0;
+      bool hasBizEco = false;
+
+      for (var genre in sourceList) {
+        // 경제나 경영이 포함된 경우 합산 로직
+        if (genre.name.contains('경제') || genre.name.contains('경영')) {
+          hasBizEco = true;
+          bizEcoCount += genre.reviewCount;
+          // 가중 평균을 위해 (평점 * 개수)를 더해둠
+          bizEcoTotalScore += (genre.average5 * genre.reviewCount);
+        } else {
+          // 나머지는 그대로 리스트에 추가
+          mergedList.add(genre);
+        }
+      }
+
+      // 합쳐진 '경제/경영' 항목 생성 및 추가
+      if (hasBizEco && bizEcoCount > 0) {
+        mergedList.add(GenreStat(
+          name: '경제/경영',
+          reviewCount: bizEcoCount,
+          average5: bizEcoTotalScore / bizEcoCount, // 가중 평균 계산
+        ));
+      }
+
+      genreRankings.value = mergedList;
       genreRankings.sort((a, b) => b.average5.compareTo(a.average5));
     }
   }

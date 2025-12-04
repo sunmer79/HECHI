@@ -14,7 +14,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         backgroundColor: const Color(0xFF4DB56C),
         elevation: 0,
         centerTitle: true,
-        // [수정] 닉네임 연동
         title: Obx(() => Text(
           '${controller.userProfile['nickname'] ?? 'HECHI'}님의 취향분석',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
@@ -42,7 +41,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
               _buildCountSection(), // 평가 수
               const Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
 
-              _buildStarSection(), // 별점 분포 및 하단 통계(간격 수정됨)
+              _buildStarSection(), // 별점 분포 및 하단 통계
               const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
               _buildTimeSection(),
@@ -66,7 +65,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
       color: const Color(0xFF4DB56C),
       child: Obx(() {
-        // [수정] 닉네임 연동 ('HECHI' -> userProfile['nickname'])
         final nickname = controller.userProfile['nickname'] ?? 'HECHI';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,9 +170,10 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} Reviews", isLarge: true, showStar: true),
                     const SizedBox(height: 20),
-                    _buildSummaryItem(controller.readingRate.value, "Reading rate", isLarge: true),
+                    _buildSummaryItem(controller.readingRate.value, "완독률", isLarge: true),
                   ],
                 ),
               ),
@@ -182,12 +181,10 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           ),
           const SizedBox(height: 30),
 
-          // ✅ [수정] 하단 통계: 간격 균등 분배 (spaceEvenly) 및 좌우 패딩 제거(부모 패딩만 따름)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 간격 균등하게
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
-              // 구분선을 넣고 싶다면 여기에 Container(width:1, height:20, color:Colors.grey[300]) 추가 가능
               _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
               _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
             ],
