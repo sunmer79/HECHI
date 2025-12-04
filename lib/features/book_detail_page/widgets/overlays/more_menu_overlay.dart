@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../controllers/book_detail_controller.dart';
 
 class MoreMenuOverlay extends StatelessWidget {
   const MoreMenuOverlay({super.key});
@@ -18,21 +19,26 @@ class MoreMenuOverlay extends StatelessWidget {
           menuItem("독서 등록", Icons.book),
           menuItem("읽은 날짜 수정", Icons.calendar_month),
           menuItem("캘린더", Icons.event),
-          menuItem("관심없어요", Icons.remove_circle_outline),
+          menuItem("관심없어요", Icons.remove_circle_outline, onTap: () {
+            final controller = Get.find<BookDetailController>();
+            controller.onNotInterested();
+          }),
         ],
       ),
     );
   }
 
-  Widget menuItem(String label, IconData icon) {
+  Widget menuItem(String label, IconData icon, {VoidCallback? onTap}) {
     return InkWell(
-      onTap: () { print("📌 Book Menu 클릭: $label"); Get.back(); },
+      onTap: () {
+        if (onTap != null) onTap();
+        Get.back();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Color(0xFFD4D4D4), width: 1),
-          ),
+          border:
+          Border(bottom: BorderSide(color: Color(0xFFD4D4D4), width: 1)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
