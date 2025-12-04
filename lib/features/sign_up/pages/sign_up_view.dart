@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/sign_up_controller.dart';
 import '../widgets/sign_up_text_field.dart';
 
@@ -17,7 +18,18 @@ class SignUpView extends GetView<SignUpController> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const Text('HECHI', style: TextStyle(color: Color(0xFF4DB56C), fontSize: 48, fontFamily: 'Gaegu', fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+
+
+              Text(
+                'HECHI',
+                style: GoogleFonts.sedgwickAveDisplay(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF4DB56C),
+                  letterSpacing: 1.5,
+                ),
+              ),
+
               const SizedBox(height: 50),
 
               SignUpTextField(label: '이름', hintText: '이름을 입력해주세요.', controller: controller.nameController),
@@ -29,15 +41,20 @@ class SignUpView extends GetView<SignUpController> {
                 label: '이메일(아이디)',
                 hintText: '예) hechi@kmu.ac.kr',
                 controller: controller.emailController,
-                suffix: GestureDetector(
-                  onTap: controller.checkEmailDuplicate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: controller.isEmailFilled.value ? const Color(0xFF4DB56C) : const Color(0xFFC4E1CD),
-                      borderRadius: BorderRadius.circular(20),
+
+                suffix: Transform.translate(
+                  offset: const Offset(20, 0),
+                  child: GestureDetector(
+                    onTap: controller.checkEmailDuplicate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.only(right: 16), // 오른쪽 여백 확보
+                      decoration: BoxDecoration(
+                        color: controller.isEmailFilled.value ? const Color(0xFF4DB56C) : const Color(0xFFC4E1CD),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text('중복 확인', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
-                    child: const Text('중복 확인', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
               )),
@@ -58,7 +75,17 @@ class SignUpView extends GetView<SignUpController> {
                 hintText: '영문, 숫자, 특수문자 조합(8자~20자)',
                 controller: controller.passwordController,
                 isObscure: controller.isPasswordHidden.value,
-                suffix: GestureDetector(onTap: controller.togglePasswordVisibility, child: Icon(controller.isPasswordHidden.value ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xFF717171))),
+
+                suffix: Transform.translate(
+                  offset: const Offset(10, 0),
+                  child: GestureDetector(
+                      onTap: controller.togglePasswordVisibility,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 16.0),
+                        child: Icon(controller.isPasswordHidden.value ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xFF717171)),
+                      )
+                  ),
+                ),
               )),
 
               const SizedBox(height: 60),
@@ -67,7 +94,7 @@ class SignUpView extends GetView<SignUpController> {
                 width: double.infinity, height: 52,
                 child: Obx(() => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : controller.submitSignUp,
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4DB56C), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4DB56C), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 0),
                   child: controller.isLoading.value
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('가입하기', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
