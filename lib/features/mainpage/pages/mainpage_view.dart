@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../controllers/mainpage_controller.dart';
 import 'popular_list_page.dart';
 import 'trending_list_page.dart';
@@ -10,6 +9,7 @@ import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../notification/pages/notification_page.dart';
 import '../../book_storage/pages/book_storage_view.dart';
 import '../../book_storage/bindings/book_storage_binding.dart';
+// import 'package:google_fonts/google_fonts.dart'; // 폰트는 일단 주석 처리 or 삭제
 
 class MainpageView extends GetView<MainpageController> {
   const MainpageView({super.key});
@@ -18,15 +18,17 @@ class MainpageView extends GetView<MainpageController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      // 상단 앱바
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 20,
         title: Obx(() => Text(
           controller.headerLogo.value,
-          style: GoogleFonts.sedgwickAveDisplay(
-            color: const Color(0xFF4DB56C),
+          style: const TextStyle(
+            color: Color(0xFF4DB56C),
             fontSize: 28,
+            fontFamily: 'Sedgwick Ave Display', // 기존 방식 유지
             fontWeight: FontWeight.bold,
           ),
         )),
