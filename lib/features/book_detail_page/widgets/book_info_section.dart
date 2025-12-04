@@ -51,7 +51,7 @@ class BookInfoSection extends GetView<BookDetailController> {
                 */
                 // 평균 평점
                 Text(
-                  '평균★${book["average_rating"] ?? 0}',
+                  '평균★${(book["average_rating"] ?? 0.0).toStringAsFixed(2)}',
                   style: const TextStyle(
                     color: Color(0xFF717171), // TextIcon-OnNormal-NormalMidEmp
                     fontSize: 13,

@@ -15,33 +15,40 @@ class BookDetailController extends GetxController {
   final int bookId = Get.arguments ?? 1;
 
   final RxBool isLoading = true.obs;
-  final RxMap book = {}.obs;
+  final RxMap<String, dynamic> book = <String, dynamic>{}.obs;
   final RxList<Map<String, dynamic>> reviews = <Map<String, dynamic>>[].obs;
-  final RxInt maxRatingCount = 1.obs;
-  final RxDouble myRating = 0.0.obs;
 
+  final RxMap<String, int> ratingHistogram = <String, int>{}.obs;
+  final RxInt maxRatingCount = 1.obs;
+
+  final RxInt userBookId = (-1).obs;
+  final RxString readingStatus = "PENDING".obs;
   final RxBool isWishlisted = false.obs;
   final RxBool isCommented = false.obs;
 
-  final RxString readingStatus = "PENDING".obs;
-
-  int myReviewId = -1;
+  final RxDouble myRating = 0.0.obs;
+  final RxDouble averageRating = 0.0.obs;
+  final RxInt totalReviewCount = 0.obs;
 
   bool get isReadingOrCompleted =>
       ["READING", "COMPLETED"].contains(readingStatus.value);
 
+  int myReviewId = -1;
+
   @override
   void onInit() {
     super.onInit();
-    Future.microtask(() async {
-      await fetchBookDetail();
-      await fetchReviews();
-      await fetchReadingStatus();
-    });
+    Future.wait([
+      fetchReadingStatus(),
+      fetchBookDetail(),
+      fetchReviews(),
+      fetchRatingSummary(),
+      fetchWishlistStatus(),
+    ]);
   }
 
   // ==========================
-  // 📌 책 상세 조회
+  // 📌 책 상세 조회 (Histogram 파싱 추가)
   // ==========================
   Future<void> fetchBookDetail() async {
     try {
@@ -52,10 +59,18 @@ class BookDetailController extends GetxController {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         book.value = data;
 
-        final histogram = Map<String, dynamic>.from(data["rating_histogram"] ?? {});
-        if (histogram.isNotEmpty) {
-          maxRatingCount.value = histogram.values.reduce((a, b) => a > b ? a : b) as int;
-          if (maxRatingCount.value == 0) maxRatingCount.value = 1;
+        if (data["rating_histogram"] != null) {
+          Map<String, dynamic> rawHist = data["rating_histogram"];
+          ratingHistogram.value =
+              rawHist.map((key, value) => MapEntry(key, value as int));
+
+          if (ratingHistogram.isNotEmpty) {
+            int max = 0;
+            ratingHistogram.forEach((_, v) {
+              if (v > max) max = v;
+            });
+            maxRatingCount.value = max == 0 ? 1 : max;
+          }
         }
       } else {
         Get.snackbar("오류", "책 정보를 불러오지 못했습니다.");
@@ -72,12 +87,22 @@ class BookDetailController extends GetxController {
   // ==========================
   Future<void> fetchReviews() async {
     try {
-      final res = await http.get(Uri.parse("$baseUrl/reviews/books/$bookId"));
+      final token = box.read('access_token');
+      final headers = {"Content-Type": "application/json"};
+      if (token != null) headers["Authorization"] = "Bearer $token";
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/reviews/books/$bookId"),
+        headers: headers,
+      );
+
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
         reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
-        final mine = reviews.firstWhereOrNull((e) => e["is_my_review"] == true);
+        final myUserId = box.read("user_id");
+        final mine = list.firstWhereOrNull(
+                (e) => e["is_my_review"] == true || e["user_id"] == myUserId);
 
         if (mine != null) {
           isCommented.value = true;
@@ -87,6 +112,8 @@ class BookDetailController extends GetxController {
           isCommented.value = false;
           myRating.value = 0.0;
         }
+      } else {
+        print("❌ Review fetch failed: ${res.statusCode}");
       }
     } catch (e) {
       print("Review error: $e");
@@ -98,7 +125,7 @@ class BookDetailController extends GetxController {
   // ==========================
   Future<void> fetchReadingStatus() async {
     try {
-      final token = box.read('access_token');
+      final token = box.read("access_token");
       if (token == null) return;
 
       final res = await http.get(
@@ -106,12 +133,57 @@ class BookDetailController extends GetxController {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        readingStatus.value = decoded["status"] ?? "NONE";
+      if (res.statusCode != 200) return;
+
+      final body = res.body.trim();
+
+      // 문자열 단독 응답 대비
+      if (!body.startsWith("{")) {
+        readingStatus.value = body.replaceAll('"', '');
+        return;
       }
+
+      final decoded = jsonDecode(body);
+
+      // 💡 서버가 주는 값 그대로 사용
+      userBookId.value = decoded["user_book_id"] ?? -1;
+
+      // 서버가 status를 주면 그대로 반영
+      if (decoded["status"] != null) {
+        readingStatus.value = decoded["status"];
+      } else {
+        readingStatus.value = "PENDING";
+      }
+
+      print("🎯 최종 상태(UI 반영): ${readingStatus.value}");
     } catch (e) {
       print("❌ Reading-Status GET Error: $e");
+    }
+  }
+
+
+  // ==========================
+  // 📌 위시리스트 반영
+  // ==========================
+  Future<void> fetchWishlistStatus() async {
+    final token = box.read("access_token");
+    if (token == null) return;
+
+    try {
+      final res = await http.get(
+        Uri.parse("$baseUrl/wishlist/"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      print("🔍 Wishlist GET Status: ${res.statusCode}");
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as List;
+        isWishlisted.value = data.any((e) => e["book_id"] == bookId);
+        print("⭐ Wishlist status initialized: ${isWishlisted.value}");
+      }
+    } catch (e) {
+      print("❌ Wishlist Status Error: $e");
     }
   }
 
@@ -123,33 +195,55 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 공통 상태 업데이트 함수 (핵심 로직)
+  // 📌 독서 상태 업데이트
   // ==========================
   Future<void> updateReadingStatus(String status) async {
     final token = box.read("access_token");
-    if (token == null) return;
+    if (token == null) {
+      Get.snackbar("알림", "로그인이 필요합니다.");
+      return;
+    }
 
     try {
+      final Map<String, dynamic> bodyData = {"status": status};
+
+      if (userBookId.value != -1) {
+        // 기존 서재 책
+        bodyData["user_book_id"] = userBookId.value;
+        print("🚀 상태 변경 요청 (기존): $status / userBookId=${userBookId.value}");
+      } else {
+        // 처음 추가하는 책
+        bodyData["book_id"] = bookId;
+        print("🚀 상태 변경 요청 (신규): $status / bookId=$bookId");
+      }
+
       final res = await http.post(
         Uri.parse("$baseUrl/reading-status/update"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({"book_id": bookId, "status": status}),
+        body: jsonEncode(bodyData),
       );
 
+      print("📡 응답 상태 코드: ${res.statusCode}");
+
       if (res.statusCode == 200 || res.statusCode == 201) {
-        readingStatus.value = status;
-        Get.back(); // 오버레이 닫기
-        Get.snackbar("완료", "서가 상태가 변경되었습니다.");
+        Get.snackbar("완료", "상태가 변경되었습니다.");
+
+        // 🔥 서버 기준 데이터로 UI 다시 동기화 (가장 중요)
+        await fetchReadingStatus();
+
       } else {
+        print("❌ 실패 본문: ${res.body}");
         Get.snackbar("오류", "상태 변경 실패: ${res.statusCode}");
       }
+
     } catch (e) {
       print("❌ Status Update Error: $e");
     }
   }
+
 
   // ==========================
   // 📌 읽고싶어요
@@ -161,77 +255,85 @@ class BookDetailController extends GetxController {
       return;
     }
 
+    final bool before = isWishlisted.value;
+
+    // 🌟 UI를 먼저 토글
+    isWishlisted.value = !before;
+
     try {
-      if (isWishlisted.value) {
-        // [삭제] DELETE 요청
-        // API 명세에 따라 Query Param 혹은 Path Variable 확인 필요
-        // 여기서는 Query Param 방식(?book_id=...)을 가정
-        final res = await http.delete(
-          Uri.parse("$baseUrl/wishlist?book_id=$bookId"),
+      http.Response res;
+
+      if (before) {
+        // [삭제] 기존에 찜했으면 -> 해제 (DELETE)
+        res = await http.delete(
+          Uri.parse("$baseUrl/wishlist/$bookId"),
           headers: {"Authorization": "Bearer $token"},
         );
-
-        if (res.statusCode == 200 || res.statusCode == 204) {
-          isWishlisted.value = false;
-          Get.snackbar("완료", "읽고싶어요에서 제거되었습니다.");
-        }
+        print("🟥 DELETE status: ${res.statusCode}");
       } else {
-        // [추가] POST 요청
-        final res = await http.post(
-          Uri.parse("$baseUrl/wishlist?book_id=$bookId"), // 이미지 명세 참고: Query Param
+        // [추가] 찜 안했으면 -> 추가 (POST)
+
+        // 🔥 [핵심 추가] 만약 현재 '관심없음(ARCHIVED)' 상태라면 -> '읽기 전(PENDING)'으로 초기화
+        if (readingStatus.value == "ARCHIVED") {
+          print("🚀 '읽고싶어요' 클릭 -> '관심없음' 상태 자동 해제");
+          // API 호출하여 상태 변경 (UI 반영은 이 함수 내부에서 처리됨)
+          await updateReadingStatus("PENDING");
+        }
+
+        res = await http.post(
+          Uri.parse("$baseUrl/wishlist/?book_id=$bookId"),
           headers: {"Authorization": "Bearer $token"},
         );
-
-        if (res.statusCode == 200 || res.statusCode == 201) {
-          isWishlisted.value = true;
-          Get.snackbar("완료", "읽고싶어요에 추가되었습니다.");
-        }
+        print("🟩 POST status: ${res.statusCode}");
       }
+
+      // 실패 → UI rollback
+      if (res.statusCode != 200 &&
+          res.statusCode != 201 &&
+          res.statusCode != 204) {
+        isWishlisted.value = before;
+        print("🔁 ROLLBACK UI due to status: ${res.statusCode}");
+        Get.snackbar("오류", "요청 처리에 실패했습니다. (${res.statusCode})");
+      }
+      print("🎯 FINAL UI state: ${isWishlisted.value}");
+
     } catch (e) {
-      Get.snackbar("오류", "네트워크 오류가 발생했습니다.");
+      isWishlisted.value = before;
+      print("❌ Wishlist Error: $e");
     }
   }
 
   // ==========================
   // 📌 코멘트 등록 함수
   // ==========================
-  Future<void> submitComment(String content) async {
-    if (myRating.value == 0) {
-      Get.snackbar("오류", "별점을 먼저 선택해주세요");
-      return;
-    }
-
+  Future<void> submitComment(String content, bool isSpoiler) async {
     try {
-      final token = box.read("access_token") ?? "";
+      final token = box.read("access_token");
+      if (token == null || userBookId.value == -1) return;
+
+      final headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      };
+
+      final body = jsonEncode({
+        "user_book_id": userBookId.value,
+        "rating": myRating.value,
+        "content": content,
+        "is_spoiler": isSpoiler,
+      });
+
       final res = await http.post(
-        Uri.parse("$baseUrl/reviews/"), // 또는 /upsert
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
-          "book_id": bookId,
-          "rating": myRating.value,
-          "content": content,
-          "is_spoiler": false,
-        }),
+        Uri.parse("$baseUrl/reviews/upsert"),
+        headers: headers,
+        body: body,
       );
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        // ✅ 1. UI 상태 즉시 변경 (낙관적 업데이트)
-        isCommented.value = true;
-
-        // ⚠️ 문제의 원인: fetchReviews가 내 점수를 0으로 초기화하지 않도록 주의
-        // fetchReviews(); <--- 이걸 바로 호출하면 서버 타이밍 이슈로 0점이 될 수 있음
-
-        Get.back(); // 오버레이 닫기
-        Get.snackbar("완료", "리뷰가 등록되었습니다.");
-
-        // ✅ 2. 약간의 딜레이 후 서버 데이터 갱신 (선택 사항)
-        // Future.delayed(const Duration(milliseconds: 500), () => fetchReviews());
-
+      if (res.statusCode == 200) {
+        fetchReviews();
+        print("리뷰 등록 완료");
       } else {
-        Get.snackbar("오류", "등록 실패 : ${res.statusCode}");
+        print("리뷰 등록 실패: ${res.body}");
       }
     } catch (e) {
       print("Error: $e");
@@ -256,6 +358,53 @@ class BookDetailController extends GetxController {
           borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
         ),
       );
+    }
+  }
+
+  // ==========================
+  // 📌 코멘트 버튼 클릭 (내 리뷰 열기)
+  // ==========================
+  void openMyReview() {
+    if (myReviewId != -1) {
+      Get.toNamed("/review/detail", arguments: myReviewId);
+    }
+  }
+
+  // ==========================
+  // 📌 별점 즉시 저장 (코멘트 없이 가능)
+  // ==========================
+  Future<void> submitRating(double rating) async {
+    try {
+      final token = box.read("access_token");
+      if (token == null || userBookId.value == -1) return;
+
+      final headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      };
+
+      final body = jsonEncode({
+        "user_book_id": userBookId.value,
+        "rating": rating,
+        "content": "",
+        "is_spoiler": false,
+      });
+
+      final res = await http.post(
+        Uri.parse("$baseUrl/reviews/upsert"),
+        headers: headers,
+        body: body,
+      );
+
+      if (res.statusCode == 200) {
+        print("⭐ Rating saved successfully");
+        fetchReviews();
+        fetchBookDetail();
+      } else {
+        print("❌ Failed to save rating: ${res.body}");
+      }
+    } catch (e) {
+      print("🚨 Error saving rating: $e");
     }
   }
 
@@ -291,5 +440,37 @@ class BookDetailController extends GetxController {
   void selectedMenu() async {
     Get.back(); // 오버레이 닫기
     // 다른 팝업 연결
+  }
+
+  // ==========================
+  // 📌 관심없어요 (모든 상태 해제)
+  // ==========================
+  Future<void> onNotInterested() async {
+    // 1. '읽고싶어요'가 체크되어 있다면 DELETE 요청
+    if (isWishlisted.value) {
+      await onWantToRead();
+    }
+
+    // 2. 독서 상태를 '관심없음(ARCHIVED)'으로 변경
+    await updateReadingStatus("ARCHIVED");
+  }
+
+  // ==========================
+  // 📌 [추가] 평점 요약 정보 조회 (GET /reviews/books/{id}/summary)
+  // ==========================
+  Future<void> fetchRatingSummary() async {
+    try {
+      final res =
+      await http.get(Uri.parse("$baseUrl/reviews/books/$bookId/summary"));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        // API 명세: {"average_rating": 0, "review_count": 0}
+        averageRating.value = (data["average_rating"] as num).toDouble();
+        totalReviewCount.value = (data["review_count"] as num).toInt();
+      }
+    } catch (e) {
+      print("❌ Rating Summary Error: $e");
+    }
   }
 }
