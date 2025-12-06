@@ -26,6 +26,11 @@ import '../features/book_storage/bindings/book_storage_binding.dart';
 import '../features/splash/pages/splash_view.dart';
 import '../features/settings/pages/settings_view.dart';
 import '../features/settings/bindings/settings_binding.dart';
+
+// ✅추가
+import '../features/review_list/bindings/review_list_binding.dart';
+import '../features/review_list/pages/review_list_page.dart';
+
 abstract class Routes {
   static const splash = '/splash';
   static const initial = '/';
@@ -43,6 +48,8 @@ abstract class Routes {
   static const tasteAnalysis = '/taste_analysis';
 
   static const bookStorage = '/book_storage';
+
+  static const reviewList = '/review/list'; // ✅ 추가
 }
 
 class AppPages {
@@ -64,5 +71,8 @@ class AppPages {
     GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()
     ),
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
+
+    // ✅ 추가
+    GetPage(name: Routes.reviewList, page: () => const ReviewListPage(), binding: ReviewListBinding()),
   ];
 }

@@ -34,6 +34,17 @@ class BookDetailController extends GetxController {
       ["READING", "COMPLETED"].contains(readingStatus.value);
 
   int myReviewId = -1;
+  final RxString myContent = "".obs;
+
+  List<Map<String, dynamic>> get bestReviews {
+    if (reviews.isEmpty) return [];
+    // 좋아요 순
+    final sortedList = List<Map<String, dynamic>>.from(reviews);
+    sortedList.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
+
+    // 상위 3개만 반환
+    return sortedList.take(3).toList();
+  }
 
   @override
   void onInit() {
@@ -97,7 +108,7 @@ class BookDetailController extends GetxController {
       );
 
       if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
+        final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
         reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
         final myUserId = box.read("user_id");
@@ -108,9 +119,11 @@ class BookDetailController extends GetxController {
           isCommented.value = true;
           myReviewId = mine["id"];
           myRating.value = (mine["rating"] as num).toDouble();
+          myContent.value = mine["content"] ?? "";
         } else {
           isCommented.value = false;
           myRating.value = 0.0;
+          myContent.value = "";
         }
       } else {
         print("❌ Review fetch failed: ${res.statusCode}");
@@ -136,19 +149,14 @@ class BookDetailController extends GetxController {
       if (res.statusCode != 200) return;
 
       final body = res.body.trim();
-
-      // 문자열 단독 응답 대비
       if (!body.startsWith("{")) {
         readingStatus.value = body.replaceAll('"', '');
         return;
       }
 
       final decoded = jsonDecode(body);
-
-      // 💡 서버가 주는 값 그대로 사용
       userBookId.value = decoded["user_book_id"] ?? -1;
 
-      // 서버가 status를 주면 그대로 반영
       if (decoded["status"] != null) {
         readingStatus.value = decoded["status"];
       } else {
@@ -188,13 +196,6 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 내 별점 변경
-  // ==========================
-  void updateMyRating(double rating) {
-    myRating.value = rating;
-  }
-
-  // ==========================
   // 📌 독서 상태 업데이트
   // ==========================
   Future<void> updateReadingStatus(String status) async {
@@ -208,11 +209,9 @@ class BookDetailController extends GetxController {
       final Map<String, dynamic> bodyData = {"status": status};
 
       if (userBookId.value != -1) {
-        // 기존 서재 책
         bodyData["user_book_id"] = userBookId.value;
         print("🚀 상태 변경 요청 (기존): $status / userBookId=${userBookId.value}");
       } else {
-        // 처음 추가하는 책
         bodyData["book_id"] = bookId;
         print("🚀 상태 변경 요청 (신규): $status / bookId=$bookId");
       }
@@ -311,13 +310,15 @@ class BookDetailController extends GetxController {
       final token = box.read("access_token");
       if (token == null || userBookId.value == -1) return;
 
+      myContent.value = content;
+
       final headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       };
 
       final body = jsonEncode({
-        "user_book_id": userBookId.value,
+        "book_id": bookId,
         "rating": myRating.value,
         "content": content,
         "is_spoiler": isSpoiler,
@@ -337,6 +338,26 @@ class BookDetailController extends GetxController {
       }
     } catch (e) {
       print("Error: $e");
+    }
+  }
+
+  // ==========================
+  // 📌 리뷰 삭제
+  // ==========================
+  Future<void> _deleteReview() async {
+    final token = box.read("access_token");
+    final res = await http.delete(
+      Uri.parse("$baseUrl/reviews/$myReviewId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200 || res.statusCode == 204) {
+      myRating.value = 0.0;
+      isCommented.value = false;
+      myReviewId = -1;
+      myContent.value = "";
+      await fetchBookDetail();
+      await fetchReviews();
+      print("🗑️ 리뷰 삭제 완료");
     }
   }
 
@@ -371,12 +392,27 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 별점 즉시 저장 (코멘트 없이 가능)
+  // 📌 내 별점 변경
+  // ==========================
+  void updateMyRating(double rating) {
+    myRating.value = rating;
+  }
+
+  // ==========================
+  // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
   Future<void> submitRating(double rating) async {
     try {
       final token = box.read("access_token");
       if (token == null || userBookId.value == -1) return;
+
+      final bool hasContent = myContent.value.isNotEmpty;
+
+      // 0점 처리 로직
+      if (rating == 0.0 && !hasContent && myReviewId != -1) {
+        await _deleteReview();
+        return;
+      }
 
       final headers = {
         "Content-Type": "application/json",
@@ -384,9 +420,9 @@ class BookDetailController extends GetxController {
       };
 
       final body = jsonEncode({
-        "user_book_id": userBookId.value,
+        "book_id": bookId,
         "rating": rating,
-        "content": "",
+        "content": hasContent ? myContent.value : null,
         "is_spoiler": false,
       });
 
@@ -398,8 +434,9 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         print("⭐ Rating saved successfully");
-        fetchReviews();
-        fetchBookDetail();
+        myRating.value = rating;
+        await fetchReviews();
+        await fetchBookDetail();
       } else {
         print("❌ Failed to save rating: ${res.body}");
       }

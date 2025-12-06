@@ -44,6 +44,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         elevation: 0,
         backgroundColor: Colors.white.withOpacity(opacity),
         automaticallyImplyLeading: false,
+        centerTitle: true,
         title: Opacity(
           opacity: opacity,
           child: Obx(() => Text(
@@ -98,9 +99,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+      alignment: Alignment.center,
       child: Obx(() => RatingBar(
         initialRating: controller.myRating.value,
-        minRating: 0.5,
+        minRating: 0.0,
         allowHalfRating: true,
         itemCount: 5,
         itemPadding: const EdgeInsets.symmetric(horizontal: 2),
