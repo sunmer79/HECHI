@@ -23,11 +23,14 @@ class ActionButtons extends GetView<BookDetailController> {
               icon: Icons.edit,
               label: "코멘트",
               isActive: controller.isCommented.value,
+              /*
               onTap: () {
                 controller.isCommented.value
                     ? controller.openMyReview() // 내 리뷰 열기
                     : controller.onWriteReview(); // 새 리뷰 작성
               },
+              */
+              onTap: () { Get.toNamed('/bookmark', arguments: controller.bookId); }
             ),
             _buildBtn(
               icon: Icons.remove_red_eye,
