@@ -12,6 +12,9 @@ import '../features/my_read/controllers/my_read_controller.dart';
 import '../features/search/pages/search_view.dart';
 import '../features/search/controllers/search_controller.dart';
 
+import '../features/reading_registration/pages/reading_registration_view.dart';
+import '../features/reading_registration/controllers/reading_registration_controller.dart';
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -48,6 +51,10 @@ class MainWrapper extends GetView<AppController> {
       Get.put(MyReadController());
     }
 
+    if (!Get.isRegistered<ReadingRegistrationController>()) {
+      Get.put(ReadingRegistrationController());
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
@@ -57,7 +64,7 @@ class MainWrapper extends GetView<AppController> {
           children: [
             const MainpageView(),
             const SearchView(),
-            _buildPlaceholder("독서 등록 페이지"),
+            const ReadingRegistrationView(),
             _buildPlaceholder("리워드 페이지"),
             MyReadView(),
           ],

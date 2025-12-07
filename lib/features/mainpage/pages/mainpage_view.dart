@@ -190,7 +190,7 @@ class MainpageView extends GetView<MainpageController> {
 
             const SizedBox(height: 40),
 
-            // 5. 급상승 검색 도서 헤더
+            // 5. 검색 순위 도서 헤더
             GestureDetector(
               onTap: () => Get.to(() => const TrendingListPage()),
               child: Padding(

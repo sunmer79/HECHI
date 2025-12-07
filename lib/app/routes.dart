@@ -26,6 +26,12 @@ import '../features/book_storage/bindings/book_storage_binding.dart';
 import '../features/splash/pages/splash_view.dart';
 import '../features/settings/pages/settings_view.dart';
 import '../features/settings/bindings/settings_binding.dart';
+
+import '../features/reading_registration/bindings/reading_registration_binding.dart';
+import '../features/reading_registration/pages/reading_registration_view.dart';
+import '../features/reading_registration/pages/stopper_detail_view.dart';
+import '../features/reading_registration/pages/recent_books_view.dart';
+
 abstract class Routes {
   static const splash = '/splash';
   static const initial = '/';
@@ -43,7 +49,7 @@ abstract class Routes {
   static const tasteAnalysis = '/taste_analysis';
 
   static const bookStorage = '/book_storage';
-}
+  static const readingRegistration = '/reading_registration';}
 
 class AppPages {
   static final pages = [
@@ -61,8 +67,13 @@ class AppPages {
     GetPage(name: Routes.readingDetail, page: () => const ReadingDetailView(), binding: ReadingDetailBinding()),
 
     GetPage(name: Routes.tasteAnalysis, page: () => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
-    GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()
-    ),
+    GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()),
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
+    GetPage(name: Routes.readingRegistration, page: () => const ReadingRegistrationView(), binding: ReadingRegistrationBinding(),
+      children: [
+        GetPage(name: '/stopper_detail', page: () => const StopperDetailView(),),
+        GetPage(name: '/recent_books', page: () => const RecentBooksView(),),
+      ],
+    ),
   ];
 }
