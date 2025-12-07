@@ -1,110 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../widgets/dialogs/option_sheet.dart';
 
 class HighlightItem extends StatelessWidget {
-  final int id;
-  final int page;
-  final String sentence;
-  final String date;
+  final Map<String, dynamic> data;
   final VoidCallback onDelete;
-  final VoidCallback onMemo;
+  final VoidCallback? onCreateMemo;
 
   const HighlightItem({
     super.key,
-    required this.id,
-    required this.page,
-    required this.sentence,
-    required this.date,
+    required this.data,
     required this.onDelete,
-    required this.onMemo,
+    this.onCreateMemo,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(top: 30, left: 17, right: 17),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 37,
-                height: 37,
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1ECD9),
-                  borderRadius: BorderRadius.circular(90),
-                ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. 타임라인 (노란색)
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF9C4),
+                shape: BoxShape.circle,
               ),
-              Expanded(
-                child: Container(
-                  width: 1,
-                  color: const Color(0xFF4DB56C),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 21),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.only(top: 5, bottom: 25),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 페이지 + more
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'p.$page',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => showOptionSheet(
-                          context: context,
-                          title: '하이라이트',
-                          onDelete: onDelete,
-                          onMemo: onMemo,
-                          isMemo: false, // 메모 작성
-                        ),
-                        child: const Icon(
-                          Icons.more_horiz,
-                          size: 18,
-                          color: Color(0xFFDADADA),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+              child: const Icon(Icons.push_pin_outlined, color: Color(0xFFFBC02D), size: 20),
+            ),
+            Container(width: 2, height: 60, color: const Color(0xFFFFF9C4)),
+          ],
+        ),
+        const SizedBox(width: 15),
 
-                  Text(
-                    sentence,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFF3F3F3F),
-                      height: 1.33,
+        // 2. 내용
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  // 인용구 배경 (디자인에 따라 조정 가능)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFDE7), // 아주 연한 노랑
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "\"${data['sentence'] ?? ""}\"",
+                      style: const TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF717171),
-                      height: 1.54,
+                  // 더보기 버튼 (우측 상단)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.bottomSheet(
+                          OptionSheet(
+                            type: 'highlight',
+                            onDelete: onDelete,
+                            onCreateMemo: onCreateMemo,
+                          ),
+                          backgroundColor: Colors.transparent,
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Icon(Icons.more_horiz, color: Colors.grey, size: 20),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text("p.${data['page']}", style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 10),
+                  Text(
+                    data['created_date']?.toString().substring(0, 10) ?? "",
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -30,7 +30,7 @@ class ActionButtons extends GetView<BookDetailController> {
                     : controller.onWriteReview(); // 새 리뷰 작성
               },
               */
-              onTap: () { Get.toNamed('/bookmark', arguments: controller.bookId); }
+              onTap: () { Get.toNamed('/book_note', arguments: { 'bookId': controller.bookId, 'tabIndex': 0 }); }
             ),
             _buildBtn(
               icon: Icons.remove_red_eye,

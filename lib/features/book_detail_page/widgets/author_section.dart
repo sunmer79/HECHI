@@ -50,7 +50,7 @@ class AuthorSection extends GetView<BookDetailController> {
         if (hasMoreAuthors)
           InkWell(
             onTap: () {
-              Get.toNamed('/authors');  // ⭐ 전체 작가 페이지로 이동
+              Get.toNamed('/authors'); // ⭐ 전체 작가 페이지로 이동
             },
             child: Container(
               width: double.infinity,

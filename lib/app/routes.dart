@@ -29,9 +29,7 @@ import '../features/settings/bindings/settings_binding.dart';
 
 // ✅ 추가
 import '../features/book_note/bindings/book_note_binding.dart';
-import '../features/book_note/pages/bookmark_page.dart';
-import '../features/book_note/pages/highlight_page.dart';
-import '../features/book_note/pages/memo_page.dart';
+import '../features/book_note/pages/book_note_page.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -52,9 +50,7 @@ abstract class Routes {
   static const bookStorage = '/book_storage';
 
   // ✅ 추가
-  static const bookmark = '/bookmark';
-  static const highlight = "/highlight";
-  static const memo = "/memo";
+  static const bookNote = '/book_note';
 }
 
 class AppPages {
@@ -78,8 +74,6 @@ class AppPages {
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
 
     // ✅ 추가
-    GetPage(name: Routes.bookmark, page: () => const BookmarkPage(), binding: BookNoteBinding()),
-    GetPage(name: Routes.highlight, page: () => const HighlightPage(), binding: BookNoteBinding()),
-    GetPage(name: Routes.memo, page: () => const MemoPage(), binding: BookNoteBinding()),
+    GetPage(name: Routes.bookNote, page: () => const BookNotePage(), binding: BookNoteBinding()),
   ];
 }

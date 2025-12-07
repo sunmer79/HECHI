@@ -1,89 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-void showOptionSheet({
-  required BuildContext context,
-  required String title,
-  required VoidCallback onDelete,
-  required VoidCallback onMemo,
-  required bool isMemo, // true면 "메모 수정", false면 "메모 작성"
-}) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-    ),
-    builder: (_) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        /// HEADER
-        Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 17),
-          alignment: Alignment.center,
-          child: Stack(
-            children: [
-              Center(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Text(
-                    "취소",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF4DB56C),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+class OptionSheet extends StatelessWidget {
+  final VoidCallback onDelete;
 
-        const Divider(height: 1, thickness: 1, color: Color(0xFFE5E5E5)),
+  final String actionLabel;
+  final VoidCallback onAction;
 
-        /// DELETE
-        _optionItem(label: "삭제", color: Colors.red, callback: onDelete),
+  const OptionSheet({
+    super.key,
+    required this.onDelete,
+    required this.actionLabel,
+    required this.onAction,
+  });
 
-        /// MEMO WRITE or MEMO EDIT
-        _optionItem(
-          label: isMemo ? "메모 수정" : "메모 작성",
-          color: Colors.black,
-          callback: onMemo,
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _optionItem({
-  required String label,
-  required Color color,
-  required VoidCallback callback,
-}) {
-  return InkWell(
-    onTap: callback,
-    child: Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 17),
-      alignment: Alignment.centerLeft,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 30),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE5E5E5), width: 1),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 17, color: color)),
-    ),
-  );
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 헤더
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+            alignment: Alignment.centerRight,
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
+            child: GestureDetector(
+              onTap: () => Get.back(),
+              child: const Text('취소', style: TextStyle(color: Color(0xFF4DB56C), fontSize: 14)),
+            ),
+          ),
+
+          _buildOption(actionLabel, onAction),
+
+          // 삭제 메뉴
+          _buildOption("삭제", () {
+            Get.back();
+            Get.defaultDialog(
+              title: "삭제",
+              middleText: "정말 삭제하시겠습니까?",
+              textConfirm: "삭제",
+              textCancel: "취소",
+              confirmTextColor: Colors.white,
+              buttonColor: Colors.red,
+              onConfirm: () {
+                Get.back();
+                onDelete();
+              },
+            );
+          }, isDelete: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOption(String label, VoidCallback onTap, {bool isDelete = false}) {
+    return InkWell(
+      onTap: () {
+        Get.back(); // 시트 닫기
+        onTap();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5)))),
+        child: Text(label, style: TextStyle(fontSize: 16, color: isDelete ? Colors.red : Colors.black)),
+      ),
+    );
+  }
 }

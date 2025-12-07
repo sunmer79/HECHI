@@ -1,238 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../widgets/dialogs/option_sheet.dart';
 
-class MemoItem extends StatefulWidget {
-  final int id;
-  final int page;
-  final String content;
-  final String date;
+class MemoItem extends StatelessWidget {
+  final Map<String, dynamic> data;
   final VoidCallback onDelete;
-  final ValueChanged<String> onUpdate;
 
-  const MemoItem({
-    super.key,
-    required this.id,
-    required this.page,
-    required this.content,
-    required this.date,
-    required this.onDelete,
-    required this.onUpdate,
-  });
-
-  @override
-  State<MemoItem> createState() => _MemoItemState();
-}
-
-class _MemoItemState extends State<MemoItem> {
-  bool isExpanded = false;
+  const MemoItem({super.key, required this.data, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(top: 30, left: 17, right: 17),
-      child: Row(
-        children: [
-          Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+              child: const Icon(Icons.description_outlined, color: Color(0xFFEF5350), size: 20),
+            ),
+            Container(width: 2, height: 60, color: const Color(0xFFFFEBEE)),
+          ],
+        ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 37,
-                height: 37,
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1ECD9),
-                  borderRadius: BorderRadius.circular(90),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFFFAFAFA), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFEEEEEE))),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(data['content'] ?? "", style: const TextStyle(fontSize: 14, height: 1.6, color: Colors.black87))),
+                    GestureDetector(
+                      onTap: () => Get.bottomSheet(OptionSheet(type: 'memo', onDelete: onDelete), backgroundColor: Colors.transparent),
+                      child: const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: Container(
-                  width: 1,
-                  color: const Color(0xFF4DB56C),
-                ),
-              ),
+              const SizedBox(height: 8),
+              Row(children: [
+                Text("p.${data['page']}", style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Text(data['created_date']?.toString().substring(0, 10) ?? "", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              ]),
             ],
           ),
-          const SizedBox(width: 21),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.only(top: 5, bottom: 25),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // p.xx + more
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'p.${widget.page}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => showOptionSheet(
-                          context: context,
-                          title: '메모',
-                          onDelete: widget.onDelete,
-                          onMemo: _openEditSheet,
-                          isMemo: true, // 메모 수정
-                        ),
-                        child: const Icon(
-                          Icons.more_horiz,
-                          size: 18,
-                          color: Color(0xFFDADADA),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 내용 (3줄 + 더보기 / 접기)
-                  AnimatedCrossFade(
-                    firstChild: Text(
-                      widget.content,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF3F3F3F),
-                        height: 1.33,
-                      ),
-                    ),
-                    secondChild: Text(
-                      widget.content,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF3F3F3F),
-                        height: 1.33,
-                      ),
-                    ),
-                    crossFadeState: isExpanded
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    duration: const Duration(milliseconds: 200),
-                  ),
-
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isExpanded = !isExpanded;
-                      });
-                    },
-                    child: Text(
-                      isExpanded ? '접기' : '더보기',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF4DB56C),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  Text(
-                    widget.date,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF717171),
-                      height: 1.54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
-  }
-
-  // ===== 메모 수정 BottomSheet (B안) =====
-  void _openEditSheet() {
-    final controller = TextEditingController(text: widget.content);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-      ),
-      builder: (context) {
-        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: SizedBox(
-            height: 260,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 헤더 (취소 / 메모 수정)
-                Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 17),
-                  alignment: Alignment.center,
-                  child: Stack(
-                    children: [
-                      const Center(
-                        child: Text(
-                          '메모 수정',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Text(
-                            '완료',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF4DB56C),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Color(0xFFE5E5E5)),
-
-                // TextField
-                Expanded(
-                  child: Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
-                    child: TextField(
-                      controller: controller,
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: '메모 내용을 입력하세요',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 완료 버튼 탭 처리
-                // (위 '완료'에서 Navigator.pop 후 실제 업데이트 호출)
-              ],
-            ),
-          ),
-        );
-      },
-    ).then((_) {
-      // BottomSheet 닫힌 뒤 내용 변경되었으면 콜백
-      final newContent = controller.text.trim();
-      if (newContent != widget.content.trim()) {
-        widget.onUpdate(newContent);
-      }
-    });
   }
 }
