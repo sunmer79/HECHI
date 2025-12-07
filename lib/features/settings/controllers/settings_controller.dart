@@ -5,15 +5,20 @@ import 'package:hechi/app/routes.dart';
 class SettingsController extends GetxController {
   final box = GetStorage();
 
-  // 🚪 로그아웃 로직
-  void logout() {
-    // 1. 저장된 토큰 및 자동 로그인 설정 삭제
-    box.remove('access_token');
-    box.remove('refresh_token');
-    box.remove('is_auto_login');
+  // ✅ 알림 설정 상태 (기본값: true)
+  RxBool isNotificationOn = true.obs;
 
-    // 2. 로그인 페이지로 이동 (모든 스택 제거)
-    Get.offAllNamed(Routes.login);
+  @override
+  void onInit() {
+    super.onInit();
+    // 저장된 알림 설정 불러오기
+    isNotificationOn.value = box.read('is_notification_on') ?? true;
+  }
+
+  // 🔔 알림 토글 함수
+  void toggleNotification(bool value) {
+    isNotificationOn.value = value;
+    box.write('is_notification_on', value); // 설정 저장
   }
 
   // 📞 고객센터 이동
@@ -21,9 +26,12 @@ class SettingsController extends GetxController {
     Get.toNamed(Routes.customer);
   }
 
-  // (추후 구현) 회원 탈퇴 등
-  void deleteAccount() {
-    // 탈퇴 로직 구현 예정
-    Get.snackbar("알림", "탈퇴 기능은 준비 중입니다.");
+  // 🚪 로그아웃
+  void logout() {
+    box.remove('access_token');
+    box.remove('refresh_token');
+    box.remove('is_auto_login');
+
+    Get.offAllNamed(Routes.login);
   }
 }
