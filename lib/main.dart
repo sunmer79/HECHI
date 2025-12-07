@@ -6,7 +6,7 @@ import 'app/routes.dart';
 import 'app/bindings/app_binding.dart';
 
 void main() async {
-  await GetStorage.init(); // ✅ [필수] 저장소 초기화
+  await GetStorage.init();
   runApp(const MyApp());
 }
 

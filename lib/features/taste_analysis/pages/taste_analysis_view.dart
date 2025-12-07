@@ -14,7 +14,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         backgroundColor: const Color(0xFF4DB56C),
         elevation: 0,
         centerTitle: true,
-        // [수정] 닉네임 연동
         title: Obx(() => Text(
           '${controller.userProfile['nickname'] ?? 'HECHI'}님의 취향분석',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
@@ -39,10 +38,10 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
             children: [
               _buildGreenHeader(),
 
-              _buildCountSection(), // 평가 수
+              _buildCountSection(), // ✅ 수정된 카드형 평가 수 섹션
               const Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
 
-              _buildStarSection(), // 별점 분포 및 하단 통계(간격 수정됨)
+              _buildStarSection(), // 별점 분포
               const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
               _buildTimeSection(),
@@ -66,7 +65,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
       color: const Color(0xFF4DB56C),
       child: Obx(() {
-        // [수정] 닉네임 연동 ('HECHI' -> userProfile['nickname'])
         final nickname = controller.userProfile['nickname'] ?? 'HECHI';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,6 +86,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
+  // ✅ [수정] MyReadView의 색상 테마를 적용한 카드형 디자인
   Widget _buildCountSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
@@ -95,28 +94,59 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text("평가 수", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
-          const SizedBox(height: 20),
-          Obx(() => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildExpandedCountItem('소설', controller.countStats['소설']!),
-              _buildExpandedCountItem('시', controller.countStats['시']!),
-              _buildExpandedCountItem('에세이', controller.countStats['에세이']!),
-              _buildExpandedCountItem('만화', controller.countStats['만화']!),
-            ],
-          )),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 16),
 
-  Widget _buildExpandedCountItem(String label, int value) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text("$value", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xFF3F3F3F))),
-          const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              // ✅ MyReadView의 연한 초록 배경색 (0xFFE8F5E9) 적용
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(12),
+              // 테두리는 아주 연하게
+              border: Border.all(color: const Color(0xFF4DB56C).withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                // 포인트 아이콘 (책)
+                const Icon(Icons.menu_book_rounded, color: Color(0xFF4DB56C), size: 28),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Obx(() => Text(
+                      controller.totalReviews.value,
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4DB56C), // ✅ 진한 초록색 텍스트
+                      ),
+                    )),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "권",
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF4DB56C), // ✅ 진한 초록색
+                          fontWeight: FontWeight.w500
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // 하단 설명 텍스트는 너무 진하지 않게
+                Text(
+                  "지금까지 읽고 평가한 책",
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xFF4DB56C).withOpacity(0.8) // 초록색 톤
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -138,7 +168,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Column(
                   children: [
                     const SizedBox(height: 18),
@@ -168,13 +198,13 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
               const SizedBox(width: 20),
 
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} Reviews", isLarge: true, showStar: true),
                     const SizedBox(height: 20),
-                    _buildSummaryItem(controller.readingRate.value, "Reading rate", isLarge: true),
+                    _buildSummaryItem(controller.readingRate.value, "완독률", isLarge: true),
                   ],
                 ),
               ),
@@ -182,12 +212,10 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           ),
           const SizedBox(height: 30),
 
-          // ✅ [수정] 하단 통계: 간격 균등 분배 (spaceEvenly) 및 좌우 패딩 제거(부모 패딩만 따름)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 간격 균등하게
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
-              // 구분선을 넣고 싶다면 여기에 Container(width:1, height:20, color:Colors.grey[300]) 추가 가능
               _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
               _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
             ],
@@ -202,24 +230,24 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
       children: [
         Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
       ],
     );
   }
 
   Widget _buildSummaryItem(String value, String label, {bool isLarge = false, bool showStar = false}) {
     return Column(
-      crossAxisAlignment: isLarge ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Row(
-          mainAxisAlignment: isLarge ? MainAxisAlignment.start : MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(value, style: TextStyle(fontSize: isLarge ? 24 : 20, fontWeight: FontWeight.bold, color: const Color(0xFF3F3F3F))),
             if (showStar) ...[const SizedBox(width: 4), const Icon(Icons.star, size: 20, color: Color(0xFF81C784))],
           ],
         ),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
       ],
     );
   }
