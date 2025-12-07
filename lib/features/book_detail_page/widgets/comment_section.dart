@@ -77,7 +77,7 @@ class CommentSection extends GetView<BookDetailController> {
                     const Text('평균 평점', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 2),
                     Text(
-                      '${controller.book["average_rating"] ?? "-"}',
+                      '${(controller.book["average_rating"] ?? "-").toStringAsFixed(2)}',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],

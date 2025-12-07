@@ -12,15 +12,58 @@ import '../widgets/comment_section.dart';
 
 import '../../../core/widgets/bottom_bar.dart';
 
-class BookDetailPage extends GetView<BookDetailController> {
+class BookDetailPage extends StatefulWidget {
   const BookDetailPage({super.key});
+  @override
+  State<BookDetailPage> createState() => _BookDetailPageState();
+}
+
+class _BookDetailPageState extends State<BookDetailPage> {
+  final scrollController = ScrollController();
+  double opacity = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController.addListener(() {
+      double offset = scrollController.offset;
+      // 0~150 사이에서 0 -> 1 로 변환
+      double newOpacity = ((offset - 260) / 100).clamp(0.0, 1.0);
+      setState(() => opacity = newOpacity);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final controller = Get.find<BookDetailController>();
 
-      // AppBar 제거됨
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white.withOpacity(opacity),
+        automaticallyImplyLeading: false,
+        title: Opacity(
+          opacity: opacity,
+          child: Obx(() => Text(
+            controller.book["title"] ?? "",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          )),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back,
+              color: opacity > 0.5 ? Colors.black : Colors.white),
+          onPressed: () => Get.back(),
+        ),
+      ),
+
       bottomNavigationBar: const BottomBar(),
 
       body: Obx(() {
@@ -28,37 +71,20 @@ class BookDetailPage extends GetView<BookDetailController> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // 데이터가 로드되면 화면 표시
         return SingleChildScrollView(
+          controller: scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. 커버 이미지
               const BookCoverHeader(),
-
-              // 2. 책 정보 (제목, 평점, 메타정보)
               const BookInfoSection(),
-
-
-              // 3. 액션 버튼 (읽고싶어요, 코멘트 등)
-              const ActionButtons(),
-
+              ActionButtons(),
               const Divider(thickness: 0.5, color: Color(0xFFD4D4D4)),
-
-              // 4. 드래그 가능한 별점 위젯
               _buildInteractiveRatingBar(),
-
               const Divider(height: 8, thickness: 8, color: Color(0xFFD4D4D4)),
-
-              // 5. 저자/역자 정보
               const AuthorSection(),
-
               const Divider(height: 8, thickness: 8, color: Color(0xFFD4D4D4)),
-
-              // 6. 코멘트 섹션 (그래프 + 리뷰)
               const CommentSection(),
-
-              // 하단 여백 확보
               const Divider(height: 8, thickness: 8, color: Color(0xFFD4D4D4)),
             ],
           ),
@@ -67,45 +93,27 @@ class BookDetailPage extends GetView<BookDetailController> {
     );
   }
 
-  // flutter_rating_bar 적용
   Widget _buildInteractiveRatingBar() {
+    final controller = Get.find<BookDetailController>();
     return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
-        alignment: Alignment.center,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 300),
-          alignment: Alignment.center,
-
-          // ✨ Obx와 KeyedSubtree 조합 (완벽합니다)
-          child: Obx(() => KeyedSubtree(
-            key: ValueKey(controller.myRating.value), // 값이 바뀌면 강제 리빌드
-            child: RatingBar(
-              initialRating: controller.myRating.value,
-              minRating: 0.5,
-              direction: Axis.horizontal,
-              allowHalfRating: true,
-              itemCount: 5,
-              itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
-              // updateOnDrag: true, // 필요 시 주석 해제 (메인화면 수정 방지하려면 false)
-
-              ratingWidget: RatingWidget(
-                full: const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
-                half: Stack(
-                  alignment: Alignment.center,
-                  children: const [
-                    Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)), // 배경 회색
-                    Icon(Icons.star_half_rounded, color: Color(0xFFFFD700)), // 앞면 금색
-                  ],
-                ),
-                empty: const Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)),
-              ),
-              onRatingUpdate: (rating) {
-                controller.updateMyRating(rating);
-              },
-            ),
-          )),
-        )
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+      child: Obx(() => RatingBar(
+        initialRating: controller.myRating.value,
+        minRating: 0.5,
+        allowHalfRating: true,
+        itemCount: 5,
+        itemPadding: const EdgeInsets.symmetric(horizontal: 2),
+        ratingWidget: RatingWidget(
+          full: const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
+          half: const Icon(Icons.star_half_rounded, color: Color(0xFFFFD700)),
+          empty: const Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)),
+        ),
+        onRatingUpdate: (rating) {
+          controller.updateMyRating(rating);
+          controller.submitRating(rating);
+        },
+      )),
     );
   }
 }
