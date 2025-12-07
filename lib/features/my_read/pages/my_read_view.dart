@@ -21,7 +21,6 @@ class MyReadView extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // ✅ [수정 완료] 설정 아이콘 클릭 시 -> Settings 페이지로 이동
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.black54),
             onPressed: () => Get.toNamed(Routes.settings),
@@ -49,6 +48,7 @@ class MyReadView extends StatelessWidget {
             _buildSectionHeader("취향 분석"),
             _buildTasteAnalysisPreview(controller),
 
+            // ✅ 수정된 태그 섹션 호출
             _buildInsightTagCloud(controller),
 
             _buildSeeAllTasteButton(),
@@ -237,13 +237,11 @@ class MyReadView extends StatelessWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: ClipRRect(
-                                // ✅ [수정] 모서리 반경 4 -> 7로 변경 (TasteAnalysis와 통일)
                                 borderRadius: BorderRadius.circular(7),
                                 child: LinearProgressIndicator(
                                   value: (d['ratio'] as num).toDouble(),
                                   backgroundColor: const Color(0xFFF5F5F5),
                                   color: Color(d['color'] as int),
-                                  // ✅ [수정] 두께 8 -> 12로 변경 (TasteAnalysis와 통일)
                                   minHeight: 12,
                                 ),
                               ),
@@ -302,6 +300,7 @@ class MyReadView extends StatelessWidget {
     });
   }
 
+  // ✅ [수정] 태그 클라우드 섹션 (API 연동 적용)
   Widget _buildInsightTagCloud(MyReadController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -313,23 +312,28 @@ class MyReadView extends StatelessWidget {
           SizedBox(
             height: 180,
             width: double.infinity,
-            child: Stack(
-              children: controller.insightTags.map((tag) {
-                final align = tag['align'];
-                final alignment = align is Alignment ? align : Alignment.center;
-                return Align(
-                  alignment: alignment,
-                  child: Text(
-                    tag['text'] as String,
-                    style: TextStyle(
-                      fontSize: (tag['size'] as num).toDouble(),
-                      color: Color(tag['color'] as int),
-                      fontWeight: (tag['size'] as num) > 20 ? FontWeight.bold : FontWeight.w500,
+            child: Obx(() {
+              if (controller.insightTags.isEmpty) {
+                return const Center(child: Text("아직 분석된 태그가 없습니다.", style: TextStyle(color: Colors.grey)));
+              }
+              return Stack(
+                children: controller.insightTags.map((tag) {
+                  final align = tag['align'];
+                  final alignment = align is Alignment ? align : Alignment.center;
+                  return Align(
+                    alignment: alignment,
+                    child: Text(
+                      tag['text'] as String,
+                      style: TextStyle(
+                        fontSize: (tag['size'] as num).toDouble(),
+                        color: Color(tag['color'] as int),
+                        fontWeight: (tag['size'] as num) > 20 ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }).toList(),
+              );
+            }),
           ),
         ],
       ),

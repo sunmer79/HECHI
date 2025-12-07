@@ -98,3 +98,33 @@ class GenreStat {
     );
   }
 }
+
+class UserInsightResponse {
+  final String analysis;
+  final List<InsightTag> tags;
+
+  UserInsightResponse({required this.analysis, required this.tags});
+
+  factory UserInsightResponse.fromJson(Map<String, dynamic> json) {
+    return UserInsightResponse(
+      analysis: json['analysis'] ?? '',
+      tags: (json['tags'] as List? ?? [])
+          .map((e) => InsightTag.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class InsightTag {
+  final String label;
+  final double weight; // 0.0 ~ 1.0 사이의 가중치
+
+  InsightTag({required this.label, required this.weight});
+
+  factory InsightTag.fromJson(Map<String, dynamic> json) {
+    return InsightTag(
+      label: json['label'] ?? '',
+      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
