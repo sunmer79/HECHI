@@ -10,15 +10,21 @@ class MyReadController extends GetxController {
   final box = GetStorage();
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
+  // AppController 연결 (프로필, 소개글)
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
   RxString get description => Get.find<AppController>().description;
 
+  // 통계 관련 변수
   final RxMap<String, int> activityStats = <String, int>{'evaluations': 0, 'comments': 0}.obs;
   RxList<Map<String, dynamic>> ratingDistData = <Map<String, dynamic>>[].obs;
   RxString averageRating = "0.0".obs;
   RxString totalReviews = "0.0".obs;
   RxString readingRate = "0%".obs;
+
+  // 태그 관련 변수
   RxList<Map<String, dynamic>> insightTags = <Map<String, dynamic>>[].obs;
+
+  // ✅ [복구] 캘린더 관련 변수
   RxInt currentYear = DateTime.now().year.obs;
   RxInt currentMonth = DateTime.now().month.obs;
   RxMap<int, String> calendarBooks = <int, String>{}.obs;
@@ -29,6 +35,7 @@ class MyReadController extends GetxController {
     fetchMyReadData();
   }
 
+  // 데이터 새로고침 (캘린더 포함)
   Future<void> fetchMyReadData() async {
     String? token = box.read('access_token');
     if (token == null) return;
@@ -38,16 +45,17 @@ class MyReadController extends GetxController {
     await Future.wait([
       _fetchStats(token),
       _fetchInsightTags(token),
-      fetchCalendarData(token),
+      fetchCalendarData(token), // ✅ 캘린더 데이터 호출
     ]);
   }
 
   void updateProfile(String newName, String newDesc) {
-    Get.find<AppController>().updateLocalProfile(newName, newDesc);
+    Get.find<AppController>().updateUserProfile(newName, newDesc);
     Get.back();
     Get.snackbar("성공", "프로필이 변경되었습니다.", backgroundColor: Colors.white);
   }
 
+  // ✅ [복구] 월 변경 함수
   void changeMonth(int offset) {
     DateTime newDate = DateTime(currentYear.value, currentMonth.value + offset);
     currentYear.value = newDate.year;
@@ -59,6 +67,7 @@ class MyReadController extends GetxController {
     }
   }
 
+  // ✅ [복구] 캘린더 API 연동
   Future<void> fetchCalendarData(String token) async {
     final url = Uri.parse('$baseUrl/analytics/calendar-month?year=${currentYear.value}&month=${currentMonth.value}');
     try {
@@ -133,7 +142,7 @@ class MyReadController extends GetxController {
     }
   }
 
-  // ✅ [수정] 태그 위치 간격 넓힘 (TasteAnalysis와 동일)
+  // ✅ [유지] 태그 순위 기반 로직
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
     try {
@@ -145,15 +154,10 @@ class MyReadController extends GetxController {
 
         if (insightData.tags.isEmpty) return;
 
-        // ✅ 위치 좌표를 더 바깥쪽으로 수정하여 간격 확보
         final List<Alignment> positions = [
-          const Alignment(0.0, -0.3),  // 1등: 중앙 상단
-          const Alignment(0.85, 0.6),  // 2등: 우측 하단 (끝으로)
-          const Alignment(-0.85, -0.7),// 3등: 좌측 상단 (끝으로)
-          const Alignment(-0.75, 0.75),// 4등: 좌측 하단 (끝으로)
-          const Alignment(0.9, -0.6),  // 5등: 우측 상단 (끝으로)
-          const Alignment(0.0, 0.9),   // 6등: 중앙 하단 (아래로)
-          const Alignment(-0.9, 0.1),  // 7등: 좌측 중앙 (끝으로)
+          const Alignment(0.0, -0.2), const Alignment(0.7, 0.5), const Alignment(-0.7, -0.6),
+          const Alignment(-0.6, 0.6), const Alignment(0.8, -0.5), const Alignment(0.0, 0.85),
+          const Alignment(-0.85, 0.1),
         ];
 
         List<Map<String, dynamic>> newTags = [];
