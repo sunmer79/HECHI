@@ -42,7 +42,7 @@ class CommentSection extends GetView<BookDetailController> {
           Container(
             width: double.infinity,
             color: const Color(0x4CD1ECD9),
-            padding: const EdgeInsets.fromLTRB(17, 20, 17, 0),
+            padding: const EdgeInsets.fromLTRB(17, 20, 17, 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -65,6 +65,9 @@ class CommentSection extends GetView<BookDetailController> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 35),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF9F9F9),
+              ),
               child: const Center(child: Text("첫 번째 리뷰를 남겨보세요!", style: TextStyle(color: Colors.grey))),
             )
           else
@@ -74,6 +77,10 @@ class CommentSection extends GetView<BookDetailController> {
               itemCount: bestReviews.length, // 최대 3개
               itemBuilder: (_, index) => ReviewCard(
                 review: bestReviews[index],
+                type: ReviewCardType.simple,
+                onLikeToggle: (int id) {
+                  controller.toggleLike(id);
+                },
               ),
             ),
 

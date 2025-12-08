@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/review_list_controller.dart';
 
 class OptionBottomSheet extends StatelessWidget {
-  // 🔥 Controller를 직접 찾지 않고, 부모로부터 기능을 전달받습니다.
+
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 

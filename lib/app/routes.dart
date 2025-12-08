@@ -30,6 +30,8 @@ import '../features/settings/bindings/settings_binding.dart';
 // ✅추가
 import '../features/review_list/bindings/review_list_binding.dart';
 import '../features/review_list/pages/review_list_page.dart';
+import '../features/review_detail/bindings/review_detail_binding.dart';
+import '../features/review_detail/pages/review_detail_page.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -49,7 +51,9 @@ abstract class Routes {
 
   static const bookStorage = '/book_storage';
 
-  static const reviewList = '/review/list'; // ✅ 추가
+  // ✅ 추가
+  static const reviewList = '/review/list';
+  static const reviewDetail = '/review_detail';
 }
 
 class AppPages {
@@ -74,5 +78,6 @@ class AppPages {
 
     // ✅ 추가
     GetPage(name: Routes.reviewList, page: () => const ReviewListPage(), binding: ReviewListBinding()),
+    GetPage(name: Routes.reviewDetail, page: () => const ReviewDetailPage(), binding: ReviewDetailBinding()),
   ];
 }
