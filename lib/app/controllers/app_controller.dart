@@ -9,11 +9,39 @@ class AppController extends GetxController {
   final box = GetStorage();
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
-  // 하단바 인덱스 관리
   RxInt currentIndex = 0.obs;
+
+  // ✅ [핵심] 앱 전체에서 공유할 내 정보 변수
+  final RxMap<String, dynamic> userProfile = <String, dynamic>{}.obs;
+  final RxString description = "나만의 소개글을 입력해주세요!".obs;
 
   void changeIndex(int index) {
     currentIndex.value = index;
+  }
+
+  // ✅ [핵심] 내 정보 가져오기 (공용 함수)
+  Future<void> fetchUserProfile() async {
+    String? token = box.read('access_token');
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+          Uri.parse('$baseUrl/auth/me'),
+          headers: {"Authorization": "Bearer $token"}
+      );
+      if (response.statusCode == 200) {
+        userProfile.value = jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("Global Profile Error: $e");
+    }
+  }
+
+  // ✅ [핵심] 프로필 업데이트 (공용 함수)
+  void updateLocalProfile(String newName, String newDesc) {
+    userProfile['nickname'] = newName;
+    userProfile.refresh(); // 강제 갱신으로 모든 페이지 알림
+    description.value = newDesc;
   }
 
   // 🚀 앱 실행 시 호출되는 자동 로그인 체크 함수
