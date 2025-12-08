@@ -51,7 +51,7 @@ class BookmarkItem extends StatelessWidget {
                       Get.bottomSheet(
                         OptionSheet(
                           onDelete: onDelete,
-                          actionLabel: hasMemo ? "메모 수정" : "메모 작성",
+                          editLabel: hasMemo ? "메모 수정" : "메모 작성",
 
                           onAction: () {
                             Get.to(() => BookmarkCreationOverlay(

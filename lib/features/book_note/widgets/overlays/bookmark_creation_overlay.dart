@@ -36,7 +36,7 @@ class BookmarkCreationOverlay extends StatelessWidget {
                   onTap: () => Get.back(),
                   child: const Text("취소", style: TextStyle(color: Colors.black, fontSize: 16)),
                 ),
-                const Text("북마크 작성", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(initialPage == null ? "북마크 작성" : "북마크 수정", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 GestureDetector(
                   onTap: () {
                     final page = int.tryParse(pageController.text) ?? 0;

@@ -91,7 +91,7 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     }
   }
 
-  // 🔥 [복구됨] 개별 리스트 조회 함수 (작성 후 갱신을 위해 필요)
+  // 개별 리스트 조회 함수 (작성 후 갱신을 위해 필요)
   Future<void> fetchBookmarks() async => await _fetchData("/bookmarks/books/$bookId", bookmarks);
   Future<void> fetchHighlights() async => await _fetchData("/highlights/books/$bookId", highlights);
   Future<void> fetchMemos() async => await _fetchData("/notes/books/$bookId", memos);
@@ -119,9 +119,9 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   // 📌 정렬 로직
   // ==========================
   void _applySort(RxList<Map<String, dynamic>> list) {
-    if (currentSort.value == "page") {
+    if (currentSort.value == "page") { // 페이지 순
       list.sort((a, b) => (a['page'] ?? 0).compareTo(b['page'] ?? 0));
-    } else {
+    } else { // 날짜 순
       list.sort((a, b) => (b['created_date'] ?? "").compareTo(a['created_date'] ?? ""));
     }
     list.refresh();

@@ -7,18 +7,19 @@ class HighlightCreationOverlay extends StatelessWidget {
   final int? initialPage;
   final String? initialSentence;
   final String? initialMemo;
-  final bool? initalIsShared;
+  final bool? initialIsPublic;
 
   late final TextEditingController pageController;
   late final TextEditingController sentenceController;
   late final TextEditingController memoController;
 
-  const HighlightCreationOverlay({
+  HighlightCreationOverlay({
     super.key,
     required this.onSubmit,
     this.initialPage,
     this.initialSentence,
     this.initialMemo,
+    this.initialIsPublic = false,
   }) {
     pageController = TextEditingController(text: initialPage?.toString() ?? "");
     sentenceController = TextEditingController(text: initialSentence ?? "");
@@ -38,11 +39,11 @@ class HighlightCreationOverlay extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(onTap: () => Get.back(), child: const Text("취소", style: TextStyle(fontSize: 16))),
-                const Text("하이라이트 작성", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(initialSentence == null ? "하이라이트 작성" : "하이라이트 수정", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 GestureDetector(
                   onTap: () {
                     final page = int.tryParse(pageController.text) ?? 0;
-                    onSubmit(page, sentenceController.text, memoController.text);
+                    onSubmit(page, sentenceController.text, memoController.text, initialIsPublic);
                     Get.back();
                   },
                   child: const Text("확인", style: TextStyle(fontSize: 16)),
@@ -77,26 +78,25 @@ class HighlightCreationOverlay extends StatelessWidget {
 
             // 문장 입력
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
               decoration: const BoxDecoration(
                 border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
               ),
               child: TextField(
                 controller: sentenceController,
-                maxLines: 3, // 문장은 적당히 길게
+                maxLines: 5,
                 decoration: const InputDecoration(
                   hintText: "기억하고 싶은 문장을 입력해주세요.",
                   border: InputBorder.none,
                   hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
-                style: const TextStyle(fontSize: 15, height: 1.5),
               ),
             ),
 
             //  메모 입력
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(15),
                 child: TextField(
                   controller: memoController,
                   maxLines: null,
@@ -107,7 +107,6 @@ class HighlightCreationOverlay extends StatelessWidget {
                     border: InputBorder.none,
                     hintStyle: TextStyle(fontSize: 14, color: Color(0xFFBDBDBD)),
                   ),
-                  style: const TextStyle(fontSize: 14),
                 ),
               ),
             ),

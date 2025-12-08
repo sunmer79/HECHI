@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 
 class OptionSheet extends StatelessWidget {
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
+  final String editLabel;
 
   final String actionLabel;
   final VoidCallback onAction;
@@ -10,8 +12,8 @@ class OptionSheet extends StatelessWidget {
   const OptionSheet({
     super.key,
     required this.onDelete,
-    required this.actionLabel,
-    required this.onAction,
+    required this.onEdit,
+    this.editLabel = "수정", // "메모 작성", "메모 수정" 등 상황에 맞게 변경 가능
   });
 
   @override
@@ -29,47 +31,56 @@ class OptionSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
             alignment: Alignment.centerRight,
-            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+            ),
             child: GestureDetector(
               onTap: () => Get.back(),
               child: const Text('취소', style: TextStyle(color: Color(0xFF4DB56C), fontSize: 14)),
             ),
           ),
 
-          _buildOption(actionLabel, onAction),
+          // 수정 (또는 작성) 버튼
+          InkWell(
+            onTap: () {
+              Get.back(); // 시트 닫고
+              onEdit();   // 수정 화면 열기
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5))),
+              ),
+              child: Text(editLabel, style: const TextStyle(fontSize: 16, color: Colors.black)),
+            ),
+          ),
 
-          // 삭제 메뉴
-          _buildOption("삭제", () {
-            Get.back();
-            Get.defaultDialog(
-              title: "삭제",
-              middleText: "정말 삭제하시겠습니까?",
-              textConfirm: "삭제",
-              textCancel: "취소",
-              confirmTextColor: Colors.white,
-              buttonColor: Colors.red,
-              onConfirm: () {
-                Get.back();
-                onDelete();
-              },
-            );
-          }, isDelete: true),
+          // 삭제 버튼
+          InkWell(
+            onTap: () {
+              Get.back();
+              // 삭제 재확인 다이얼로그
+              Get.defaultDialog(
+                title: "삭제",
+                middleText: "정말 삭제하시겠습니까?",
+                textConfirm: "삭제",
+                textCancel: "취소",
+                confirmTextColor: Colors.white,
+                buttonColor: Colors.red,
+                onConfirm: () {
+                  Get.back(); // 다이얼로그 닫기
+                  onDelete(); // 실제 삭제 로직 실행
+                },
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              child: const Text("삭제", style: TextStyle(fontSize: 16, color: Colors.red)),
+            ),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildOption(String label, VoidCallback onTap, {bool isDelete = false}) {
-    return InkWell(
-      onTap: () {
-        Get.back(); // 시트 닫기
-        onTap();
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5)))),
-        child: Text(label, style: TextStyle(fontSize: 16, color: isDelete ? Colors.red : Colors.black)),
       ),
     );
   }
