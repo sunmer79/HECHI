@@ -205,7 +205,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} 권", isLarge: true, showStar: true),
+                    _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} Reviews", isLarge: true, showStar: true),
                     const SizedBox(height: 20),
                     _buildSummaryItem(controller.readingRate.value, "완독률", isLarge: true),
                   ],
