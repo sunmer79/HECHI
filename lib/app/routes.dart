@@ -27,8 +27,16 @@ import '../features/splash/pages/splash_view.dart';
 import '../features/settings/pages/settings_view.dart';
 import '../features/settings/bindings/settings_binding.dart';
 
+
+// ✅추가
+import '../features/review_list/bindings/review_list_binding.dart';
+import '../features/review_list/pages/review_list_page.dart';
+import '../features/review_detail/bindings/review_detail_binding.dart';
+import '../features/review_detail/pages/review_detail_page.dart';
+
 import '../features/calendar/pages/calendar_view.dart';
 import '../features/calendar/bindings/calendar_binding.dart';
+
 
 abstract class Routes {
   static const splash = '/splash';
@@ -47,6 +55,10 @@ abstract class Routes {
   static const tasteAnalysis = '/taste_analysis';
 
   static const bookStorage = '/book_storage';
+
+  // ✅ 추가
+  static const reviewList = '/review/list';
+  static const reviewDetail = '/review_detail';
 
   static const calendar = '/calendar';
 }
@@ -70,6 +82,12 @@ class AppPages {
     GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()
     ),
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
+
+
+    // ✅ 추가
+    GetPage(name: Routes.reviewList, page: () => const ReviewListPage(), binding: ReviewListBinding()),
+    GetPage(name: Routes.reviewDetail, page: () => const ReviewDetailPage(), binding: ReviewDetailBinding()),
+
   GetPage(
   name: Routes.calendar,
   page: () => const CalendarView(),
