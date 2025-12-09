@@ -435,9 +435,6 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      // 상태 업데이트
-      myRating.value = rating;
-      myReviewId = data["id"];
       print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
 
       reviews.refresh();
