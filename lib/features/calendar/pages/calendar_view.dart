@@ -96,7 +96,7 @@ class CalendarView extends GetView<CalendarController> {
                 // 2. 요일 헤더
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((day) {
+                  children: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) {
                     return Expanded(
                       child: Center(
                         child: Text(
