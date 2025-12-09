@@ -117,7 +117,6 @@ class BookDetailController extends GetxController {
                 (e) => e["is_my_review"] == true || e["user_id"] == myUserId);
 
         if (mine != null) {
-          isCommented.value = true;
           myReviewId = mine["id"];
           myRating.value = (mine["rating"] as num?)?.toDouble() ?? 0.0;
           myContent.value = mine["content"] ?? "";
@@ -436,10 +435,6 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      // 상태 업데이트
-      myRating.value = rating;
-      myReviewId = data["id"];
-      isCommented.value = true;
       print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
 
       reviews.refresh();
