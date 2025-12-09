@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:hechi/features/review_list/controllers/review_list_controller.dart';
 import '../controllers/review_detail_controller.dart';
-import '../../../core/widgets/bottom_bar.dart';
+import '../../review_list/widgets/option_bottom_sheet.dart';
 
 class ReviewDetailPage extends GetView<ReviewDetailController> {
   const ReviewDetailPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<ReviewDetailController>()) {
-      Get.put(ReviewDetailController());
+    ReviewListController? reviewList;
+    if (Get.isRegistered<ReviewListController>()) {
+      reviewList = Get.find<ReviewListController>();
     }
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -28,38 +29,48 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.black),
-            onPressed: () { },
-          )
+          Obx(() {
+            if (!controller.isMyReview.value) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.more_horiz, color: Colors.black),
+              onPressed: () {
+                final reviewId = controller.review['id'];
+                Get.bottomSheet(
+                  OptionBottomSheet(
+                    reviewId: reviewId,
+                      onEdit: (id) => reviewList?.editReview(id),
+                      onDelete: (id) async {
+                        await reviewList?.deleteComment(id);
+                        Get.back(result: true);
+                      },
+                  ),
+                  backgroundColor: Colors.transparent,
+                );
+              },
+            );
+          }),
         ],
       ),
-      bottomNavigationBar: const BottomBar(),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoadingReview.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildMainContent(),
-                      _buildActionButtons(),
-                      _buildStatsLine(),
-                      const Divider(thickness: 1, height: 1, color: Color(0xFFF3F3F3)),
-                      _buildCommentList(),
-                    ],
-                  ),
-                );
-              }),
-            ),
-            _buildBottomInputField(),
-          ],
-        ),
+          child: Obx(() {
+            if (controller.isLoadingReview.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildMainContent(),
+                  _buildActionButtons(),
+                  _buildStatsLine(),
+                  const Divider(
+                      thickness: 1, height: 1, color: Color(0xFFF3F3F3)),
+                  _buildCommentList(),
+                ],
+              ),
+            );
+          }),
       ),
     );
   }
@@ -302,11 +313,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                             ),
                           ],
                         ),
-                        if (isMyComment)
-                          GestureDetector(
-                            onTap: () => _showDeleteDialog(context, comment['id']),
-                            child: const Icon(Icons.more_horiz, size: 16, color: Color(0xFFABABAB)),
-                          )
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -366,30 +372,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           GestureDetector(
             onTap: controller.postComment,
             child: const Text("등록", style: TextStyle(color: Color(0xFF4DB56C), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 삭제 확인 다이얼로그
-  void _showDeleteDialog(BuildContext context, int commentId) {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text("댓글 삭제", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("이 댓글을 삭제하시겠습니까?"),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("취소", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back(); // 다이얼로그 닫기
-              controller.deleteComment(commentId); // 컨트롤러 삭제 함수 실행
-            },
-            child: const Text("삭제", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -278,8 +278,9 @@ class ReviewCard extends StatelessWidget {
             onTap: () {
               Get.bottomSheet(
                 OptionBottomSheet(
-                  onEdit: () => onEdit?.call(review['id']),
-                  onDelete: () => onDelete?.call(review['id']),
+                  reviewId: review['id'],
+                  onEdit: onEdit,
+                  onDelete: onDelete,
                 ),
                 backgroundColor: Colors.transparent,
               );

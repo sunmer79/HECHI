@@ -21,6 +21,7 @@ class ReviewDetailController extends GetxController {
   final TextEditingController commentInputController = TextEditingController();
   late RxBool isLiked = false.obs;
   late RxInt likeCount = 0.obs;
+  final RxBool isMyReview = false.obs;
 
   @override
   void onInit() {
@@ -42,17 +43,20 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 데이터 세팅 (공통 함수)
+  // 📌 리뷰 데이터 세팅
   // ==========================
   void setReviewData(Map<String, dynamic> data) {
     review.value = data;
     isLiked.value = data['is_liked'] ?? false;
     likeCount.value = data["like_count"] ?? 0;
+
+    isMyReview.value = data["is_my_review"] ?? false;
+
     isLoadingReview.value = false;
   }
 
   // ==========================
-  // 📌 리뷰 상세 조회 (ID로 조회)
+  // 📌 코멘트 상세 조회
   // ==========================
   Future<void> fetchReviewDetail(int reviewId) async {
     try {
