@@ -4,13 +4,9 @@ import 'package:hechi/app/theme.dart';
 import 'package:hechi/app/routes.dart';
 import 'package:hechi/app/controllers/app_controller.dart';
 import 'package:hechi/core/widgets/bottom_bar.dart';
-
 import '../features/mainpage/pages/mainpage_view.dart';
-import '../features/mainpage/controllers/mainpage_controller.dart';
 import '../features/my_read/pages/my_read_view.dart';
-import '../features/my_read/controllers/my_read_controller.dart';
 import '../features/search/pages/search_view.dart';
-import '../features/search/controllers/search_controller.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -32,21 +28,6 @@ class MainWrapper extends GetView<AppController> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<AppController>()) {
-      Get.put(AppController());
-    }
-
-    if (!Get.isRegistered<MainpageController>()) {
-      Get.put(MainpageController());
-    }
-
-    if (!Get.isRegistered<BookSearchController>()) {
-      Get.put(BookSearchController());
-    }
-
-    if (!Get.isRegistered<MyReadController>()) {
-      Get.put(MyReadController());
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,
