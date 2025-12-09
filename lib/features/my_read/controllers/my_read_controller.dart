@@ -4,27 +4,30 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_stats_model.dart';
+import '../../../app/controllers/app_controller.dart';
 
 class MyReadController extends GetxController {
   final box = GetStorage();
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
-  // 1. User Profile Data
-  final RxMap<String, dynamic> userProfile = <String, dynamic>{}.obs;
+  // AppController 연결 (프로필, 소개글)
+  RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
+  RxString get description => Get.find<AppController>().description;
 
-  // 2. Activity Stats (평가/코멘트)
+  // 통계 관련 변수
   final RxMap<String, int> activityStats = <String, int>{'evaluations': 0, 'comments': 0}.obs;
-
-  // 3. Analytics Data (별점 분포 그래프용)
   RxList<Map<String, dynamic>> ratingDistData = <Map<String, dynamic>>[].obs;
-
-  // 요약 정보
   RxString averageRating = "0.0".obs;
-  RxString totalReviews = "0".obs;
+  RxString totalReviews = "0.0".obs;
   RxString readingRate = "0%".obs;
 
-  // 4. ✅ [수정] 독서 선호 태그 (API 연동을 위해 RxList로 변경)
+  // 태그 관련 변수
   RxList<Map<String, dynamic>> insightTags = <Map<String, dynamic>>[].obs;
+
+  // ✅ [복구] 캘린더 관련 변수
+  RxInt currentYear = DateTime.now().year.obs;
+  RxInt currentMonth = DateTime.now().month.obs;
+  RxMap<int, String> calendarBooks = <int, String>{}.obs;
 
   @override
   void onInit() {
@@ -32,25 +35,62 @@ class MyReadController extends GetxController {
     fetchMyReadData();
   }
 
-  void fetchMyReadData() async {
+  // 데이터 새로고침 (캘린더 포함)
+  Future<void> fetchMyReadData() async {
     String? token = box.read('access_token');
     if (token == null) return;
 
+    Get.find<AppController>().fetchUserProfile();
+
     await Future.wait([
-      _fetchUserProfile(token),
       _fetchStats(token),
-      _fetchInsightTags(token), // ✅ 태그 데이터 호출 추가
+      _fetchInsightTags(token),
+      fetchCalendarData(token), // ✅ 캘린더 데이터 호출
     ]);
   }
 
-  Future<void> _fetchUserProfile(String token) async {
+  void updateProfile(String newName, String newDesc) {
+    Get.find<AppController>().updateUserProfile(newName, newDesc);
+    Get.back();
+    Get.snackbar("성공", "프로필이 변경되었습니다.", backgroundColor: Colors.white);
+  }
+
+  // ✅ [복구] 월 변경 함수
+  void changeMonth(int offset) {
+    DateTime newDate = DateTime(currentYear.value, currentMonth.value + offset);
+    currentYear.value = newDate.year;
+    currentMonth.value = newDate.month;
+
+    String? token = box.read('access_token');
+    if (token != null) {
+      fetchCalendarData(token);
+    }
+  }
+
+  // ✅ [복구] 캘린더 API 연동
+  Future<void> fetchCalendarData(String token) async {
+    final url = Uri.parse('$baseUrl/analytics/calendar-month?year=${currentYear.value}&month=${currentMonth.value}');
     try {
-      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: {"Authorization": "Bearer $token"});
+      final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
       if (response.statusCode == 200) {
-        userProfile.value = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        Map<int, String> newBooks = {};
+        List days = data['days'] ?? [];
+        for (var dayData in days) {
+          String dateStr = dayData['date'];
+          DateTime date = DateTime.parse(dateStr);
+          List items = dayData['items'] ?? [];
+          if (items.isNotEmpty) {
+            String thumbnail = items[0]['thumbnail'] ?? "";
+            if (thumbnail.isNotEmpty) {
+              newBooks[date.day] = thumbnail;
+            }
+          }
+        }
+        calendarBooks.value = newBooks;
       }
     } catch (e) {
-      print("User Profile Error: $e");
+      print("Calendar fetch error: $e");
     }
   }
 
@@ -102,7 +142,7 @@ class MyReadController extends GetxController {
     }
   }
 
-  // ✅ [신규] 태그 API 연동 로직 (TasteAnalysis와 동일)
+  // ✅ [유지] 태그 순위 기반 로직
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
     try {
@@ -114,42 +154,28 @@ class MyReadController extends GetxController {
 
         if (insightData.tags.isEmpty) return;
 
-        // 화면 배치 위치
         final List<Alignment> positions = [
-          const Alignment(0.0, -0.2),  // 중앙 상단 (가장 중요한 태그)
-          const Alignment(0.5, 0.3),   // 우측 하단
-          const Alignment(-0.5, -0.4), // 좌측 상단
-          const Alignment(-0.4, 0.4),  // 좌측 하단
-          const Alignment(0.6, -0.5),  // 우측 상단
-          const Alignment(0.1, 0.7),   // 중앙 하단
-          const Alignment(-0.7, 0.0),  // 좌측 중앙
+          const Alignment(0.0, -0.2), const Alignment(0.7, 0.5), const Alignment(-0.7, -0.6),
+          const Alignment(-0.6, 0.6), const Alignment(0.8, -0.5), const Alignment(0.0, 0.85),
+          const Alignment(-0.85, 0.1),
         ];
 
         List<Map<String, dynamic>> newTags = [];
-
         var sortedTags = insightData.tags;
         sortedTags.sort((a, b) => b.weight.compareTo(a.weight));
         var topTags = sortedTags.take(positions.length).toList();
 
         for (int i = 0; i < topTags.length; i++) {
           final tag = topTags[i];
-          final weight = tag.weight;
-
-          // 크기 및 색상 동적 설정
-          final double size = 14.0 + (weight * 20.0);
+          final double size = 40.0 - (i * 4.0);
 
           int color;
-          if (weight > 0.8) {
-            color = 0xFF2E7D32;
-          } else if (weight > 0.6) {
-            color = 0xFF43A047;
-          } else if (weight > 0.4) {
-            color = 0xFF66BB6A;
-          } else if (weight > 0.2) {
-            color = 0xFF81C784;
-          } else {
-            color = 0xFFA5D6A7;
-          }
+          if (i == 0) { color = 0xFF2E7D32; }
+          else if (i == 1) { color = 0xFF388E3C; }
+          else if (i == 2) { color = 0xFF43A047; }
+          else if (i == 3) { color = 0xFF4DB56C; }
+          else if (i == 4) { color = 0xFF66BB6A; }
+          else { color = 0xFF81C784; }
 
           newTags.add({
             'text': tag.label,
@@ -158,7 +184,6 @@ class MyReadController extends GetxController {
             'align': positions[i],
           });
         }
-
         insightTags.value = newTags;
       }
     } catch (e) {

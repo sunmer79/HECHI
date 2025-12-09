@@ -32,27 +32,35 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB56C)));
         }
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGreenHeader(),
+        // ✅ [추가] 당겨서 새로고침 기능
+        return RefreshIndicator(
+          color: const Color(0xFF4DB56C),
+          onRefresh: () async {
+            await controller.fetchData();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildGreenHeader(),
 
-              _buildCountSection(), // ✅ 수정된 카드형 평가 수 섹션
-              const Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
+                _buildCountSection(), // 카드형 평가 수
+                const Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
 
-              _buildStarSection(), // 별점 분포
-              const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                _buildStarSection(), // 별점 분포
+                const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-              _buildTimeSection(),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                _buildTimeSection(),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-              _buildTagSection(),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                _buildTagSection(), // 수정된 태그
+                const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-              _buildGenreSection(),
-              const SizedBox(height: 40),
-            ],
+                _buildGenreSection(),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         );
       }),
@@ -69,7 +77,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("$nickname PEDIA", style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+            Text("$nickname's Book", style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             const Text("취향분석", style: TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 24),
@@ -86,7 +94,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
-  // ✅ [수정] MyReadView의 색상 테마를 적용한 카드형 디자인
   Widget _buildCountSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
@@ -100,15 +107,12 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24),
             decoration: BoxDecoration(
-              // ✅ MyReadView의 연한 초록 배경색 (0xFFE8F5E9) 적용
               color: const Color(0xFFE8F5E9),
               borderRadius: BorderRadius.circular(12),
-              // 테두리는 아주 연하게
               border: Border.all(color: const Color(0xFF4DB56C).withOpacity(0.1)),
             ),
             child: Column(
               children: [
-                // 포인트 아이콘 (책)
                 const Icon(Icons.menu_book_rounded, color: Color(0xFF4DB56C), size: 28),
                 const SizedBox(height: 8),
                 Row(
@@ -121,7 +125,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF4DB56C), // ✅ 진한 초록색 텍스트
+                        color: Color(0xFF4DB56C),
                       ),
                     )),
                     const SizedBox(width: 4),
@@ -129,19 +133,18 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                       "권",
                       style: TextStyle(
                           fontSize: 16,
-                          color: Color(0xFF4DB56C), // ✅ 진한 초록색
+                          color: Color(0xFF4DB56C),
                           fontWeight: FontWeight.w500
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                // 하단 설명 텍스트는 너무 진하지 않게
                 Text(
                   "지금까지 읽고 평가한 책",
                   style: TextStyle(
                       fontSize: 12,
-                      color: const Color(0xFF4DB56C).withOpacity(0.8) // 초록색 톤
+                      color: const Color(0xFF4DB56C).withOpacity(0.8)
                   ),
                 ),
               ],
@@ -273,6 +276,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
+
   Widget _buildTagSection() {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -281,23 +285,28 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         child: Container(
           height: 180,
           width: double.infinity,
-          child: Stack(
-            children: controller.tags.map((tag) {
-              final align = tag['align'];
-              final alignment = align is Alignment ? align : Alignment.center;
-              return Align(
-                alignment: alignment,
-                child: Text(
-                  tag['text'] as String,
-                  style: TextStyle(
-                    fontSize: (tag['size'] as num).toDouble(),
-                    color: Color(tag['color'] as int),
-                    fontWeight: (tag['size'] as num) > 20 ? FontWeight.bold : FontWeight.w500,
+          child: Obx(() {
+            if (controller.totalReviews.value == "0" || controller.tags.isEmpty) {
+              return const Center(child: Text("아직 분석된 태그가 없습니다.", style: TextStyle(color: Colors.grey)));
+            }
+
+            return Stack(
+              children: controller.tags.map((tag) {
+                final align = tag['align'];
+                return Align(
+                  alignment: align is Alignment ? align : Alignment.center,
+                  child: Text(
+                    tag['text'] as String,
+                    style: TextStyle(
+                      fontSize: (tag['size'] as num).toDouble(),
+                      color: Color(tag['color'] as int),
+                      fontWeight: FontWeight.normal, // Regular 적용
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            );
+          }),
         ),
       ),
     );
