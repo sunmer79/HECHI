@@ -335,14 +335,16 @@ class BookDetailController extends GetxController {
     print("🚀 코멘트 등록 요청: $body"); // 디버깅용 로그
 
     final res = await http.post(
-      Uri.parse("$baseUrl/reviews/upsert"),
+      Uri.parse("$baseUrl/reviews"),
       headers: headers,
       body: body,
     );
 
     if (res.statusCode == 200) {
-      await fetchReviews();   // Sync
-      isCommented.value = true;  // UI 버튼 초록색
+      final data = jsonDecode(res.body);
+      myReviewId = data["id"];
+      await fetchReviews();
+      isCommented.value = true;
     }
   }
 
@@ -372,7 +374,7 @@ class BookDetailController extends GetxController {
   Future<void> onWriteReview() async {
     // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
-      Get.toNamed("/review/detail", arguments: myReviewId);
+      Get.toNamed("/review_detail", arguments: myReviewId);
     }
     // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
@@ -386,23 +388,14 @@ class BookDetailController extends GetxController {
       );
     }
   }
-
-  // ==========================
-  // 📌 코멘트 버튼 클릭 (내 리뷰 열기)
-  // ==========================
-  void openMyReview() {
-    if (myReviewId != -1) {
-      Get.toNamed("/review/detail", arguments: myReviewId);
-    }
-  }
-
+/*
   // ==========================
   // 📌 내 별점 변경
   // ==========================
   void updateMyRating(double rating) {
     myRating.value = rating;
   }
-
+*/
   // ==========================
   // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
@@ -422,9 +415,12 @@ class BookDetailController extends GetxController {
       "Authorization": "Bearer $token",
     };
 
+    final sendRating = (rating == 0.0) ? null : rating;
+
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
+      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });
@@ -438,9 +434,17 @@ class BookDetailController extends GetxController {
     );
 
     if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+
+      // 상태 업데이트
       myRating.value = rating;
-      await fetchReviews();
-      await fetchBookDetail();
+      myReviewId = data["id"];
+      isCommented.value = true;
+      print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
+
+      reviews.refresh();
+
+      await fetchBookDetail(); // 통계 갱신
     }
   }
 
@@ -536,6 +540,7 @@ class BookDetailController extends GetxController {
           target['is_liked'] = !currentLike;
           target['like_count'] = (target['like_count'] ?? 0) + (!currentLike ? 1 : -1);
           reviews[index] = target;
+          reviews.refresh();
         }
       } else {
         print("❌ 좋아요 실패: ${res.statusCode}");

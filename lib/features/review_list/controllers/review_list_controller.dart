@@ -9,7 +9,6 @@ class ReviewListController extends GetxController {
   final box = GetStorage();
 
   final int bookId = Get.arguments ?? 1;
-  final int myUserId = GetStorage().read("user_id") ?? -1;
 
   final RxBool isLoading = true.obs;
   final RxList<Map<String, dynamic>> reviews = <Map<String, dynamic>>[].obs;
@@ -44,12 +43,10 @@ class ReviewListController extends GetxController {
 
       if (res.statusCode == 200) {
         final List<dynamic> list = jsonDecode(res.body);
-        final parsedList = list
+        reviews.value = list
             .map((e) => Map<String, dynamic>.from(e))
             .where((e) => (e["content"] ?? "").toString().isNotEmpty)
             .toList();
-
-        reviews.value = parsedList;
         _applySort(); // 데이터 로드 후 정렬 적용
       } else {
         print("❌ 리뷰 로드 실패: ${res.statusCode}");
@@ -65,11 +62,9 @@ class ReviewListController extends GetxController {
   // 📌 정렬 로직 (내부 함수)
   // ==========================
   void _applySort() {
-    if (currentSort.value == "likes") {
-      // 좋아요 많은 순 (내림차순)
+    if (currentSort.value == "likes") { // 좋아요 많은 순 (내림차순)
       reviews.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
-    } else {
-      // 최신 순 (ID 내림차순)
+    } else { // 최신 순 (ID 내림차순)
       reviews.sort((a, b) => (b["id"] ?? 0).compareTo(a["id"] ?? 0));
     }
     reviews.refresh();
@@ -95,27 +90,36 @@ class ReviewListController extends GetxController {
   // 📌 좋아요 토글 API 호출
   // ==========================
   Future<void> toggleLike(int reviewId) async {
-    final token = box.read("access_token");
-    if (token == null) {
-      Get.snackbar("알림", "로그인이 필요합니다.");
-      return;
-    }
+    final index = reviews.indexWhere((r) => r["id"] == reviewId);
+    if (index == -1) return;
+
+    final review = reviews[index];
+
+    final bool prev = review["is_liked"] ?? false;
+
+    review["is_liked"] = !prev;
+    review["like_count"] = (review["like_count"] ?? 0) + (prev ? -1 : 1);
+    reviews[index] = review;
+    reviews.refresh();
 
     try {
-      // API 호출 (POST /reviews/{id}/like)
+      final token = box.read("access_token");
       final res = await http.post(
         Uri.parse("$baseUrl/reviews/$reviewId/like"),
         headers: {"Authorization": "Bearer $token"},
       );
 
-      if (res.statusCode == 200) {
-        print("✅ 좋아요 변경 성공 (ID: $reviewId)");
-      } else {
-        print("❌ 좋아요 실패: ${res.statusCode}");
-        // 필요하다면 여기서 리스트를 다시 불러오거나(fetchReviews), 에러 메시지를 띄웁니다.
+      if (res.statusCode != 200) {
+        review["is_liked"] = prev;
+        review["like_count"] = (review["like_count"] ?? 0) + (prev ? 1 : -1);
+        reviews[index] = review;
+        reviews.refresh();
       }
     } catch (e) {
-      print("❌ 좋아요 에러: $e");
+      review["is_liked"] = prev;
+      review["like_count"] = (review["like_count"] ?? 0) + (prev ? 1 : -1);
+      reviews[index] = review;
+      reviews.refresh();
     }
   }
 
@@ -134,11 +138,8 @@ class ReviewListController extends GetxController {
       }
 
       final rating = (target["rating"] as num?)?.toDouble() ?? 0.0;
-      final String? content = target['content'];
-      http.Response res;
 
-      print("--------------------------------------------------");
-      print("🔍 [디버깅] 삭제 프로세스 시작 (ID: $reviewId, Rating: $rating)");
+      http.Response res;
 
       if (rating == 0.0) {
         print("🔹 별점 0점이므로 완전 삭제 요청 (DELETE)");
@@ -148,24 +149,31 @@ class ReviewListController extends GetxController {
         );
       } else {
         print("🔹 별점($rating)은 유지하고 내용만 삭제 요청 (UPSERT)");
+
+        final headers = {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        };
+
+        final body = jsonEncode({
+          "book_id": bookId,
+          "rating": rating,
+          "content": null,
+          "is_spoiler": false,
+        });
+
         res = await http.post(
           Uri.parse("$baseUrl/reviews/upsert"),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $token",
-          },
-          body: jsonEncode({
-            "book_id": bookId,
-            "rating": rating,
-            "content": null,
-            "is_spoiler": false,
-          }),
+          headers: headers,
+          body: body,
         );
+        print("🚀 리뷰 삭제 요청: $body");
+
       }
-
       if (res.statusCode == 200 || res.statusCode == 204) {
+        final data = jsonDecode(res.body);
         Get.snackbar("완료", "삭제되었습니다.");
-
+        print("받은 값: ${data['content']}");
         // await fetchReviews();
 
         reviews.removeWhere((e) => e['id'] == reviewId);
@@ -195,6 +203,6 @@ class ReviewListController extends GetxController {
   // ==========================
   void editReview(int reviewId) {
     Get.back(); // 바텀시트 닫기
-    Get.toNamed("/review/detail", arguments: reviewId); // 상세/수정 페이지로 이동
+    Get.toNamed("/review_detail", arguments: reviewId); // 상세/수정 페이지로 이동
   }
 }

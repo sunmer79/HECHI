@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import '../../review_list/controllers/review_list_controller.dart';
+import '../../book_detail_page/controllers/book_detail_controller.dart';
 
 class ReviewDetailController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
@@ -24,8 +25,8 @@ class ReviewDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
 
+    final args = Get.arguments;
     if (args is int)
       fetchReviewDetail(args);
     else {
@@ -46,7 +47,7 @@ class ReviewDetailController extends GetxController {
   void setReviewData(Map<String, dynamic> data) {
     review.value = data;
     isLiked.value = data['is_liked'] ?? false;
-    likeCount.value = (data['like_count'] is int) ? data['like_count'] : 0;
+    likeCount.value = data["like_count"] ?? 0;
     isLoadingReview.value = false;
   }
 
@@ -122,6 +123,11 @@ class ReviewDetailController extends GetxController {
       if (res.statusCode == 200) {
         final List<dynamic> list = jsonDecode(utf8.decode(res.bodyBytes));
         comments.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
+
+        final int newCount = comments.length;
+        review["comment_count"] = newCount;
+        review.refresh();
+        syncCommentCount(reviewId, newCount);
       }
     } catch (e) {
       print("❌ 댓글 에러: $e");
@@ -141,9 +147,8 @@ class ReviewDetailController extends GetxController {
       final token = box.read('access_token');
       if (token == null) return;
 
-      final int reviewId = review['id'];
       final res = await http.post(
-        Uri.parse("$baseUrl/reviews/$reviewId/comments"),
+        Uri.parse("$baseUrl/reviews/${review['id']}/comments"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -155,9 +160,6 @@ class ReviewDetailController extends GetxController {
         commentInputController.clear();
         Get.focusScope?.unfocus();
         await fetchComments();
-        if (Get.isRegistered<ReviewListController>()) {
-          await Get.find<ReviewListController>().fetchReviews();
-        }
         Get.snackbar("성공", "댓글이 등록되었습니다.");
       } else {
         Get.snackbar("오류", "댓글 등록 실패: ${res.statusCode}");
@@ -181,6 +183,11 @@ class ReviewDetailController extends GetxController {
       if (res.statusCode == 200 || res.statusCode == 204) {
         Get.snackbar("완료", "댓글이 삭제되었습니다.");
         comments.removeWhere((e) => e['id'] == commentId);
+
+        if ((review['comment_count'] ?? 0) > 0) {
+          review['comment_count'] = review['comment_count'] - 1;
+          review.refresh();
+        }
       }
     } catch (e) {
       print("❌ 댓글 삭제 에러: $e");
@@ -196,7 +203,7 @@ class ReviewDetailController extends GetxController {
 
     final bool prevLiked = isLiked.value;
     isLiked.value = !prevLiked;
-    if (isLiked.value) likeCount.value++; else likeCount.value--;
+    likeCount.value += prevLiked ? -1 : 1;
 
     try {
       final res = await http.post(
@@ -206,13 +213,38 @@ class ReviewDetailController extends GetxController {
 
       if (res.statusCode != 200) {
         isLiked.value = prevLiked;
-        if (prevLiked) likeCount.value++; else likeCount.value--;
+        likeCount.value += prevLiked ? 1 : -1;
         print("❌ 좋아요 실패: ${res.statusCode}");
       }
     } catch (e) {
       isLiked.value = prevLiked;
-      if (prevLiked) likeCount.value++; else likeCount.value--;
+      likeCount.value += prevLiked ? 1 : -1;
       print("❌ 좋아요 에러: $e");
+    }
+  }
+
+  // ==========================
+  // 📌 댓글 카운트 동기화
+  // ==========================
+  void syncCommentCount(int reviewId, int newCount) {
+    if (Get.isRegistered<ReviewListController>()) {
+      final list = Get.find<ReviewListController>();
+      final index = list.reviews.indexWhere((r) => r["id"] == reviewId);
+
+      if (index != -1) {
+        list.reviews[index]["comment_count"] = newCount;
+        list.reviews.refresh();
+      }
+    }
+
+    if (Get.isRegistered<BookDetailController>()) {
+      final b = Get.find<BookDetailController>();
+      final index = b.reviews.indexWhere((r) => r["id"] == reviewId);
+
+      if (index != -1) {
+        b.reviews[index]["comment_count"] = newCount;
+        b.reviews.refresh();
+      }
     }
   }
 }

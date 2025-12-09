@@ -111,8 +111,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
           half: const Icon(Icons.star_half_rounded, color: Color(0xFFFFD700)),
           empty: const Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)),
         ),
+        glow: false,
         onRatingUpdate: (rating) {
-          controller.updateMyRating(rating);
+          // controller.updateMyRating(rating);
+          controller.myRating.value = rating;
           controller.submitRating(rating);
         },
       )),

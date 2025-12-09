@@ -19,11 +19,11 @@ class ReviewCard extends StatelessWidget {
   // 로컬 상태
   final RxBool isExpanded = false.obs;
   final RxBool isSpoilerVisible = false.obs;
-  late final RxBool isLiked;
-  late final RxInt likeCount;
 
   static const int maxInitialLines = 5;
   static const int maxExpandedLines = 20;
+  late final RxBool isLiked;
+  late final RxInt likeCount;
 
   final ReviewCardType type;
 
@@ -37,8 +37,8 @@ class ReviewCard extends StatelessWidget {
     this.type = ReviewCardType.detail,
   }) {
     isLiked = RxBool(review["is_liked"] ?? false);
-    likeCount = RxInt(review["like_count"] is int ? review["like_count"] : 0);
-    if (isMyReview) isSpoilerVisible.value = true;
+    likeCount = RxInt((review["like_count"] is int) ? review["like_count"] : 0);
+    // if (isMyReview) isSpoilerVisible.value = true;
   }
 
   // 텍스트 길이 측정 헬퍼
@@ -53,34 +53,33 @@ class ReviewCard extends StatelessWidget {
   }
 
   void _toggleLike() {
-    if (isLiked.value) likeCount.value--;
-    else likeCount.value++;
     isLiked.value = !isLiked.value;
+    if (isLiked.value) {
+      likeCount.value++;
+    } else {
+      likeCount.value--;
+    }
     if (onLikeToggle != null) onLikeToggle!(review['id']);
   }
 
   @override
   Widget build(BuildContext context) {
-    final int reviewId = review['id'];
-    const style = TextStyle(color: Colors.black, fontSize: 13, height: 1.54, letterSpacing: 0.25);
-    final double rating = (review["rating"] as num?)?.toDouble() ?? 0.0;
-    final String date = (review['created_at'] ?? review['created_date'] ?? "").toString().split('T')[0];
     const contentStyle = TextStyle(color: Colors.black, fontSize: 14, height: 1.5, letterSpacing: 0.25);
+    final double rating = (review["rating"] as num?)?.toDouble() ?? 0.0;
 
     return Obx(() {
       final spoilerVisible = isSpoilerVisible.value;
       final expanded = isExpanded.value;
+
       final Color activeColor = const Color(0xFF4DB56C);
       final Color inactiveColor = const Color(0xFF9E9E9E);
-      final currentMaxLines = spoilerVisible || expanded ? maxExpandedLines : maxInitialLines;
       final Color currentColor = isLiked.value ? activeColor : inactiveColor;
       final IconData currentIcon = isLiked.value ? Icons.thumb_up : Icons.thumb_up_alt_outlined;
-      final String date = (review['created_at'] ?? '').toString().split('T')[0];
 
       return Material(
         color: Colors.white,
         child: InkWell(
-          onTap: () { Get.toNamed('/review_detail', arguments: reviewId); },
+          onTap: () { Get.toNamed('/review_detail', arguments: review['id']); },
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
@@ -100,9 +99,9 @@ class ReviewCard extends StatelessWidget {
                 // 1. 헤더 (프로필, 닉네임, 날짜, 별점)
                 // ==============================
                 if (type == ReviewCardType.simple) ...[
-                  _buildSimpleHeader(rating, reviewId),
+                  _buildSimpleHeader(rating),
                 ] else ...[
-                    _buildDetailHeader(rating, date, reviewId),
+                    _buildDetailHeader(rating),
                     const SizedBox(height: 12),
                 ],
 
@@ -114,7 +113,6 @@ class ReviewCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFF717171)),
                         const SizedBox(width: 4),
                         const Text("스포일러가 포함되어 있습니다.", style: TextStyle(color: Color(0xFF717171), fontSize: 13)),
                         const SizedBox(width: 8),
@@ -173,9 +171,9 @@ class ReviewCard extends StatelessWidget {
                   children: [
                     // 좋아요
                     if (type == ReviewCardType.simple)
-                      _buildSimpleBottom(currentIcon, currentColor, reviewId)
+                      _buildSimpleBottom(currentIcon, currentColor)
                     else
-                      _buildDetailBottom(currentColor, reviewId)
+                      _buildDetailBottom(currentColor)
                   ],
                 ),
               ],
@@ -186,7 +184,7 @@ class ReviewCard extends StatelessWidget {
     });
   }
 
-  Widget _buildSimpleHeader(double rating, int reviewId){
+  Widget _buildSimpleHeader(double rating){
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -220,7 +218,9 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailHeader(double rating, String date, int reviewId){
+  Widget _buildDetailHeader(double rating){
+    final String date = (review['created_at'] ?? '').toString().split('T')[0];
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -250,7 +250,7 @@ class ReviewCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    " $date",
+                    date,
                     style: const TextStyle(
                         color: Color(0xFF9E9E9E),
                         fontSize: 12
@@ -278,8 +278,8 @@ class ReviewCard extends StatelessWidget {
             onTap: () {
               Get.bottomSheet(
                 OptionBottomSheet(
-                  onEdit: () => onEdit?.call(reviewId),
-                  onDelete: () => onDelete?.call(reviewId),
+                  onEdit: () => onEdit?.call(review['id']),
+                  onDelete: () => onDelete?.call(review['id']),
                 ),
                 backgroundColor: Colors.transparent,
               );
@@ -290,7 +290,7 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSimpleBottom(IconData currentIcon, Color currentColor, int reviewId){
+  Widget _buildSimpleBottom(IconData currentIcon, Color currentColor){
     return Row (
       children: [
         GestureDetector(
@@ -316,7 +316,7 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailBottom(Color currentColor, int reviewId) {
+  Widget _buildDetailBottom(Color currentColor) {
     return Row (
       children: [
         GestureDetector(
