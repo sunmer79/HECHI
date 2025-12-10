@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/taste_analysis_controller.dart';
 import '../../../../core/widgets/bottom_bar.dart';
+import 'dart:ui';
+import 'dart:math';
 
 class TasteAnalysisView extends GetView<TasteAnalysisController> {
   const TasteAnalysisView({super.key});
@@ -16,7 +18,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         centerTitle: true,
         title: Obx(() => Text(
           '${controller.userProfile['nickname'] ?? 'HECHI'}님의 취향분석',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
         )),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -32,7 +34,6 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB56C)));
         }
 
-        // ✅ [추가] 당겨서 새로고침 기능
         return RefreshIndicator(
           color: const Color(0xFF4DB56C),
           onRefresh: () async {
@@ -44,19 +45,14 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildGreenHeader(),
-
-                _buildCountSection(), // 카드형 평가 수
+                _buildCountSection(),
                 const Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
-
-                _buildStarSection(), // 별점 분포
+                _buildStarSection(),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
                 _buildTimeSection(),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
-                _buildTagSection(), // 수정된 태그
+                _buildTagSection(),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
                 _buildGenreSection(),
                 const SizedBox(height: 40),
               ],
@@ -83,7 +79,8 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
             const SizedBox(height: 24),
             Row(
               children: [
-                const CircleAvatar(radius: 14, backgroundColor: Colors.white, child: Icon(Icons.person, color: Color(0xFF4DB56C), size: 20)),
+                const CircleAvatar(radius: 14, backgroundColor: Colors.white, child: Icon(Icons.person, color: Color(0xFF4DB56C), size: 20
+                )),
                 const SizedBox(width: 10),
                 Text(nickname, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
               ],
@@ -100,21 +97,24 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("평가 수", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
-          const SizedBox(height: 16),
-
+          const Text("평가 수", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
+          const SizedBox(height: 20),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(vertical: 30),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF4DB56C).withOpacity(0.1)),
+              borderRadius: BorderRadius.circular(8),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF0FDF0),
+                  Color(0xFFE8F5E9),
+                ],
+              ),
             ),
             child: Column(
               children: [
-                const Icon(Icons.menu_book_rounded, color: Color(0xFF4DB56C), size: 28),
-                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -123,28 +123,29 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                     Obx(() => Text(
                       controller.totalReviews.value,
                       style: const TextStyle(
-                        fontSize: 36,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF4DB56C),
                       ),
                     )),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     const Text(
                       "권",
                       style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 20,
                           color: Color(0xFF4DB56C),
-                          fontWeight: FontWeight.w500
+                          fontWeight: FontWeight.bold
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 Text(
-                  "지금까지 읽고 평가한 책",
+                  '지금까지 ${controller.userProfile['nickname'] ?? 'HECHI'}님이 읽고 평가한 책',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: const Color(0xFF4DB56C).withOpacity(0.8)
+                    fontSize: 14,
+                    color: const Color(0xFF4DB56C).withOpacity(0.8),
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -158,97 +159,110 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
   Widget _buildStarSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-      child: Obx(() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("별점분포", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
-          const SizedBox(height: 20),
+      child: Obx(() {
+        final maxRatio = controller.starRatingDistribution.fold<double>(
+          0.0,
+              (prevMax, d) => (d['ratio'] as num).toDouble() > prevMax ? (d['ratio'] as num).toDouble() : prevMax,
+        );
 
-          const Center(child: Text("Summary", style: TextStyle(fontSize: 12, color: Colors.grey))),
-          const SizedBox(height: 15),
+        final displayDistribution = controller.starRatingDistribution.reversed.toList();
+        const int darkGreenColorValue = 0xFF4EB56D;
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 4,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 18),
-                    ...controller.starRatingDistribution.map((d) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 12, child: Text("${d['score']}", style: const TextStyle(color: Colors.grey, fontSize: 12))),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(7),
-                              child: LinearProgressIndicator(
-                                value: (d['ratio'] as num).toDouble(),
-                                backgroundColor: const Color(0xFFF5F5F5),
-                                color: Color(d['color'] as int),
-                                minHeight: 12,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("별점분포", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
+            const SizedBox(height: 5),
+
+            SizedBox(
+              height: 100,
+              child: Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: displayDistribution.map((d) {
+                    double ratio = (d['ratio'] as num).toDouble();
+                    double score = (d['score'] as num).toDouble();
+                    int colorValue = (d['color'] as num).toInt();
+                    Color barColor = Color(colorValue);
+                    int count = (d['count'] as num).toInt();
+
+                    final bool isMostFrequent = colorValue == darkGreenColorValue;
+                    final bool isFirstScore = score == 0.5;
+                    final bool isLastScore = score == 5.0;
+
+                    final bool showScoreText = isMostFrequent || isFirstScore || isLastScore;
+
+                    String scoreText;
+                    if (score == score.toInt()) {
+                      scoreText = score.toInt().toString();
+                    } else {
+                      scoreText = score.toStringAsFixed(1);
+                    }
+
+                    const double maxHeight = 60.0;
+                    double barHeight = count > 0 ? maxHeight * ratio : 2.0;
+
+                    return Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (showScoreText) ...[
+                              Text(
+                                  scoreText,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isMostFrequent ? barColor : Colors.grey.shade600,
+                                    fontWeight: isMostFrequent ? FontWeight.bold : FontWeight.normal,
+                                  )
+                              ),
+                              const SizedBox(height: 4),
+                            ]
+                            else
+                              const SizedBox(height: 18),
+
+                            SizedBox(
+                              height: barHeight,
+                              width: 30,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: barColor,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 10),
+                          ],
+                        ),
                       ),
-                    )).toList(),
-                  ],
+                    );
+                  }).toList(),
                 ),
               ),
-              const SizedBox(width: 20),
+            ),
 
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _buildSummaryItem(controller.averageRating.value, "${controller.totalReviews.value} Reviews", isLarge: true, showStar: true),
-                    const SizedBox(height: 20),
-                    _buildSummaryItem(controller.readingRate.value, "완독률", isLarge: true),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
+            const SizedBox(height: 30),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
-              _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
-              _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
-            ],
-          ),
-        ],
-      )),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
+                _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
+                _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
+              ],
+            ),
+          ],
+        );
+      }),
     );
   }
 
   Widget _buildBottomStatItem(String value, String label) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-      ],
-    );
-  }
-
-  Widget _buildSummaryItem(String value, String label, {bool isLarge = false, bool showStar = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(value, style: TextStyle(fontSize: isLarge ? 24 : 20, fontWeight: FontWeight.bold, color: const Color(0xFF3F3F3F))),
-            if (showStar) ...[const SizedBox(width: 4), const Icon(Icons.star, size: 20, color: Color(0xFF81C784))],
-          ],
-        ),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
       ],
@@ -276,38 +290,43 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
-
   Widget _buildTagSection() {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: colSection(
         title: "독서 선호 태그",
-        child: Container(
-          height: 180,
-          width: double.infinity,
-          child: Obx(() {
-            if (controller.totalReviews.value == "0" || controller.tags.isEmpty) {
-              return const Center(child: Text("아직 분석된 태그가 없습니다.", style: TextStyle(color: Colors.grey)));
-            }
+        child: Obx(() {
+          if (controller.totalReviews.value == "0" || controller.tags.isEmpty) {
+            return const Center(child: Text("아직 분석된 태그가 없습니다.", style: TextStyle(color: Colors.grey)));
+          }
 
-            return Stack(
+          const double stackHeight = 160;
+
+          return SizedBox(
+            height: stackHeight,
+            width: double.infinity,
+            child: Stack(
               children: controller.tags.map((tag) {
-                final align = tag['align'];
-                return Align(
-                  alignment: align is Alignment ? align : Alignment.center,
+                double size = (tag['size'] as num).toDouble();
+                Color color = Color(tag['color'] as int);
+                Offset position = tag['position'] as Offset;
+
+                return Positioned(
+                  left: position.dx * 300,
+                  top: position.dy * stackHeight,
                   child: Text(
                     tag['text'] as String,
                     style: TextStyle(
-                      fontSize: (tag['size'] as num).toDouble(),
-                      color: Color(tag['color'] as int),
-                      fontWeight: FontWeight.normal, // Regular 적용
+                      fontSize: size * 1.4,
+                      color: color,
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 );
               }).toList(),
-            );
-          }),
-        ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -323,6 +342,10 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
           final top3 = controller.genreRankings.take(3).toList();
           final others = controller.genreRankings.skip(3).toList();
 
+          String to100Score(double score5) {
+            return (score5 * 20).round().toString();
+          }
+
           return Column(
             children: [
               const Center(child: Text("인생은 역시 한 편의 책!", style: TextStyle(color: Color(0xFF4DB56C), fontSize: 14))),
@@ -335,7 +358,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                   children: [
                     Text(e.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
                     const SizedBox(height: 6),
-                    Text("${e.average5.toStringAsFixed(0)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                    Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 13, color: Colors.grey)),
                   ],
                 )).toList(),
               ),
@@ -347,7 +370,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(e.name, style: const TextStyle(fontSize: 16, color: Color(0xFF3F3F3F))),
-                    Text("${e.average5.toStringAsFixed(0)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 14, color: Color(0xFF3F3F3F))),
+                    Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 14, color: Color(0xFF3F3F3F))),
                   ],
                 ),
               )).toList(),
