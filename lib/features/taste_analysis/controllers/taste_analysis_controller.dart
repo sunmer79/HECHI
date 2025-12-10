@@ -1,31 +1,36 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import '../../../data/models/user_stats_model.dart';
 import '../../../app/controllers/app_controller.dart';
+import 'dart:ui';
 
 class TasteAnalysisController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
   final box = GetStorage();
-
   RxBool isLoading = true.obs;
-
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
 
   RxList<Map<String, dynamic>> starRatingDistribution = <Map<String, dynamic>>[
-    {'score': 5, 'ratio': 0.0, 'color': 0xFF43A047},
-    {'score': 4, 'ratio': 0.0, 'color': 0xFF66BB6A},
-    {'score': 3, 'ratio': 0.0, 'color': 0xFF81C784},
-    {'score': 2, 'ratio': 0.0, 'color': 0xFFA5D6A7},
-    {'score': 1, 'ratio': 0.0, 'color': 0xFFC8E6C9},
+    {'score': 5.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 4.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 4.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 3.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 3.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 2.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 2.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 1.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 1.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
+    {'score': 0.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
   ].obs;
+
   RxString averageRating = "0.0".obs;
   RxString totalReviews = "0.0".obs;
   RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
   RxString totalReadingTime = "0.0".obs;
+
   RxList<Map<String, dynamic>> tags = <Map<String, dynamic>>[].obs;
   RxList<GenreStat> genreRankings = <GenreStat>[].obs;
 
@@ -38,21 +43,18 @@ class TasteAnalysisController extends GetxController {
   Future<void> fetchData() async {
     isLoading.value = true;
     String? token = box.read('access_token');
-    if (token == null) {
-      isLoading.value = false;
-      return;
+
+    if (token != null) {
+      try {
+        await Future.wait([
+          _fetchMyStats(token),
+          _fetchInsightTags(token),
+        ]);
+      } catch (e) {
+      }
     }
 
-    try {
-      await Future.wait([
-        _fetchMyStats(token),
-        _fetchInsightTags(token),
-      ]);
-    } catch (e) {
-      print("Error fetching data: $e");
-    } finally {
-      isLoading.value = false;
-    }
+    isLoading.value = false;
   }
 
   Future<void> _fetchMyStats(String token) async {
@@ -73,7 +75,9 @@ class TasteAnalysisController extends GetxController {
 
       _updateDistribution(stats.ratingDistribution);
 
-      List<GenreStat> sourceList = stats.subGenres.isNotEmpty ? stats.subGenres : stats.topLevelGenres;
+      List<GenreStat> sourceList = stats.subGenres.isNotEmpty
+          ? stats.subGenres
+          : stats.topLevelGenres;
       List<GenreStat> mergedList = [];
       int bizEcoCount = 0;
       double bizEcoTotalScore = 0.0;
@@ -99,32 +103,26 @@ class TasteAnalysisController extends GetxController {
 
       genreRankings.value = mergedList;
       genreRankings.sort((a, b) => b.average5.compareTo(a.average5));
+    } else {
+      throw Exception("API call failed with status: ${response.statusCode}");
     }
   }
 
-  void _updateDistribution(List<RatingDist> distData) {
-    int maxCount = 0;
-    for (var d in distData) {
-      if (d.count > maxCount) maxCount = d.count;
-    }
-
-    var newDist = <Map<String, dynamic>>[];
-    for (var item in starRatingDistribution) {
-      int score = item['score'];
-      var apiData = distData.firstWhere(
-            (d) => d.rating == score,
-        orElse: () => RatingDist(rating: score, count: 0),
-      );
-
-      double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
-      newDist.add({'score': score, 'ratio': ratio, 'color': item['color']});
-    }
-    starRatingDistribution.value = newDist;
-  }
-
-  // ✅ [수정] 태그 위치 간격 넓힘
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
+
+    final List<Offset> presetPositions = [
+      Offset(0.50, 0.45),
+      Offset(0.40, 0.60),
+      Offset(0.60, 0.30),
+      Offset(0.75, 0.50),
+      Offset(0.25, 0.50),
+      Offset(0.30, 0.20),
+      Offset(0.70, 0.70),
+      Offset(0.50, 0.85),
+      Offset(0.20, 0.80),
+    ];
+
     try {
       final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
 
@@ -134,45 +132,116 @@ class TasteAnalysisController extends GetxController {
 
         if (insightData.tags.isEmpty) return;
 
-        // ✅ 위치 좌표를 더 바깥쪽(1.0에 가깝게)으로 수정하여 간격 확보
-        final List<Alignment> positions = [
-          const Alignment(0.0, -0.3),  // 1등: 중앙 상단 (조금 더 위로)
-          const Alignment(0.85, 0.6),  // 2등: 우측 하단 (더 끝으로)
-          const Alignment(-0.85, -0.7),// 3등: 좌측 상단 (더 끝으로)
-          const Alignment(-0.75, 0.75),// 4등: 좌측 하단 (더 끝으로)
-          const Alignment(0.9, -0.6),  // 5등: 우측 상단 (더 끝으로)
-          const Alignment(0.0, 0.9),   // 6등: 중앙 하단 (더 아래로)
-          const Alignment(-0.9, 0.1),  // 7등: 좌측 중앙 (더 끝으로)
-        ];
-
         List<Map<String, dynamic>> newTags = [];
         var sortedTags = insightData.tags;
         sortedTags.sort((a, b) => b.weight.compareTo(a.weight));
-        var topTags = sortedTags.take(positions.length).toList();
+        var topTags = sortedTags.take(9).toList();
 
-        for (int i = 0; i < topTags.length; i++) {
-          final tag = topTags[i];
-          final double size = 40.0 - (i * 4.0);
+        var highestTag = topTags.isNotEmpty ? topTags.removeAt(0) : null;
+        var topThree = topTags.take(3).toList();
+        var remainingTags = topTags.skip(3).toList();
 
+        var finalTags = [
+          ...topThree,
+          ...remainingTags,
+          if (highestTag != null) highestTag,
+        ];
+
+        const int topTagColor = 0xFF4EB56D;
+        const int otherTagColor = 0xFFAAD2B6;
+        const double topTagSize = 14.0;
+        const double otherTagSize = 9.0;
+
+        int tagIndex = 0;
+        for (var tag in finalTags) {
+          double size;
           int color;
-          if (i == 0) { color = 0xFF2E7D32; }
-          else if (i == 1) { color = 0xFF388E3C; }
-          else if (i == 2) { color = 0xFF43A047; }
-          else if (i == 3) { color = 0xFF4DB56C; }
-          else if (i == 4) { color = 0xFF66BB6A; }
-          else { color = 0xFF81C784; }
+
+          if (tagIndex < 3) {
+            size = topTagSize;
+            color = topTagColor;
+          } else {
+            size = otherTagSize;
+            color = otherTagColor;
+          }
+
+          Offset position = presetPositions[tagIndex % presetPositions.length];
 
           newTags.add({
             'text': tag.label,
             'size': size,
             'color': color,
-            'align': positions[i],
+            'position': position,
           });
+          tagIndex++;
         }
+
         tags.value = newTags;
       }
     } catch (e) {
-      print("Tag fetch error: $e");
     }
+  }
+
+  void _updateDistribution(List<RatingDist> distData) {
+    int maxCount = 0;
+
+    final bool useIndexMapping = distData.length == 10;
+
+    for (var d in distData) {
+      if (d.count > maxCount) {
+        maxCount = d.count;
+      }
+    }
+
+    double mostFrequentRatingScore = double.tryParse(mostGivenRating.value) ?? 0.0;
+
+    const int darkGreenColor = 0xFF4EB56D;
+    const int lightGreenColor = 0xFFAAD2B6;
+
+    var newDist = <Map<String, dynamic>>[];
+    const double minRatioForOneCount = 0.02;
+
+    for (int i = 0; i < starRatingDistribution.length; i++) {
+      var item = starRatingDistribution[i];
+      double score = item['score'];
+      int count = 0;
+
+      if (useIndexMapping) {
+        int distIndex = starRatingDistribution.length - 1 - i;
+        if (distIndex >= 0 && distIndex < distData.length) {
+          count = distData[distIndex].count;
+        }
+      } else {
+        try {
+          var apiData = distData.firstWhere(
+                (d) => (d.rating.toDouble() / 10.0 - score).abs() < 0.001,
+            orElse: () => RatingDist(rating: 0, count: 0),
+          );
+          count = apiData.count;
+        } catch (e) {
+          count = 0;
+        }
+      }
+
+      double ratio = 0.0;
+
+      if (count == 0) {
+        ratio = 0.0;
+      } else {
+        double calculatedRatio = maxCount > 0 ? (count / maxCount) : 0.0;
+        ratio = calculatedRatio.isFinite && calculatedRatio > 0
+            ? calculatedRatio.clamp(minRatioForOneCount, 1.0)
+            : minRatioForOneCount;
+      }
+
+      int color = lightGreenColor;
+      if ((score - mostFrequentRatingScore).abs() < 0.001 && count > 0) {
+        color = darkGreenColor;
+      }
+
+      newDist.add({'score': score, 'ratio': ratio, 'color': color, 'count': count});
+    }
+
+    starRatingDistribution.value = newDist;
   }
 }
