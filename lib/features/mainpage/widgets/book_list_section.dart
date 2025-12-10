@@ -40,7 +40,7 @@ class BookListSection extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         SizedBox(
-          height: 240,
+          height: 250,
           child: bookList.isEmpty
               ? const Center(child: Text("데이터가 없습니다."))
               : ListView.separated(
@@ -91,7 +91,7 @@ class BookListSection extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '평균★${book['rating']}',
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.2,),
           ),
         ],
       ),
