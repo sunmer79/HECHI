@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/my_read_controller.dart';
-import '../pages/profile_edit_view.dart'; // 경로 확인 필요
+import '../pages/profile_edit_view.dart';
 
 class ProfileHeader extends StatelessWidget {
   final MyReadController controller;
@@ -17,7 +17,7 @@ class ProfileHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 프로필 이미지
+            // 1. 프로필 이미지
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -32,52 +32,54 @@ class ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 닉네임
+            // 2. 닉네임
             Text(
               profile['nickname'] ?? 'HECHI',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.black),
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600, // 조금 더 강조
+                  color: Colors.black
+              ),
             ),
             const SizedBox(height: 4),
 
-            // 소개글
+            // 3. 소개글
             Text(
               controller.description.value,
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
 
-            // 버튼들
-            Row(
-              children: [
-                Expanded(child: _buildOutlineBtn("프로필 수정", Icons.edit, onTap: () => Get.to(() => const ProfileEditView()))),
-                const SizedBox(width: 8),
-                Expanded(child: _buildOutlineBtn("공유", Icons.share)),
-              ],
+            // 4. [수정됨] 프로필 수정 버튼 (단독, 꽉 찬 너비)
+            SizedBox(
+              width: double.infinity, // 가로로 꽉 채우기
+              height: 42, // 터치하기 좋은 적절한 높이 설정
+              child: OutlinedButton(
+                onPressed: () => Get.to(() => const ProfileEditView()),
+                style: OutlinedButton.styleFrom(
+                  // 배경색: 투명 혹은 아주 연한 회색 (인스타그램 느낌)
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87, // 글자색
+                  elevation: 0,
+                  // 테두리: 너무 진하지 않은 은은한 회색
+                  side: const BorderSide(color: Color(0xFFDBDBDB), width: 1),
+                  // 모서리: 요즘 트렌드에 맞춰 살짝 둥글게 (8px)
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "프로필 수정",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       );
     });
-  }
-
-  Widget _buildOutlineBtn(String text, IconData icon, {VoidCallback? onTap}) {
-    return OutlinedButton(
-      onPressed: onTap ?? () {},
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFEEEEEE)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (text == "공유") ...[
-            Icon(icon, size: 16, color: Colors.black54),
-            const SizedBox(width: 4)
-          ],
-          Text(text, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w400)),
-        ],
-      ),
-    );
   }
 }

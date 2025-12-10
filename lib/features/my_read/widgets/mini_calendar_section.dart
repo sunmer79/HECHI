@@ -25,7 +25,7 @@ class MiniCalendarSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Obx(() => Text(
-                  "${controller.currentMonth.value}월 캘린더 (${controller.monthlyReadCount.value}권)",
+                  "${controller.currentMonth.value}월 캘린더",
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))
               )),
               const SizedBox(width: 8),
