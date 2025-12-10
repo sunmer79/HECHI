@@ -14,8 +14,8 @@ class MyReadView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Controller 생성
-    final controller = Get.put(MyReadController(), permanent: true);
+    // ✅ [수정] permanent: true 제거 (페이지 접속 시마다 컨트롤러 로직 수행)
+    final controller = Get.put(MyReadController());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -29,7 +29,6 @@ class MyReadView extends StatelessWidget {
           ),
         ],
       ),
-      // 당겨서 새로고침 (Refresh)
       body: RefreshIndicator(
         color: const Color(0xFF4DB56C),
         onRefresh: () async {
@@ -54,19 +53,17 @@ class MyReadView extends StatelessWidget {
 
               Container(height: 8, color: const Color(0xFFF5F5F5)),
 
-              // 캘린더 섹션 (이전 요청사항 반영)
+              // 캘린더 섹션
               _buildCalendarSection(controller),
 
               Container(height: 8, color: const Color(0xFFF5F5F5)),
 
               _buildSectionHeader("취향 분석"),
+              // ✅ [수정] 개편된 취향 분석 UI 적용
               _buildTasteAnalysisPreview(controller),
 
               const SizedBox(height: 20),
               const Divider(height: 1, color: Color(0xFFEEEEEE)),
-
-              // 태그 클라우드
-              _buildInsightTagCloud(controller),
 
               _buildSeeAllTasteButton(),
 
@@ -77,6 +74,10 @@ class MyReadView extends StatelessWidget {
       ),
     );
   }
+
+  // -----------------------------------------------------------------------
+  // 1. 프로필 및 상단 통계 위젯
+  // -----------------------------------------------------------------------
 
   Widget _buildProfileHeader(MyReadController controller) {
     return Obx(() {
@@ -111,9 +112,7 @@ class MyReadView extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _buildOutlineBtn("프로필 수정", Icons.edit, onTap: () {
-                  Get.to(() => const ProfileEditView());
-                })),
+                Expanded(child: _buildOutlineBtn("프로필 수정", Icons.edit, onTap: () => Get.to(() => const ProfileEditView()))),
                 const SizedBox(width: 8),
                 Expanded(child: _buildOutlineBtn("공유", Icons.share)),
               ],
@@ -146,33 +145,22 @@ class MyReadView extends StatelessWidget {
   }
 
   Widget _buildActivityStats(MyReadController controller) {
-    return Obx(() {
-      final stats = controller.activityStats;
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildStatItem(stats['evaluations'] ?? 0, "평가"),
-            ),
-            Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
-            Expanded(
-              child: _buildStatItem(stats['comments'] ?? 0, "코멘트"),
-            ),
-          ],
-        ),
-      );
-    });
+    return Obx(() => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Expanded(child: _buildStatItem(controller.activityStats['evaluations'] ?? 0, "평가")),
+          Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
+          Expanded(child: _buildStatItem(controller.activityStats['comments'] ?? 0, "코멘트")),
+        ],
+      ),
+    ));
   }
 
   Widget _buildStatItem(int count, String label) {
     return Column(
       children: [
-        Text("$count",
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF3F3F3F))),
+        Text("$count", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Color(0xFF3F3F3F))),
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
@@ -183,30 +171,20 @@ class MyReadView extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 10),
-      child: Text(title,
-          style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF3F3F3F))),
+      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Color(0xFF3F3F3F))),
     );
   }
 
   Widget _buildArchiveLink() {
     return InkWell(
-      onTap: () {
-        Get.to(
-              () => const BookStorageView(),
-          binding: BookStorageBinding(),
-        );
-      },
+      onTap: () => Get.to(() => const BookStorageView(), binding: BookStorageBinding()),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text("보관함으로 이동하기",
-                style: TextStyle(color: Colors.grey, fontSize: 14)),
+            Text("보관함으로 이동하기", style: TextStyle(color: Colors.grey, fontSize: 14)),
             SizedBox(width: 4),
             Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
           ],
@@ -215,7 +193,10 @@ class MyReadView extends StatelessWidget {
     );
   }
 
-  // 캘린더 섹션 (아까 추가한 기능 유지)
+  // -----------------------------------------------------------------------
+  // 2. 캘린더 섹션 (수정된 요일 표기 반영)
+  // -----------------------------------------------------------------------
+
   Widget _buildCalendarSection(MyReadController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
@@ -230,10 +211,7 @@ class MyReadView extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
               const SizedBox(width: 8),
-              Obx(() => Text(
-                  "${controller.currentMonth.value}월 캘린더",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))
-              )),
+              Obx(() => Text("${controller.currentMonth.value}월 캘린더", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F)))),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.arrow_right, color: Colors.black54),
@@ -244,26 +222,22 @@ class MyReadView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
+          // ✅ Mon, Tue 형태로 변경됨
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((day) {
+            children: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) {
               return Expanded(
                 child: Center(
-                  child: Text(
-                    day,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
+                  child: Text(day, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
                 ),
               );
             }).toList(),
           ),
           const SizedBox(height: 10),
           Obx(() => _buildCalendarGrid(controller)),
-          const SizedBox(height: 60),
+          const SizedBox(height: 40),
           InkWell(
-            onTap: () {
-              Get.toNamed(Routes.calendar);
-            },
+            onTap: () => Get.toNamed(Routes.calendar),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
@@ -281,28 +255,18 @@ class MyReadView extends StatelessWidget {
   Widget _buildCalendarGrid(MyReadController controller) {
     final year = controller.currentYear.value;
     final month = controller.currentMonth.value;
-
     final firstDay = DateTime(year, month, 1);
     final lastDay = DateTime(year, month + 1, 0);
-
     final startOffset = firstDay.weekday - 1;
     final totalDays = lastDay.day;
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 0.7,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 0.7),
       itemCount: startOffset + totalDays,
       itemBuilder: (context, index) {
-        if (index < startOffset) {
-          return const SizedBox();
-        }
-
+        if (index < startOffset) return const SizedBox();
         final day = index - startOffset + 1;
         final hasBook = controller.calendarBooks.containsKey(day);
         final bookImageUrl = controller.calendarBooks[day];
@@ -310,27 +274,20 @@ class MyReadView extends StatelessWidget {
         return Column(
           children: [
             if (hasBook && bookImageUrl != null && bookImageUrl.isNotEmpty)
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.network(
-                    bookImageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[300]),
-                  ),
-                ),
-              )
+              Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.network(bookImageUrl, fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[300]))))
             else
               const Spacer(),
-
             const SizedBox(height: 4),
-            if (!hasBook)
-              Text("$day", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            if (!hasBook) Text("$day", style: const TextStyle(fontSize: 12, color: Colors.black54)),
           ],
         );
       },
     );
   }
+
+  // -----------------------------------------------------------------------
+  // 3. ✅ [수정 완료] 취향 분석 미리보기 (그래프 확장 + 하단 통계 3종)
+  // -----------------------------------------------------------------------
 
   Widget _buildTasteAnalysisPreview(MyReadController controller) {
     return Obx(() {
@@ -346,6 +303,7 @@ class MyReadView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // #별점분포 태그
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -358,82 +316,48 @@ class MyReadView extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w500)),
             ),
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Column(
-                    children: controller.ratingDistData.map((d) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 12,
-                              child: Text("${d['score']}",
-                                  style: const TextStyle(
-                                      color: Colors.grey, fontSize: 11)),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(7),
-                                child: LinearProgressIndicator(
-                                  value: (d['ratio'] as num).toDouble(),
-                                  backgroundColor: const Color(0xFFF5F5F5),
-                                  color: Color(d['color'] as int),
-                                  minHeight: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 20),
+
+            // 1. 별점 그래프 (가로 꽉 차게 변경)
+            Column(
+              children: controller.ratingDistData.map((d) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            controller.averageRating.value,
+                      SizedBox(
+                        width: 12,
+                        child: Text("${d['score']}",
                             style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF3F3F3F)),
+                                color: Colors.grey, fontSize: 12)),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(7),
+                          child: LinearProgressIndicator(
+                            value: (d['ratio'] as num).toDouble(),
+                            backgroundColor: const Color(0xFFF5F5F5),
+                            color: Color(d['color'] as int),
+                            minHeight: 12,
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.star,
-                              color: Color(0xFF81C784), size: 18),
-                        ],
-                      ),
-                      Text(
-                        "${controller.totalReviews.value} Reviews",
-                        style:
-                        const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        controller.readingRate.value,
-                        style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF3F3F3F)),
-                      ),
-                      const Text(
-                        "완독률",
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
                     ],
                   ),
-                ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 30),
+
+            // 2. 하단 통계 (평균, 개수, 많이 준 별점)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
+                _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
+                _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
               ],
             ),
           ],
@@ -442,44 +366,32 @@ class MyReadView extends StatelessWidget {
     });
   }
 
-  // ✅ [수정] 태그 클라우드 섹션 (빈 상태 처리 포함)
-  Widget _buildInsightTagCloud(MyReadController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("독서 선호 태그", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF3F3F3F))),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 200,
-            width: double.infinity,
-            child: Obx(() {
-              if (controller.totalReviews.value == "0" || controller.insightTags.isEmpty) {
-                return const Center(child: Text("아직 분석된 태그가 없습니다.", style: TextStyle(color: Colors.grey)));
-              }
-              return Stack(
-                children: controller.insightTags.map((tag) {
-                  final align = tag['align'];
-                  return Align(
-                    alignment: align is Alignment ? align : Alignment.center,
-                    child: Text(
-                      tag['text'] as String,
-                      style: TextStyle(
-                        fontSize: (tag['size'] as num).toDouble(),
-                        color: Color(tag['color'] as int),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            }),
-          ),
-        ],
-      ),
+  // ✅ [신규] 하단 통계 아이템 위젯
+  Widget _buildBottomStatItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+            value,
+            style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500, // Medium
+                color: Color(0xFF3F3F3F)
+            )
+        ),
+        const SizedBox(height: 4),
+        Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.grey)
+        ),
+      ],
     );
   }
+
+  // -----------------------------------------------------------------------
+  // 4. 태그 클라우드 및 버튼
+  // -----------------------------------------------------------------------
+
+
 
   Widget _buildSeeAllTasteButton() {
     return InkWell(
@@ -492,8 +404,7 @@ class MyReadView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Text("모든 취향 분석 보기",
-                    style: TextStyle(color: Colors.grey, fontSize: 14)),
+                Text("모든 취향 분석 보기", style: TextStyle(color: Colors.grey, fontSize: 14)),
                 SizedBox(width: 4),
                 Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
               ],
