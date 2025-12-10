@@ -231,6 +231,7 @@ class ReviewDetailController extends GetxController {
   Future<void> fetchComments() async {
     try {
       isLoadingComments.value = true;
+
       final token = box.read('access_token');
       final headers = {"Content-Type": "application/json"};
       if (token != null) headers["Authorization"] = "Bearer $token";
@@ -241,13 +242,13 @@ class ReviewDetailController extends GetxController {
       );
 
       if (res.statusCode == 200) {
-        final List<dynamic> list = jsonDecode(utf8.decode(res.bodyBytes));
+        final list = jsonDecode(utf8.decode(res.bodyBytes));
         comments.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
-        final int newCount = comments.length;
-        review["comment_count"] = newCount;
+        final int count = comments.length;
+        review["comment_count"] = count;
         review.refresh();
-        syncCommentCount(reviewId, newCount);
+        syncCommentCount(reviewId, count);
       }
     } catch (e) {
       print("❌ 댓글 에러: $e");
@@ -281,12 +282,6 @@ class ReviewDetailController extends GetxController {
         Get.focusScope?.unfocus();
         await fetchComments();
 
-        final int newCount = comments.length;
-        review['comment_count'] = newCount;
-        review.refresh();
-
-        syncCommentCount(reviewId, newCount);
-
         Get.snackbar("성공", "댓글이 등록되었습니다.");
       } else {
         Get.snackbar("오류", "댓글 등록 실패: ${res.statusCode}");
@@ -311,10 +306,10 @@ class ReviewDetailController extends GetxController {
         Get.snackbar("완료", "댓글이 삭제되었습니다.");
         comments.removeWhere((e) => e['id'] == commentId);
 
-        if ((review['comment_count'] ?? 0) > 0) {
-          review['comment_count'] = review['comment_count'] - 1;
-          review.refresh();
-        }
+        final newCount = comments.length;
+        review["comment_count"] = newCount;
+        review.refresh();
+        syncCommentCount(reviewId, newCount);
       }
     } catch (e) {
       print("❌ 댓글 삭제 에러: $e");
@@ -387,13 +382,13 @@ class ReviewDetailController extends GetxController {
   // ==========================
   // 📌 댓글 카운트 동기화
   // ==========================
-  void syncCommentCount(int reviewId, int newCount) {
+  void syncCommentCount(int reviewId, int count) {
     if (Get.isRegistered<ReviewListController>()) {
       final list = Get.find<ReviewListController>();
-      final index = list.reviews.indexWhere((r) => r["id"] == reviewId);
 
+      final index = list.reviews.indexWhere((r) => r["id"] == reviewId);
       if (index != -1) {
-        list.reviews[index]["comment_count"] = newCount;
+        list.reviews[index]["comment_count"] = count;
         list.reviews.refresh();
       }
     }
@@ -403,7 +398,7 @@ class ReviewDetailController extends GetxController {
       final index = b.reviews.indexWhere((r) => r["id"] == reviewId);
 
       if (index != -1) {
-        b.reviews[index]["comment_count"] = newCount;
+        b.reviews[index]["comment_count"] = count;
         b.reviews.refresh();
       }
     }

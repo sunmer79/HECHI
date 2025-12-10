@@ -403,7 +403,6 @@ class BookDetailController extends GetxController {
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
-      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });

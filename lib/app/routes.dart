@@ -56,7 +56,7 @@ abstract class Routes {
 
   static const bookStorage = '/book_storage';
 
-  static const reviewList = '/review/list';
+  static const reviewList = '/review_list';
   static const reviewDetail = '/review_detail';
 
   static const calendar = '/calendar';

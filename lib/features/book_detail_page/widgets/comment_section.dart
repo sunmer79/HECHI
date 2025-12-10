@@ -87,7 +87,7 @@ class CommentSection extends GetView<BookDetailController> {
           // 4. 모두보기 버튼
           if (hasMoreToReviews)
             InkWell(
-              onTap: () => Get.toNamed("/review/list", arguments: controller.bookId), // ✅ 전체 페이지 이동
+              onTap: () => Get.toNamed("/review_list", arguments: controller.bookId), // ✅ 전체 페이지 이동
               child: Container(
                 width: double.infinity,
                 height: 50,
