@@ -306,7 +306,7 @@ class BookDetailController extends GetxController {
   // ==========================
   // 📌 코멘트 등록 함수
   // ==========================
-  Future<void> submitComment(String content, bool isSpoiler) async {
+  Future<void> submitReview(String content, bool isSpoiler) async {
     final token = box.read("access_token");
     if (token == null) return;
 
@@ -343,7 +343,7 @@ class BookDetailController extends GetxController {
   // ==========================
   // 📌 코멘트 + 별점 삭제
   // ==========================
-  Future<void> deleteReview() async {
+  Future<void> delete() async {
     final token = box.read("access_token");
     final res = await http.delete(
       Uri.parse("$baseUrl/reviews/$myReviewId"),
@@ -364,13 +364,12 @@ class BookDetailController extends GetxController {
   // 📌 코멘트 버튼 클릭 (Overlay 오픈)
   // ==========================
   Future<void> onWriteReview() async {
-
     if (isCommented.value && myReviewId != -1) {
       Get.toNamed("/review_detail", arguments: myReviewId);
     }
     else {
       Get.bottomSheet(
-        CommentOverlay(onSubmit: submitComment),
+        CommentOverlay(onSubmit: submitReview),
         isScrollControlled: true,
         backgroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
@@ -390,7 +389,7 @@ class BookDetailController extends GetxController {
     final bool hasContent = myContent.value.isNotEmpty;
 
     if (rating == 0.0 && !hasContent && myReviewId != -1) {
-      await deleteReview();
+      await delete();
       return;
     }
 

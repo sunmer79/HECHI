@@ -44,7 +44,7 @@ class OptionBottomSheet extends StatelessWidget {
                     onTap: () => Get.back(),
                     child: const Text(
                       '취소',
-                      style: TextStyle(color: Color(0xFF4DB56C), fontSize: 18),
+                      style: TextStyle(color: Color(0xFF4DB56C), fontSize: 18, fontWeight: FontWeight.w400),
                     ),
                   ),
                 )
@@ -67,7 +67,7 @@ class OptionBottomSheet extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   insetPadding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
-                    width: 300,
+                    width: 200,
                     height: 107,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -173,16 +173,16 @@ class OptionBottomSheet extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: 62,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        alignment: Alignment.centerLeft,
         decoration: const BoxDecoration(
           border: Border(
-            bottom: BorderSide(width: 0.50, color: Color(0xFFABABAB)),
+            bottom: BorderSide(width: 0.5, color: Color(0xFFABABAB)),
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(color: Colors.black, fontSize: 18),
+          style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w400),
         ),
       ),
     );

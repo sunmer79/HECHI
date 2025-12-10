@@ -94,7 +94,7 @@ class ReviewListPage extends GetView<ReviewListController> {
                     },
 
                     onEdit: (id) => controller.editReview(id),
-                    onDelete: (id) => controller.deleteComment(id),
+                    onDelete: (id) => controller.deleteReview(id),
                   );
                 },
               );

@@ -169,7 +169,10 @@ Widget _bar(double score, int count, int maxCount) {
           heightFactor: ratio, // 비율에 따라 높이 결점 (최대 1.0)
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 1), // bar 간 간격
-            color: const Color(0xFF4DB56C),
+            decoration: const BoxDecoration(
+              color: const Color(0xFF4DB56C),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+            ),
           ),
         )
     ),

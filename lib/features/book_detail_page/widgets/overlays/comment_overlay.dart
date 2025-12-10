@@ -81,6 +81,7 @@ class CommentOverlay extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 17),
                 child: TextField(
+                  controller: textController,
                   autofocus: true,
                   maxLines: null,
                   onChanged: (v) => text.value = v,

@@ -20,10 +20,12 @@ class BookInfoSection extends GetView<BookDetailController> {
             child: Text(
               book["title"] ?? "",
               style: const TextStyle(
+                fontFamily: 'Roboto',
                 color: Colors.black,
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
-                height: 0.71,
+                // height: 0.71,
+                height: 1.3,
                 letterSpacing: 0.10,
               ),
             ),

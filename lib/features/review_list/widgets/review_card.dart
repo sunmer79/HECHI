@@ -24,6 +24,7 @@ class ReviewCard extends StatelessWidget {
   static const int maxExpandedLines = 20;
   late final RxBool isLiked;
   late final RxInt likeCount;
+  late final RxInt commentCount;
 
   final ReviewCardType type;
 
@@ -38,6 +39,7 @@ class ReviewCard extends StatelessWidget {
   }) {
     isLiked = RxBool(review["is_liked"] ?? false);
     likeCount = RxInt((review["like_count"] is int) ? review["like_count"] : 0);
+    commentCount = RxInt((review["comment_count"] is int) ? review["comment_count"] : 0);
     // if (isMyReview) isSpoilerVisible.value = true;
   }
 
@@ -151,7 +153,7 @@ class ReviewCard extends StatelessWidget {
                           // 전체보기 (상세 이동)
                           else if (expanded && clippedAtTwenty)
                             GestureDetector(
-                              onTap: () => Get.toNamed("/review/detail", arguments: review['id']),
+                              onTap: () => Get.toNamed("/review_detail", arguments: review['id']),
                               child: const Padding(
                                 padding: EdgeInsets.only(top: 6.0),
                                 child: Text("전체보기", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, decoration: TextDecoration.underline)),
@@ -272,7 +274,7 @@ class ReviewCard extends StatelessWidget {
           ),
         ),
 
-        // 더보기 버튼 (내 리뷰일 때)
+        // option_overlay
         if (isMyReview)
           GestureDetector(
             onTap: () {
@@ -292,7 +294,8 @@ class ReviewCard extends StatelessWidget {
   }
 
   Widget _buildSimpleBottom(IconData currentIcon, Color currentColor){
-    return Row (
+    return Obx(() {
+      return Row (
       children: [
         GestureDetector(
           onTap: _toggleLike,
@@ -310,34 +313,40 @@ class ReviewCard extends StatelessWidget {
           children: [
             const Icon(Icons.chat_bubble_outline, size: 16, color: Color(0xFF9E9E9E)),
             const SizedBox(width: 4),
-            Text("${review['comment_count'] ?? 0}", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, fontWeight: FontWeight.w500)),
+            Text("${commentCount.value}", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, fontWeight: FontWeight.w500)),
           ],
-        ),
-      ],
-    );
+        )],
+      );
+    });
   }
 
   Widget _buildDetailBottom(Color currentColor) {
-    return Row (
-      children: [
-        GestureDetector(
-          onTap: _toggleLike,
-          child: Row(
+    return Obx(() {
+      return Row(
+        children: [
+          GestureDetector(
+            onTap: _toggleLike,
+            child: Row(
+              children: [
+                const SizedBox(width: 4),
+                Text("좋아요 ${likeCount.value}", style: TextStyle(
+                    color: currentColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 댓글
+          Row(
             children: [
               const SizedBox(width: 4),
-              Text("좋아요 ${likeCount.value}", style: TextStyle(color: currentColor, fontSize: 13, fontWeight: FontWeight.w500)),
+              Text("댓글 ${review['comment_count'] ?? 0}", style: const TextStyle(
+                  color: Color(0xFF717171), fontSize: 13)),
             ],
           ),
-        ),
-        const SizedBox(width: 16),
-        // 댓글
-        Row(
-          children: [
-            const SizedBox(width: 4),
-            Text("댓글 ${review['comment_count'] ?? 0}", style: const TextStyle(color: Color(0xFF717171), fontSize: 13)),
-          ],
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }

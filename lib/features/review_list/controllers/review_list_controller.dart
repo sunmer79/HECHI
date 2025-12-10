@@ -125,7 +125,7 @@ class ReviewListController extends GetxController {
   // ==========================
   // 📌 코멘트 삭제
   // ==========================
-  Future<void> deleteComment(int reviewId) async {
+  Future<void> deleteReview(int reviewId) async {
     try {
       final token = box.read("access_token");
       if (token == null) return;
@@ -170,9 +170,7 @@ class ReviewListController extends GetxController {
 
       }
       if (res.statusCode == 200 || res.statusCode == 204) {
-        final data = jsonDecode(res.body);
         Get.snackbar("완료", "삭제되었습니다.");
-        print("받은 값: ${data['content']}");
         await fetchReviews();
 
         if (Get.isRegistered<BookDetailController>()) {
@@ -194,7 +192,56 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 수정 Overlay 오픈
+  // 📌 코멘트 수정
+  // ==========================
+  Future<void> updateReview(int reviewId, String newContent, bool isSpoiler) async {
+    final token = box.read("access_token");
+    if (token == null) return;
+    final target = reviews.firstWhereOrNull((e) => e['id'] == reviewId);
+    if (target == null) return;
+
+    final double rating = (target["rating"] as num?)?.toDouble() ?? 0.0;
+
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    final body = jsonEncode({
+      "book_id": bookId,
+      "rating": rating == 0.0 ? null : rating,
+      "content": newContent,
+      "is_spoiler": isSpoiler,
+    });
+
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/reviews/upsert"),
+      headers: headers,
+      body: body,
+    );
+
+    if (res.statusCode == 200) {
+      final index = reviews.indexWhere((e) => e['id'] == reviewId);
+      if (index != -1) {
+        reviews[index]['content'] = newContent;
+        reviews[index]['is_spoiler'] = isSpoiler;
+        reviews.refresh();
+      }
+
+      if (Get.isRegistered<BookDetailController>()) {
+        final bookDetail = Get.find<BookDetailController>();
+        await bookDetail.fetchReviews();
+        await bookDetail.fetchBookDetail();
+      }
+      Get.snackbar("성공", "코멘트가 수정되었습니다.");
+    } else {
+      Get.snackbar("오류", "수정 실패: ${res.statusCode}");
+    }
+  }
+
+  // ==========================
+  // 📌 코멘트 수정 Overlay
   // ==========================
   void editReview(int reviewId) {
     Get.back();
@@ -209,26 +256,14 @@ class ReviewListController extends GetxController {
       Get.snackbar("오류", "상세 페이지 정보를 불러올 수 없습니다.");
       return;
     }
-    final bookDetail = Get.find<BookDetailController>();
 
     Get.bottomSheet(
       CommentOverlay(
         isEditMode: true,
         initialText: currentContent,
         initialSpoiler: currentSpoiler,
-
-        onSubmit: (newContent, newSpoiler) async {
-          await bookDetail.submitComment(newContent, newSpoiler);
-          await fetchReviews();
-
-          final index = reviews.indexWhere((e) => e['id'] == reviewId);
-          if (index != -1) {
-            var updated = Map<String, dynamic>.from(reviews[index]);
-            updated['content'] = newContent;
-            updated['is_spoiler'] = newSpoiler;
-            reviews[index] = updated;
-            reviews.refresh();
-          }
+        onSubmit: (newContent, newSpoiler) {
+          updateReview(reviewId, newContent, newSpoiler);
         },
       ),
       isScrollControlled: true,

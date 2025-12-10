@@ -4,6 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hechi/features/review_list/controllers/review_list_controller.dart';
 import '../controllers/review_detail_controller.dart';
 import '../../review_list/widgets/option_bottom_sheet.dart';
+import '../../../core/widgets/bottom_bar.dart';
 
 class ReviewDetailPage extends GetView<ReviewDetailController> {
   const ReviewDetailPage({super.key});
@@ -34,15 +35,11 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
             return IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: () {
-                final reviewId = controller.review['id'];
                 Get.bottomSheet(
                   OptionBottomSheet(
-                    reviewId: reviewId,
-                      onEdit: (id) => reviewList?.editReview(id),
-                      onDelete: (id) async {
-                        await reviewList?.deleteComment(id);
-                        Get.back(result: true);
-                      },
+                    reviewId: controller.reviewId,
+                      onEdit: (_) => controller.showEditOverlay(),
+                      onDelete: (_) => controller.deleteReview(),
                   ),
                   backgroundColor: Colors.transparent,
                 );
@@ -51,26 +48,32 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           }),
         ],
       ),
+      bottomNavigationBar: const BottomBar(),
       body: SafeArea(
-          child: Obx(() {
-            if (controller.isLoadingReview.value) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildMainContent(),
-                  _buildActionButtons(),
-                  _buildStatsLine(),
-                  const Divider(
-                      thickness: 1, height: 1, color: Color(0xFFF3F3F3)),
-                  _buildCommentList(),
-                ],
-              ),
-            );
-          }),
+        child: Column(
+          children: [
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoadingReview.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildMainContent(),
+                      _buildActionButtons(),
+                      _buildStatsLine(),
+                      const Divider(thickness: 1, height: 1, color: Color(0xFFF3F3F3)),
+                      _buildCommentList(),
+                    ],
+                  ),
+                );
+              }),
+            ),
+            _buildBottomInputField(),
+          ],
+        ),
       ),
     );
   }
@@ -122,14 +125,15 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                     const SizedBox(height: 6),
 
                     // 별점
-                    RatingBarIndicator(
-                      rating: rating,
-                      itemBuilder: (context, index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
-                      itemCount: 5,
-                      itemSize: 16.0,
-                      direction: Axis.horizontal,
-                    ),
-                    const SizedBox(height: 10),
+                    if (rating > 0)
+                      RatingBarIndicator(
+                        rating: rating,
+                        itemBuilder: (context, index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
+                        itemCount: 5,
+                        itemSize: 16.0,
+                        direction: Axis.horizontal,
+                      ),
+                      const SizedBox(height: 10),
 
                     Text(
                       bookTitle,
