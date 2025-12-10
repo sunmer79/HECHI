@@ -175,7 +175,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
             const SizedBox(height: 5),
 
             SizedBox(
-              height: 100,
+              height: 105, // ⭐️ 수정: 높이를 100에서 105로 늘려 오버플로우 공간 확보
               child: Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -233,7 +233,7 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 5), // ⭐️ 수정: 하단 공간을 10에서 5로 줄여 오버플로우 흡수
                           ],
                         ),
                       ),
