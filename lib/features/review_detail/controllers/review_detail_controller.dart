@@ -49,7 +49,7 @@ class ReviewDetailController extends GetxController {
 
     isLoadingReview.value = false;
   }
-
+/*
   // ==========================
   // 📌 코멘트 상세 조회
   // ==========================
@@ -82,6 +82,48 @@ class ReviewDetailController extends GetxController {
       Get.back();
     }
   }
+*/
+  Future<void> fetchReviewDetail() async {
+    try {
+      isLoadingReview.value = true;
+      final token = box.read('access_token');
+      final headers = {"Content-Type": "application/json"};
+      if (token != null) headers["Authorization"] = "Bearer $token";
+
+      print("📡 [FETCH] GET /reviews/$reviewId 요청 시작");
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/reviews/$reviewId"),
+        headers: headers,
+      );
+
+      print("📡 상태코드: ${res.statusCode}");
+      print("📡 응답 body: ${res.body}");   // ←🔥 추가
+      print("📡 응답 bytes: ${utf8.decode(res.bodyBytes)}"); // ←🔥 추가
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        print("📡 파싱된 데이터: $data"); // ←🔥 추가
+
+        setReviewData(data);
+
+        if (data['book_id'] != null) {
+          fetchBookDetail(data['book_id']);
+        }
+        fetchComments();
+      } else {
+        print("❌ 리뷰 상세 조회 실패: ${res.statusCode}");
+        print("❌ 서버 응답 body: ${res.body}");  // ←🔥 매우 중요
+
+        Get.back();
+        Get.snackbar("오류", "리뷰를 불러오지 못했습니다.");
+      }
+    } catch (e) {
+      print("❌ 리뷰 상세 에러: $e");
+      Get.back();
+    }
+  }
+
 
   // ==========================
   // 📌 책 상세 정보 조회 (제목, 표지, 저자 등)
@@ -242,7 +284,7 @@ class ReviewDetailController extends GetxController {
       );
 
       if (res.statusCode == 200) {
-        final list = jsonDecode(utf8.decode(res.bodyBytes));
+        final List<dynamic> list = jsonDecode(utf8.decode(res.bodyBytes));
         comments.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
         final int count = comments.length;
