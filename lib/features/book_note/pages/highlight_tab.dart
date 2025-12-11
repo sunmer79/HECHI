@@ -3,20 +3,23 @@ import 'package:get/get.dart';
 import '../controllers/book_note_controller.dart';
 import '../widgets/highlight_item.dart';
 import '../widgets/dialogs/sort_bottom_sheet.dart';
-import '../widgets/overlays/highlight_creation_overlay.dart';
+import '../widgets/overlays/creation_overlay.dart';
+// import '../widgets/overlays/highlight_creation_overlay.dart';
 
 class HighlightTab extends GetView<BookNoteController> {
   const HighlightTab({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<BookNoteController>();
+
     return Column(
       children: [
         _buildControlBar(context),
 
         Expanded(
           child: Obx(() {
-            if (controller.isLoading.value) {
+            if (controller.isLoadingHighlights.value) {
               return const Center(child: CircularProgressIndicator());
             }
             if (controller.highlights.isEmpty) {
@@ -28,15 +31,11 @@ class HighlightTab extends GetView<BookNoteController> {
             return ListView.separated(
               padding: const EdgeInsets.all(20),
               itemCount: controller.highlights.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 0),
               itemBuilder: (context, index) {
                 final item = controller.highlights[index];
-                return HighlightItem(
-                  data: item,
-                  onDelete: () => controller.deleteItem('highlight', item['id']),
-                  onUpdate: (highlight_id, sentence, memo, isPublic) => controller.updateHighlight(item['id'], sentence, memo, isPublic),
-                );
+                return HighlightItem(data: item);
               },
+              separatorBuilder: (_, __) => const SizedBox(height: 0),
             );
           }),
         ),
@@ -55,7 +54,7 @@ class HighlightTab extends GetView<BookNoteController> {
         children: [
           GestureDetector(
             onTap: () => Get.bottomSheet(
-              const SortBottomSheet(),
+              const SortBottomSheet(type: "highlight"),
               backgroundColor: Colors.transparent,
             ),
             child: Row(
@@ -63,7 +62,7 @@ class HighlightTab extends GetView<BookNoteController> {
                 const Icon(Icons.sort, size: 18, color: Colors.grey),
                 const SizedBox(width: 6),
                 Obx(() => Text(
-                  controller.sortText,
+                  controller.sortTextHighlight.value,
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                 )),
               ],
@@ -72,10 +71,20 @@ class HighlightTab extends GetView<BookNoteController> {
 
           GestureDetector(
             onTap: () {
+              /*
               Get.bottomSheet(
-                HighlightCreationOverlay(onSubmit: controller.createHighlight),
+                HighlightCreationOverlay(isEdit: false,),
                 isScrollControlled: true,
                 backgroundColor: Colors.white,
+              );
+               */
+              Get.bottomSheet(
+                CreationOverlay(
+                  type: "highlight",
+                  isEdit: false,
+                ),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
               );
             },
             child: const Icon(Icons.edit, color: Colors.grey, size: 24),

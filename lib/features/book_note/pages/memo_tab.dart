@@ -3,23 +3,26 @@ import 'package:get/get.dart';
 import '../controllers/book_note_controller.dart';
 import '../widgets/memo_item.dart';
 import '../widgets/dialogs/sort_bottom_sheet.dart';
-import '../widgets/overlays/memo_creation_overlay.dart';
+import '../widgets/overlays/creation_overlay.dart';
+// import '../widgets/overlays/memo_creation_overlay.dart';
 
 class MemoTab extends GetView<BookNoteController> {
   const MemoTab({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<BookNoteController>();
+
     return Column(
       children: [
         _buildControlBar(context),
 
         Expanded(
           child: Obx(() {
-            if (controller.isLoading.value) {
+            if (controller.isLoadingNotes.value) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (controller.memos.isEmpty) {
+            if (controller.notes.isEmpty) {
               return const Center(
                 child: Text("작성된 메모가 없습니다.", style: TextStyle(color: Colors.grey)),
               );
@@ -27,16 +30,12 @@ class MemoTab extends GetView<BookNoteController> {
 
             return ListView.separated(
               padding: const EdgeInsets.all(20),
-              itemCount: controller.memos.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 0),
+              itemCount: controller.notes.length,
               itemBuilder: (context, index) {
-                final item = controller.memos[index];
-                return MemoItem(
-                  data: item,
-                  onDelete: () => controller.deleteItem('memo', item['id']),
-                  onUpdate: (memo_id, content) => controller.updateMemo(item['id'], content),
-                );
+                final item = controller.notes[index];
+                return MemoItem(data: item);
               },
+              separatorBuilder: (_, __) => const SizedBox(height: 0),
             );
           }),
         ),
@@ -53,32 +52,26 @@ class MemoTab extends GetView<BookNoteController> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Get.bottomSheet(
-              const SortBottomSheet(),
-              backgroundColor: Colors.transparent,
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.sort, size: 18, color: Colors.grey),
-                const SizedBox(width: 6),
-                Obx(() => Text(
-                  controller.sortText,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                )),
-              ],
-            ),
-          ),
-
+          // const Text("메모", style: TextStyle(color: Colors.grey, fontSize: 14)),
           GestureDetector(
             onTap: () {
+              /*
               Get.bottomSheet(
-                MemoCreationOverlay(onSubmit: controller.createMemo),
+                MemoCreationOverlay(isEdit: false),
                 isScrollControlled: true,
                 backgroundColor: Colors.white,
               );
+               */
+              Get.bottomSheet(
+                CreationOverlay(
+                  type: "memo",
+                  isEdit: false,
+                ),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+              );
             },
-            child: const Icon(Icons.edit, color: Colors.grey, size: 24),
+          child: const Icon(Icons.edit, color: Colors.grey, size: 24),
           ),
         ],
       ),

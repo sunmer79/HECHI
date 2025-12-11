@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../controllers/book_note_controller.dart';
 import '../widgets/bookmark_item.dart';
 import '../widgets/dialogs/sort_bottom_sheet.dart';
-import '../widgets/overlays/bookmark_creation_overlay.dart';
+import '../widgets/overlays/creation_overlay.dart';
+// import '../widgets/overlays/bookmark_creation_overlay.dart';
 
 class BookmarkTab extends GetView<BookNoteController> {
   const BookmarkTab({super.key});
@@ -18,7 +17,7 @@ class BookmarkTab extends GetView<BookNoteController> {
 
         Expanded(
           child: Obx(() {
-            if (controller.isLoading.value) {
+            if (controller.isLoadingBookmarks.value) {
               return const Center(child: CircularProgressIndicator());
             }
             if (controller.bookmarks.isEmpty) {
@@ -33,11 +32,7 @@ class BookmarkTab extends GetView<BookNoteController> {
               separatorBuilder: (_, __) => const SizedBox(height: 0),
               itemBuilder: (context, index) {
                 final item = controller.bookmarks[index];
-                return BookmarkItem(
-                  data: item,
-                  onDelete: () => controller.deleteItem('bookmark', item['id']),
-                  onUpdate: (bookmark_id, page, memo) => controller.updateBookmark(item['id'], page, memo),
-                );
+                return BookmarkItem(data: item);
               },
             );
           }),
@@ -57,7 +52,7 @@ class BookmarkTab extends GetView<BookNoteController> {
         children: [
           GestureDetector(
             onTap: () => Get.bottomSheet(
-              const SortBottomSheet(),
+              const SortBottomSheet(type: "bookmark"),
               backgroundColor: Colors.transparent,
             ),
             child: Row(
@@ -65,7 +60,7 @@ class BookmarkTab extends GetView<BookNoteController> {
                 const Icon(Icons.sort, size: 18, color: Colors.grey),
                 const SizedBox(width: 6),
                 Obx(() => Text(
-                  controller.sortText,
+                  controller.sortTextBookmark.value,
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                 )),
               ],
@@ -74,10 +69,20 @@ class BookmarkTab extends GetView<BookNoteController> {
 
           GestureDetector(
             onTap: () {
+              /*
               Get.bottomSheet(
-                BookmarkCreationOverlay(onSubmit: controller.createBookmark),
+                BookmarkCreationOverlay(isEdit: false,),
                 isScrollControlled: true,
                 backgroundColor: Colors.white,
+              );
+               */
+              Get.bottomSheet(
+                CreationOverlay(
+                  type: "bookmark",
+                  isEdit: false,
+                ),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
               );
             },
             child: const Icon(Icons.edit, color: Colors.grey, size: 24),

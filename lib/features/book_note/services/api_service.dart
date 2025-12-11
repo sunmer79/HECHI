@@ -9,7 +9,7 @@ class ApiService {
 
   /// ====================== GET ======================
   Future<dynamic> get(String endpoint) async {
-    final token = box.read("token");
+    final token = box.read("access_token");
 
     final response = await http.get(
       Uri.parse("$baseUrl$endpoint"),
@@ -24,7 +24,7 @@ class ApiService {
 
   /// ====================== POST ======================
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
-    final token = box.read("token");
+    final token = box.read("access_token");
 
     final response = await http.post(
       Uri.parse("$baseUrl$endpoint"),
@@ -40,7 +40,7 @@ class ApiService {
 
   /// ====================== PUT ======================
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
-    final token = box.read("token");
+    final token = box.read("access_token");
 
     final response = await http.put(
       Uri.parse("$baseUrl$endpoint"),
@@ -56,7 +56,7 @@ class ApiService {
 
   /// ====================== DELETE ======================
   Future<dynamic> delete(String endpoint) async {
-    final token = box.read("token");
+    final token = box.read("access_token");
 
     final response = await http.delete(
       Uri.parse("$baseUrl$endpoint"),

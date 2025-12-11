@@ -1,93 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../controllers/book_note_controller.dart';
+import '../styles/overlay_common.dart';
 
-class BookmarkCreationOverlay extends StatelessWidget {
-  final Function(int page, String memo) onSubmit;
-
+class BookmarkCreationOverlay extends StatefulWidget {
+  final bool isEdit;
+  final int? bookmarkId;
   final int? initialPage;
   final String? initialMemo;
 
-  late final TextEditingController pageController;
-  late final TextEditingController memoController;
-
-  BookmarkCreationOverlay({
+  const BookmarkCreationOverlay({
     super.key,
-    required this.onSubmit,
+    required this.isEdit,
+    this.bookmarkId,
     this.initialPage,
     this.initialMemo,
-  }) {
-    pageController = TextEditingController(text: initialPage?.toString() ?? "");
-    memoController = TextEditingController(text: initialMemo ?? "");
+  });
+
+  @override
+  State<BookmarkCreationOverlay> createState() =>
+      _BookmarkCreationOverlayState();
+}
+
+class _BookmarkCreationOverlayState extends State<BookmarkCreationOverlay> {
+  late TextEditingController pageController;
+  late TextEditingController memoController;
+
+  @override
+  void initState() {
+    super.initState();
+    pageController =
+        TextEditingController(text: widget.initialPage?.toString() ?? "");
+    memoController = TextEditingController(text: widget.initialMemo ?? "");
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: SafeArea(
+    final controller = Get.find<BookNoteController>();
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.only(top: 16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 1. 헤더 (취소 / 제목 / 확인)
+            /// ===== Header =====
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(
-                  onTap: () => Get.back(),
-                  child: const Text("취소", style: TextStyle(color: Colors.black, fontSize: 16)),
-                ),
-                Text(initialPage == null ? "북마크 작성" : "북마크 수정", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                GestureDetector(
-                  onTap: () {
-                    final page = int.tryParse(pageController.text) ?? 0;
-                    onSubmit(page, memoController.text);
-                    Get.back();
-                  },
-                  child: const Text("확인", style: TextStyle(color: Colors.black, fontSize: 16)),
-                ),
+                TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text("취소", style: OverlayCommon.actionStyle)),
+                Text(widget.isEdit ? "북마크 수정" : "북마크 작성",
+                    style: OverlayCommon.headerStyle),
+                TextButton(
+                    onPressed: () {
+                      final page = int.tryParse(pageController.text);
+                      if (page == null) {
+                        Get.snackbar("오류", "올바른 페이지를 입력해주세요");
+                        return;
+                      }
+
+                      final memo = memoController.text.trim();
+
+                      if (widget.isEdit) {
+                        controller.updateBookmark(
+                            widget.bookmarkId!, page, memo);
+                      } else {
+                        controller.createBookmark(page, memo);
+                      }
+                    },
+                    child: const Text("완료", style: OverlayCommon.actionStyle)),
               ],
             ),
-            const SizedBox(height: 30),
 
-            // 2. 페이지 입력 (녹색 배경 스타일)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9), // 연한 초록
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
+            const Divider(height: 1),
+
+            /// ===== Input Fields =====
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  const Text("p.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4DB56C))),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: pageController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: "북마크할 페이지 번호를 입력해주세요.",
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ),
+                  TextField(
+                    controller: pageController,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                    OverlayCommon.input("페이지 번호를 입력하세요 (필수)"),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: memoController,
+                    maxLines: 5,
+                    decoration:
+                    OverlayCommon.input("메모를 입력하세요 (선택)"),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // 3. 메모 입력
-            Expanded(
-              child: TextField(
-                controller: memoController,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  hintText: "페이지에 대한 생각을 자유롭게 적어주세요.",
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
-                ),
               ),
             ),
           ],

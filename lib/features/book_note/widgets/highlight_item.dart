@@ -1,98 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../widgets/dialogs/option_sheet.dart';
+import '../widgets/dialogs/option_bottom_sheet.dart';
+import '../widgets/styles/item_common.dart';
 
 class HighlightItem extends StatelessWidget {
   final Map<String, dynamic> data;
-  final VoidCallback onDelete;
-  final VoidCallback? onCreateMemo;
 
-  const HighlightItem({
-    super.key,
-    required this.data,
-    required this.onDelete,
-    this.onCreateMemo,
-  });
+  const HighlightItem({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final memo = data["memo"] ?? "";
+    final hasMemo = memo.isNotEmpty;
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. 타임라인 (노란색)
-        Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFF9C4),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.push_pin_outlined, color: Color(0xFFFBC02D), size: 20),
-            ),
-            Container(width: 2, height: 60, color: const Color(0xFFFFF9C4)),
-          ],
-        ),
-        const SizedBox(width: 15),
+        _buildHeader(context),
 
-        // 2. 내용
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  // 인용구 배경 (디자인에 따라 조정 가능)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFDE7), // 아주 연한 노랑
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "\"${data['sentence'] ?? ""}\"",
-                      style: const TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
-                    ),
-                  ),
-                  // 더보기 버튼 (우측 상단)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        Get.bottomSheet(
-                          OptionSheet(
-                            type: 'highlight',
-                            onDelete: onDelete,
-                            onCreateMemo: onCreateMemo,
-                          ),
-                          backgroundColor: Colors.transparent,
-                        );
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(Icons.more_horiz, color: Colors.grey, size: 20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text("p.${data['page']}", style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 10),
-                  Text(
-                    data['created_date']?.toString().substring(0, 10) ?? "",
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
+        const SizedBox(height: 8),
+
+        Text(
+          data["sentence"] ?? "",
+          style: ItemCommon.titleStyle,
+        ),
+
+        if (hasMemo) ...[
+          const SizedBox(height: 6),
+          Text(memo, style: ItemCommon.memoStyle),
+        ],
+
+        const SizedBox(height: 12),
+        _buildPublicFlag(),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildPublicFlag() {
+    final isPublic = data["is_public"] ?? false;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isPublic ? Colors.green[100] : Colors.grey[300],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        isPublic ? "공개" : "비공개",
+        style: TextStyle(
+          color: isPublic ? Colors.green[700] : Colors.grey[600],
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final created = _formatDate(data["created_date"]);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(created, style: ItemCommon.subStyle),
+
+        GestureDetector(
+          onTap: () => Get.bottomSheet(
+            OptionBottomSheet(
+              type: "highlight",
+              data: data,
+            ),
           ),
+          child: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
         ),
       ],
     );
+  }
+
+  String _formatDate(String raw) {
+    final date = DateTime.parse(raw);
+    return "${date.year}.${date.month}.${date.day}";
   }
 }

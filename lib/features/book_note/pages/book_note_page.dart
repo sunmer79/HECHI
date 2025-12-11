@@ -27,7 +27,7 @@ class BookNotePage extends GetView<BookNoteController> {
           // 2. 책 정보 헤더 (제목, 작가, 표지)
           const BookInfoHeader(),
 
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          const Divider(height: 10, color: Color(0xFFEEEEEE)),
 
           // 3. 탭 바 (북마크 / 하이라이트 / 메모)
           TabBar(

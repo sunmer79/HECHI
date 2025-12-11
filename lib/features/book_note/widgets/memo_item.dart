@@ -1,58 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../widgets/dialogs/option_sheet.dart';
+import '../widgets/dialogs/option_bottom_sheet.dart';
+import '../widgets/styles/item_common.dart';
 
 class MemoItem extends StatelessWidget {
   final Map<String, dynamic> data;
-  final VoidCallback onDelete;
 
-  const MemoItem({super.key, required this.data, required this.onDelete});
+  const MemoItem({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final content = data["content"] ?? "";
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
-              child: const Icon(Icons.description_outlined, color: Color(0xFFEF5350), size: 20),
+        _buildHeader(context),
+
+        const SizedBox(height: 8),
+
+        Text(content, style: ItemCommon.memoStyle),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final created = _formatDate(data["created_date"]);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(created, style: ItemCommon.subStyle),
+
+        GestureDetector(
+          onTap: () => Get.bottomSheet(
+            OptionBottomSheet(
+              type: "memo",
+              data: data,
             ),
-            Container(width: 2, height: 60, color: const Color(0xFFFFEBEE)),
-          ],
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFFAFAFA), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFEEEEEE))),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: Text(data['content'] ?? "", style: const TextStyle(fontSize: 14, height: 1.6, color: Colors.black87))),
-                    GestureDetector(
-                      onTap: () => Get.bottomSheet(OptionSheet(type: 'memo', onDelete: onDelete), backgroundColor: Colors.transparent),
-                      child: const Icon(Icons.more_horiz, color: Colors.grey, size: 20),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(children: [
-                Text("p.${data['page']}", style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                Text(data['created_date']?.toString().substring(0, 10) ?? "", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ]),
-            ],
           ),
+          child: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
         ),
       ],
     );
+  }
+
+  String _formatDate(String raw) {
+    final date = DateTime.parse(raw);
+    return "${date.year}.${date.month}.${date.day}";
   }
 }

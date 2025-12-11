@@ -1,75 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../controllers/book_note_controller.dart';
+import '../styles/overlay_common.dart';
 
-class MemoCreationOverlay extends StatelessWidget {
-  final Function(int page, String content) onSubmit;
-  final TextEditingController pageController = TextEditingController();
-  final TextEditingController contentController = TextEditingController();
+class MemoCreationOverlay extends StatefulWidget {
+  final bool isEdit;
+  final int? memoId;
+  final String? initialContent;
 
-  MemoCreationOverlay({super.key, required this.onSubmit});
+  const MemoCreationOverlay({
+    super.key,
+    required this.isEdit,
+    this.memoId,
+    this.initialContent,
+  });
+
+  @override
+  State<MemoCreationOverlay> createState() => _MemoCreationOverlayState();
+}
+
+class _MemoCreationOverlayState extends State<MemoCreationOverlay> {
+  late TextEditingController contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    contentController =
+        TextEditingController(text: widget.initialContent ?? "");
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: SafeArea(
+    final controller = Get.find<BookNoteController>();
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.only(top: 16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 헤더
+            /// ===== Header =====
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                GestureDetector(onTap: () => Get.back(), child: const Text("취소", style: TextStyle(fontSize: 16))),
-                const Text("메모 작성", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                GestureDetector(
-                  onTap: () {
-                    final page = int.tryParse(pageController.text) ?? 0;
-                    onSubmit(page, contentController.text);
-                    Get.back();
-                  },
-                  child: const Text("확인", style: TextStyle(fontSize: 16)),
-                ),
+                TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text("취소", style: OverlayCommon.actionStyle)),
+                Text(widget.isEdit ? "메모 수정" : "메모 작성",
+                    style: OverlayCommon.headerStyle),
+                TextButton(
+                    onPressed: () {
+                      final content = contentController.text.trim();
+                      if (content.isEmpty) {
+                        Get.snackbar("오류", "메모를 입력해주세요");
+                        return;
+                      }
+
+                      if (widget.isEdit) {
+                        controller.updateMemo(widget.memoId!, content);
+                      } else {
+                        controller.createMemo(content);
+                      }
+                    },
+                    child: const Text("완료", style: OverlayCommon.actionStyle)),
               ],
             ),
-            const SizedBox(height: 30),
 
-            // 페이지 입력 (메모는 빨간색 계열)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(8)),
-              child: Row(
-                children: [
-                  const Text("p.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFEF5350))),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: pageController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: "관련 페이지 (선택)",
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            const Divider(height: 1),
 
-            // 내용 입력
-            Expanded(
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: TextField(
                 controller: contentController,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  hintText: "작품에 대한 생각을 자유롭게 적어주세요.",
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
-                ),
+                maxLines: 10,
+                decoration:
+                OverlayCommon.input("메모 내용을 입력하세요"),
               ),
             ),
           ],
