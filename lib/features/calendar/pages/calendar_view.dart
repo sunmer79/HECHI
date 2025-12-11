@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/calendar_controller.dart';
 import '../../../../core/widgets/bottom_bar.dart';
-
-// 분리한 위젯들 임포트
+import '../../../../core/widgets/common_calendar_widget.dart';
 import '../widgets/calendar_app_bar.dart';
 import '../widgets/monthly_summary_section.dart';
-import '../widgets/weekday_header.dart';
-import '../widgets/calendar_grid.dart';
 
 class CalendarView extends GetView<CalendarController> {
   const CalendarView({super.key});
@@ -17,7 +14,7 @@ class CalendarView extends GetView<CalendarController> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // 1. 앱바 분리
+      // 1. 앱바
       appBar: CalendarAppBar(controller: controller),
 
       bottomNavigationBar: const BottomBar(),
@@ -36,18 +33,17 @@ class CalendarView extends GetView<CalendarController> {
               children: [
                 const SizedBox(height: 20),
 
-                // 2. 월간 요약 (몇 권, 장르)
+                // 2. 월간 요약 섹션
                 MonthlySummarySection(controller: controller),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
-                // 3. 요일 헤더 (Mon, Tue...)
-                const WeekdayHeader(),
-
-                const SizedBox(height: 12),
-
-                // 4. 달력 그리드 (날짜, 책 표지)
-                CalendarGrid(controller: controller),
+                CommonCalendarWidget(
+                  currentYear: controller.currentYear.value,
+                  currentMonth: controller.currentMonth.value,
+                  bookCovers: controller.calendarBooks,
+                  dailyBooks: controller.dailyBooks,
+                ),
 
                 const SizedBox(height: 40),
               ],

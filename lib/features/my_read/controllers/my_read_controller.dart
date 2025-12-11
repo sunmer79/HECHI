@@ -29,8 +29,13 @@ class MyReadController extends GetxController {
   // 캘린더 관련 변수
   RxInt currentYear = DateTime.now().year.obs;
   RxInt currentMonth = DateTime.now().month.obs;
-  RxMap<int, String> calendarBooks = <int, String>{}.obs;
   RxInt monthlyReadCount = 0.obs; // 이번 달 읽은 권수
+
+  // 1. 달력 그리드용 표지 (Key: 날짜, Value: 썸네일 URL)
+  RxMap<int, String> calendarBooks = <int, String>{}.obs;
+
+  // 2. ✅ [추가됨] 바텀 시트용 상세 리스트 (Key: 날짜, Value: 책 정보 리스트)
+  RxMap<int, List<dynamic>> dailyBooks = <int, List<dynamic>>{}.obs;
 
   @override
   void onInit() {
@@ -68,36 +73,53 @@ class MyReadController extends GetxController {
     }
   }
 
-  // ✅ [수정됨] API 명세서 반영: total_read_count 사용
+  // ✅ [수정됨] 캘린더 데이터 가져오기 (상세 리스트 파싱 추가)
   Future<void> fetchCalendarData(String token) async {
-    final url = Uri.parse('$baseUrl/analytics/calendar-month?year=${currentYear.value}&month=${currentMonth.value}');
+    final queryParams = {
+      'year': currentYear.value.toString(),
+      'month': currentMonth.value.toString(),
+    };
+
+    final url = Uri.parse('$baseUrl/analytics/calendar-month').replace(queryParameters: queryParams);
+
     try {
       final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
 
-        // 1. API에서 제공하는 총 독서량 바로 적용
         monthlyReadCount.value = data['total_read_count'] ?? 0;
 
-        Map<int, String> newBooks = {};
+        Map<int, String> newCovers = {};      // 표지용
+        Map<int, List<dynamic>> newDaily = {}; // 상세 리스트용
+
         List days = data['days'] ?? [];
 
-        // 2. 날짜별 책 표지 매핑
         for (var dayData in days) {
-          String dateStr = dayData['date'];
-          DateTime date = DateTime.parse(dateStr);
-          List items = dayData['items'] ?? [];
+          try {
+            String dateStr = dayData['date'];
+            DateTime date = DateTime.parse(dateStr);
+            List items = dayData['items'] ?? [];
 
-          if (items.isNotEmpty) {
-            // 첫 번째 아이템의 썸네일 사용
-            String thumbnail = items[0]['thumbnail'] ?? "";
-            if (thumbnail.isNotEmpty) {
-              newBooks[date.day] = thumbnail;
+            if (items.isNotEmpty) {
+              // (1) 표지 저장
+              String? thumbnail = items[0]['thumbnail'];
+              if (thumbnail != null && thumbnail.isNotEmpty) {
+                newCovers[date.day] = thumbnail;
+              }
+
+              // (2) ✅ 상세 리스트 저장 (바텀 시트용)
+              newDaily[date.day] = items;
             }
+          } catch (e) {
+            print("⚠️ 날짜 파싱 에러: $e");
           }
         }
-        calendarBooks.value = newBooks;
+
+        // 상태 업데이트
+        calendarBooks.value = newCovers;
+        dailyBooks.value = newDaily; // ✅ 변수 업데이트
+
       }
     } catch (e) {
       print("Calendar fetch error: $e");
@@ -112,9 +134,8 @@ class MyReadController extends GetxController {
         final stats = UserStatsResponse.fromJson(json);
 
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
-        activityStats['comments'] = stats.ratingSummary.totalReviews;
+        activityStats['comments'] = stats.ratingSummary.totalReviews; // API에 코멘트 수가 없다면 리뷰 수와 동일하게 처리 중
 
-        // UI 강제 갱신
         activityStats.refresh();
 
         averageRating.value = stats.ratingSummary.average5.toStringAsFixed(1);
