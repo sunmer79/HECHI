@@ -96,7 +96,7 @@ class OptionBottomSheet extends StatelessWidget {
       Get.bottomSheet(
         CreationOverlay(
           type: "bookmark",
-          isEdit: hasMemo,
+          isEdit: true,
           itemId: data["id"],
           page: data["page"],
           memo: hasMemo ? data["memo"] : "",
@@ -110,7 +110,7 @@ class OptionBottomSheet extends StatelessWidget {
       Get.bottomSheet(
         CreationOverlay(
           type: "highlight",
-          isEdit: hasMemo,
+          isEdit: true,
           itemId: data["id"],
           sentence: data["sentence"],
           memo: hasMemo ? data["memo"] : "",
@@ -242,4 +242,3 @@ class OptionBottomSheet extends StatelessWidget {
   }
 }
 */
-

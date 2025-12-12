@@ -50,9 +50,10 @@ class MemoTab extends GetView<BookNoteController> {
         border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5))),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // const Text("메모", style: TextStyle(color: Colors.grey, fontSize: 14)),
+          const Spacer(),
           GestureDetector(
             onTap: () {
               /*

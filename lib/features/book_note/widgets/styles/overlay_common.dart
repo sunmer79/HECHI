@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class OverlayCommon {
   static const headerStyle =
-  TextStyle(fontSize: 17, fontWeight: FontWeight.w600);
+  TextStyle(fontSize: 15, fontWeight: FontWeight.bold);
 
   static const actionStyle =
-  TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+  TextStyle(fontSize: 13, color: Colors.black);
 
   static InputDecoration input(String hint) {
     return InputDecoration(
