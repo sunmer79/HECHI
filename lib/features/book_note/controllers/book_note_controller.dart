@@ -99,6 +99,18 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
           "memo": memo.isEmpty ? null : memo,
         },
       );
+
+      // 메모가 있으면 notes에 추가 생성
+      if (memo.trim().isNotEmpty){
+        await api.post(
+          "/notes/",
+          {
+            "book_id": bookId,
+            "content": memo,
+          },
+        );
+      }
+
       fetchBookmarks();
       fetchNotes(); // memo 포함 시 notes에도 반영
       Get.back();
@@ -162,13 +174,13 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     isLoadingHighlights.value = false;
   }
 
-  Future<void> createHighlight(String sentence, String memo, bool isPublic) async {
+  Future<void> createHighlight(int page, String sentence, String memo, bool isPublic) async {
     try {
       await api.post(
         "/highlights/",
         {
           "book_id": bookId,
-          "page": 0, // 페이지 정보는 UI에서 없으므로 기본값
+          "page": page,
           "sentence": sentence,
           "memo": memo.isEmpty ? null : memo,
           "is_public": isPublic,
@@ -182,15 +194,15 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     }
   }
 
-  Future<void> updateHighlight(int id, String sentence, String memo, bool isPublic) async {
+  Future<void> updateHighlight(int id, int page, String sentence, String memo, bool isPublic) async {
     try {
       await api.put(
         "/highlights/$id",
         {
+          "page": page,
           "sentence": sentence,
           "memo": memo,
           "is_public": isPublic,
-          "page": 0,
         },
       );
       fetchHighlights();

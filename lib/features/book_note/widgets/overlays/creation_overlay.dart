@@ -459,6 +459,11 @@ class _CreationOverlayState extends State<CreationOverlay> {
         break;
 
       case "highlight":
+        final page = int.tryParse(pageController.text);
+        if (page == null) {
+          Get.snackbar("오류", "페이지 번호를 입력해주세요.");
+          return;
+        }
         final sentence = sentenceController.text.trim();
         if (sentence.isEmpty) {
           Get.snackbar("오류", "문장을 입력해주세요.");
@@ -469,12 +474,13 @@ class _CreationOverlayState extends State<CreationOverlay> {
         if (widget.isEdit) {
           controller.updateHighlight(
             widget.itemId!,
+            page,
             sentence,
             memo,
             isPublic,
           );
         } else {
-          controller.createHighlight(sentence, memo, isPublic);
+          controller.createHighlight(page, sentence, memo, isPublic);
         }
         break;
 
