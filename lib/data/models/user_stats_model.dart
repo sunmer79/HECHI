@@ -3,7 +3,7 @@ class UserStatsResponse {
   final RatingSummary ratingSummary;
   final ReadingTime readingTime;
   final List<GenreStat> topLevelGenres;
-  final List<GenreStat> subGenres; // ✅ Dart에서는 변수명을 subGenres로 정의함
+  final List<GenreStat> subGenres;
 
   UserStatsResponse({
     required this.ratingDistribution,
@@ -47,12 +47,14 @@ class RatingSummary {
   final int totalReviews;
   final double mostFrequentRating;
   final int average100;
+  final int totalComments;
 
   RatingSummary({
     required this.average5,
     required this.totalReviews,
     required this.mostFrequentRating,
     required this.average100,
+    required this.totalComments,
   });
 
   factory RatingSummary.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,7 @@ class RatingSummary {
       totalReviews: (json['total_reviews'] as num?)?.toInt() ?? 0,
       mostFrequentRating: (json['most_frequent_rating'] as num?)?.toDouble() ?? 0.0,
       average100: (json['average_100'] as num?)?.toInt() ?? 0,
+      totalComments: json['total_comments']??0,
     );
   }
 }

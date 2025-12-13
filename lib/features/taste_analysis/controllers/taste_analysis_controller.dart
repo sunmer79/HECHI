@@ -51,6 +51,7 @@ class TasteAnalysisController extends GetxController {
           _fetchInsightTags(token),
         ]);
       } catch (e) {
+        print("오류");
       }
     }
 
@@ -179,6 +180,7 @@ class TasteAnalysisController extends GetxController {
         tags.value = newTags;
       }
     } catch (e) {
+      print("오류");
     }
   }
 
