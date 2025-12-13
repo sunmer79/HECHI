@@ -21,14 +21,13 @@ class UserStatsResponse {
       readingTime: ReadingTime.fromJson(json['reading_time'] ?? {}),
       topLevelGenres: (json['top_level_genres'] as List? ?? [])
           .map((e) => GenreStat.fromJson(e)).toList(),
-      // ✅ JSON의 'sub_genres'를 Dart의 'subGenres'로 매핑
       subGenres: (json['sub_genres'] as List? ?? [])
           .map((e) => GenreStat.fromJson(e)).toList(),
     );
   }
 }
 
-// ... (나머지 클래스들 RatingDist, GenreStat 등은 기존과 동일)
+// ... (RatingDist 등 다른 클래스는 기존 유지) ...
 class RatingDist {
   final int rating;
   final int count;
@@ -47,14 +46,14 @@ class RatingSummary {
   final int totalReviews;
   final double mostFrequentRating;
   final int average100;
-  final int totalComments;
+  final int totalComments; // ✅ [추가] 코멘트 개수 필드
 
   RatingSummary({
     required this.average5,
     required this.totalReviews,
     required this.mostFrequentRating,
     required this.average100,
-    required this.totalComments,
+    required this.totalComments, // ✅ [추가] 생성자
   });
 
   factory RatingSummary.fromJson(Map<String, dynamic> json) {
@@ -63,7 +62,8 @@ class RatingSummary {
       totalReviews: (json['total_reviews'] as num?)?.toInt() ?? 0,
       mostFrequentRating: (json['most_frequent_rating'] as num?)?.toDouble() ?? 0.0,
       average100: (json['average_100'] as num?)?.toInt() ?? 0,
-      totalComments: json['total_comments']??0,
+      // ✅ [핵심] JSON의 'total_comments'를 가져옵니다.
+      totalComments: (json['total_comments'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -120,7 +120,7 @@ class UserInsightResponse {
 
 class InsightTag {
   final String label;
-  final double weight; // 0.0 ~ 1.0 사이의 가중치
+  final double weight;
 
   InsightTag({required this.label, required this.weight});
 

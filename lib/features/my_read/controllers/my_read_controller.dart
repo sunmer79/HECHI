@@ -19,10 +19,10 @@ class MyReadController extends GetxController {
   RxList<Map<String, dynamic>> ratingDistData = <Map<String, dynamic>>[].obs;
 
   RxString averageRating = "0.0".obs;
-  RxString totalReviews = "0.0".obs;
+  RxString totalReviews = "0".obs;
   RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
-  RxString totalComments="0.0".obs;
+  RxString totalComments = "0".obs; // ✅ 개별 변수
 
   // 태그 클라우드 데이터
   RxList<Map<String, dynamic>> insightTags = <Map<String, dynamic>>[].obs;
@@ -30,12 +30,9 @@ class MyReadController extends GetxController {
   // 캘린더 관련 변수
   RxInt currentYear = DateTime.now().year.obs;
   RxInt currentMonth = DateTime.now().month.obs;
-  RxInt monthlyReadCount = 0.obs; // 이번 달 읽은 권수
+  RxInt monthlyReadCount = 0.obs;
 
-  // 1. 달력 그리드용 표지 (Key: 날짜, Value: 썸네일 URL)
   RxMap<int, String> calendarBooks = <int, String>{}.obs;
-
-  // 2. ✅ [추가됨] 바텀 시트용 상세 리스트 (Key: 날짜, Value: 책 정보 리스트)
   RxMap<int, List<dynamic>> dailyBooks = <int, List<dynamic>>{}.obs;
 
   @override
@@ -74,7 +71,6 @@ class MyReadController extends GetxController {
     }
   }
 
-  // ✅ [수정됨] 캘린더 데이터 가져오기 (상세 리스트 파싱 추가)
   Future<void> fetchCalendarData(String token) async {
     final queryParams = {
       'year': currentYear.value.toString(),
@@ -88,11 +84,10 @@ class MyReadController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-
         monthlyReadCount.value = data['total_read_count'] ?? 0;
 
-        Map<int, String> newCovers = {};      // 표지용
-        Map<int, List<dynamic>> newDaily = {}; // 상세 리스트용
+        Map<int, String> newCovers = {};
+        Map<int, List<dynamic>> newDaily = {};
 
         List days = data['days'] ?? [];
 
@@ -103,47 +98,50 @@ class MyReadController extends GetxController {
             List items = dayData['items'] ?? [];
 
             if (items.isNotEmpty) {
-              // (1) 표지 저장
               String? thumbnail = items[0]['thumbnail'];
               if (thumbnail != null && thumbnail.isNotEmpty) {
                 newCovers[date.day] = thumbnail;
               }
-
-              // (2) ✅ 상세 리스트 저장 (바텀 시트용)
               newDaily[date.day] = items;
             }
           } catch (e) {
             print("⚠️ 날짜 파싱 에러: $e");
           }
         }
-
-        // 상태 업데이트
         calendarBooks.value = newCovers;
-        dailyBooks.value = newDaily; // ✅ 변수 업데이트
-
+        dailyBooks.value = newDaily;
       }
     } catch (e) {
       print("Calendar fetch error: $e");
     }
   }
 
+  // ✅ [수정됨] 디버그 로그 추가
   Future<void> _fetchStats(String token) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/analytics/my-stats'), headers: {"Authorization": "Bearer $token"});
+
       if (response.statusCode == 200) {
         final json = jsonDecode(utf8.decode(response.bodyBytes));
         final stats = UserStatsResponse.fromJson(json);
 
+        // 🔥🔥🔥 [범인 확인용 로그] 이 로그가 0으로 찍히면 100% 백엔드 문제입니다.
+        print("🔥🔥🔥 [DEBUG] 서버가 준 코멘트 개수: ${stats.ratingSummary.totalComments}");
+
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
-        activityStats['comments'] = stats.ratingSummary.totalComments; // API에 코멘트 수가 없다면 리뷰 수와 동일하게 처리 중
+        activityStats['comments'] = stats.ratingSummary.totalComments;
 
         activityStats.refresh();
 
         averageRating.value = stats.ratingSummary.average5.toStringAsFixed(1);
         totalReviews.value = stats.ratingSummary.totalReviews.toString();
+
+        // UI 반영을 위해 String 변수 업데이트
+        totalComments.value = stats.ratingSummary.totalComments.toString();
+
         readingRate.value = "${stats.ratingSummary.average100}%";
         mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
-        totalComments.value=stats.ratingSummary.totalComments.toString();
+
         int maxCount = 0;
         for (var d in stats.ratingDistribution) {
           if (d.count > maxCount) maxCount = d.count;
@@ -203,7 +201,6 @@ class MyReadController extends GetxController {
         for (int i = 0; i < topTags.length; i++) {
           final tag = topTags[i];
           final double size = 40.0 - (i * 4.0);
-
           int color;
           if (i == 0) { color = 0xFF2E7D32; }
           else if (i == 1) { color = 0xFF388E3C; }
