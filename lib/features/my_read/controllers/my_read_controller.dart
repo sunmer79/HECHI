@@ -125,7 +125,6 @@ class MyReadController extends GetxController {
         final json = jsonDecode(utf8.decode(response.bodyBytes));
         final stats = UserStatsResponse.fromJson(json);
 
-        // 🔥🔥🔥 [범인 확인용 로그] 이 로그가 0으로 찍히면 100% 백엔드 문제입니다.
         print("🔥🔥🔥 [DEBUG] 서버가 준 코멘트 개수: ${stats.ratingSummary.totalComments}");
 
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
