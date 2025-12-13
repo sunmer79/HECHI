@@ -483,8 +483,8 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         // API 명세: {"average_rating": 0, "review_count": 0}
-        averageRating.value = (data["average_rating"] as num).toDouble();
-        totalReviewCount.value = (data["review_count"] as num).toInt();
+        averageRating.value = (data["average_rating"] as num?)?.toDouble() ?? 0.0;
+        totalReviewCount.value = (data["review_count"] as num?)?.toInt() ?? 0;
       }
     } catch (e) {
       print("❌ Rating Summary Error: $e");
