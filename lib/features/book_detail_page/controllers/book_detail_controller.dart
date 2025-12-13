@@ -95,7 +95,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 목록 조회
+  // 📌 코멘트 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -237,10 +237,7 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         Get.snackbar("완료", "상태가 변경되었습니다.");
-
-        // 🔥 서버 기준 데이터로 UI 다시 동기화 (가장 중요)
         await fetchReadingStatus();
-
       } else {
         print("❌ 실패 본문: ${res.body}");
         Get.snackbar("오류", "상태 변경 실패: ${res.statusCode}");
@@ -264,7 +261,6 @@ class BookDetailController extends GetxController {
 
     final bool before = isWishlisted.value;
 
-    // 🌟 UI를 먼저 토글
     isWishlisted.value = !before;
 
     try {
@@ -278,12 +274,9 @@ class BookDetailController extends GetxController {
         );
         print("🟥 DELETE status: ${res.statusCode}");
       } else {
-        // [추가] 찜 안했으면 -> 추가 (POST)
 
-        // 🔥 [핵심 추가] 만약 현재 '관심없음(ARCHIVED)' 상태라면 -> '읽기 전(PENDING)'으로 초기화
         if (readingStatus.value == "ARCHIVED") {
           print("🚀 '읽고싶어요' 클릭 -> '관심없음' 상태 자동 해제");
-          // API 호출하여 상태 변경 (UI 반영은 이 함수 내부에서 처리됨)
           await updateReadingStatus("PENDING");
         }
 
@@ -313,7 +306,7 @@ class BookDetailController extends GetxController {
   // ==========================
   // 📌 코멘트 등록 함수
   // ==========================
-  Future<void> submitComment(String content, bool isSpoiler) async {
+  Future<void> submitReview(String content, bool isSpoiler) async {
     final token = box.read("access_token");
     if (token == null) return;
 
@@ -334,7 +327,7 @@ class BookDetailController extends GetxController {
     print("🚀 코멘트 등록 요청: $body"); // 디버깅용 로그
 
     final res = await http.post(
-      Uri.parse("$baseUrl/reviews"),
+      Uri.parse("$baseUrl/reviews/upsert"),
       headers: headers,
       body: body,
     );
@@ -348,9 +341,9 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 삭제
+  // 📌 코멘트 + 별점 삭제
   // ==========================
-  Future<void> _deleteReview() async {
+  Future<void> delete() async {
     final token = box.read("access_token");
     final res = await http.delete(
       Uri.parse("$baseUrl/reviews/$myReviewId"),
@@ -371,14 +364,12 @@ class BookDetailController extends GetxController {
   // 📌 코멘트 버튼 클릭 (Overlay 오픈)
   // ==========================
   Future<void> onWriteReview() async {
-    // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
       Get.toNamed("/review_detail", arguments: myReviewId);
     }
-    // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
       Get.bottomSheet(
-        CommentOverlay(onSubmit: submitComment),
+        CommentOverlay(onSubmit: submitReview),
         isScrollControlled: true,
         backgroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
@@ -387,14 +378,7 @@ class BookDetailController extends GetxController {
       );
     }
   }
-/*
-  // ==========================
-  // 📌 내 별점 변경
-  // ==========================
-  void updateMyRating(double rating) {
-    myRating.value = rating;
-  }
-*/
+
   // ==========================
   // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
@@ -405,7 +389,7 @@ class BookDetailController extends GetxController {
     final bool hasContent = myContent.value.isNotEmpty;
 
     if (rating == 0.0 && !hasContent && myReviewId != -1) {
-      await _deleteReview();
+      await delete();
       return;
     }
 
@@ -419,7 +403,6 @@ class BookDetailController extends GetxController {
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
-      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });
@@ -438,7 +421,6 @@ class BookDetailController extends GetxController {
       print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
 
       reviews.refresh();
-
       await fetchBookDetail(); // 통계 갱신
     }
   }
@@ -501,8 +483,8 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         // API 명세: {"average_rating": 0, "review_count": 0}
-        averageRating.value = (data["average_rating"] as num).toDouble();
-        totalReviewCount.value = (data["review_count"] as num).toInt();
+        averageRating.value = (data["average_rating"] as num?)?.toDouble() ?? 0.0;
+        totalReviewCount.value = (data["review_count"] as num?)?.toInt() ?? 0;
       }
     } catch (e) {
       print("❌ Rating Summary Error: $e");

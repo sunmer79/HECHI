@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:hechi/features/review_list/controllers/review_list_controller.dart';
 import '../controllers/review_detail_controller.dart';
+import '../../review_list/widgets/option_bottom_sheet.dart';
 import '../../../core/widgets/bottom_bar.dart';
 
 class ReviewDetailPage extends GetView<ReviewDetailController> {
@@ -9,10 +11,10 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<ReviewDetailController>()) {
-      Get.put(ReviewDetailController());
+    ReviewListController? reviewList;
+    if (Get.isRegistered<ReviewListController>()) {
+      reviewList = Get.find<ReviewListController>();
     }
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -28,10 +30,22 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.black),
-            onPressed: () { },
-          )
+          Obx(() {
+            if (!controller.isMyReview.value) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.more_horiz, color: Colors.black),
+              onPressed: () {
+                Get.bottomSheet(
+                  OptionBottomSheet(
+                    reviewId: controller.reviewId,
+                      onEdit: (_) => controller.showEditOverlay(),
+                      onDelete: (_) => controller.deleteReview(),
+                  ),
+                  backgroundColor: Colors.transparent,
+                );
+              },
+            );
+          }),
         ],
       ),
       bottomNavigationBar: const BottomBar(),
@@ -111,14 +125,15 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                     const SizedBox(height: 6),
 
                     // 별점
-                    RatingBarIndicator(
-                      rating: rating,
-                      itemBuilder: (context, index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
-                      itemCount: 5,
-                      itemSize: 16.0,
-                      direction: Axis.horizontal,
-                    ),
-                    const SizedBox(height: 10),
+                    if (rating > 0)
+                      RatingBarIndicator(
+                        rating: rating,
+                        itemBuilder: (context, index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
+                        itemCount: 5,
+                        itemSize: 16.0,
+                        direction: Axis.horizontal,
+                      ),
+                      const SizedBox(height: 10),
 
                     Text(
                       bookTitle,
@@ -302,11 +317,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                             ),
                           ],
                         ),
-                        if (isMyComment)
-                          GestureDetector(
-                            onTap: () => _showDeleteDialog(context, comment['id']),
-                            child: const Icon(Icons.more_horiz, size: 16, color: Color(0xFFABABAB)),
-                          )
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -366,30 +376,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           GestureDetector(
             onTap: controller.postComment,
             child: const Text("등록", style: TextStyle(color: Color(0xFF4DB56C), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 삭제 확인 다이얼로그
-  void _showDeleteDialog(BuildContext context, int commentId) {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text("댓글 삭제", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("이 댓글을 삭제하시겠습니까?"),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("취소", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back(); // 다이얼로그 닫기
-              controller.deleteComment(commentId); // 컨트롤러 삭제 함수 실행
-            },
-            child: const Text("삭제", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

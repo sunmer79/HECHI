@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../book_detail_page/controllers/book_detail_controller.dart';
+import '../../book_detail_page/widgets/overlays/comment_overlay.dart';
 import 'package:http/http.dart' as http;
 
 class ReviewListController extends GetxController {
@@ -13,11 +15,9 @@ class ReviewListController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxList<Map<String, dynamic>> reviews = <Map<String, dynamic>>[].obs;
 
-  // 정렬 상태 (latest: 최신순, likes: 좋아요순)
   final RxString currentSort = "likes".obs;
   String get sortText => currentSort.value == "likes" ? "좋아요 순" : "최신 순";
 
-  // 스포일러 해제된 리뷰 ID 목록
   final RxSet<int> unlockedSpoilers = <int>{}.obs;
 
   @override
@@ -27,7 +27,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 목록 조회 (데이터 로드 후 즉시 정렬)
+  // 📌 코멘트 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -47,7 +47,7 @@ class ReviewListController extends GetxController {
             .map((e) => Map<String, dynamic>.from(e))
             .where((e) => (e["content"] ?? "").toString().isNotEmpty)
             .toList();
-        _applySort(); // 데이터 로드 후 정렬 적용
+        _applySort();
       } else {
         print("❌ 리뷰 로드 실패: ${res.statusCode}");
       }
@@ -59,7 +59,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 정렬 로직 (내부 함수)
+  // 📌 정렬 로직
   // ==========================
   void _applySort() {
     if (currentSort.value == "likes") { // 좋아요 많은 순 (내림차순)
@@ -71,12 +71,12 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 정렬 변경 (UI에서 호출)
+  // 📌 정렬 변경
   // ==========================
   void changeSort(String type) {
     currentSort.value = type;
     _applySort();
-    Get.back(); // 바텀시트 닫기
+    Get.back();
   }
 
   // ==========================
@@ -94,7 +94,6 @@ class ReviewListController extends GetxController {
     if (index == -1) return;
 
     final review = reviews[index];
-
     final bool prev = review["is_liked"] ?? false;
 
     review["is_liked"] = !prev;
@@ -124,7 +123,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 삭제
+  // 📌 코멘트 삭제
   // ==========================
   Future<void> deleteReview(int reviewId) async {
     try {
@@ -171,24 +170,18 @@ class ReviewListController extends GetxController {
 
       }
       if (res.statusCode == 200 || res.statusCode == 204) {
-        final data = jsonDecode(res.body);
         Get.snackbar("완료", "삭제되었습니다.");
-        print("받은 값: ${data['content']}");
-        // await fetchReviews();
-
-        reviews.removeWhere((e) => e['id'] == reviewId);
-        reviews.refresh();
+        await fetchReviews();
 
         if (Get.isRegistered<BookDetailController>()) {
-          final detail = Get.find<BookDetailController>();
+          final bookDetail = Get.find<BookDetailController>();
 
-          detail.myRating.value = rating > 0 ? rating : 0.0;
-          detail.myContent.value = "";
-          detail.isCommented.value = false;
-          if (rating == 0) detail.myReviewId = -1;
+          bookDetail.myContent.value = "";
+          bookDetail.isCommented.value = false;
+          if (rating == 0) bookDetail.myReviewId = -1;
 
-          await detail.fetchReviews();
-          await detail.fetchBookDetail();
+          await bookDetail.fetchReviews();
+          await bookDetail.fetchBookDetail();
         }
       } else {
         Get.snackbar("오류", "삭제 실패: ${res.statusCode}");
@@ -199,10 +192,85 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 수정 페이지로 이동
+  // 📌 코멘트 수정
+  // ==========================
+  Future<void> updateReview(int reviewId, String newContent, bool isSpoiler) async {
+    final token = box.read("access_token");
+    if (token == null) return;
+    final target = reviews.firstWhereOrNull((e) => e['id'] == reviewId);
+    if (target == null) return;
+
+    final double rating = (target["rating"] as num?)?.toDouble() ?? 0.0;
+
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    final body = jsonEncode({
+      "book_id": bookId,
+      "rating": rating == 0.0 ? null : rating,
+      "content": newContent,
+      "is_spoiler": isSpoiler,
+    });
+
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/reviews/upsert"),
+      headers: headers,
+      body: body,
+    );
+
+    if (res.statusCode == 200) {
+      final index = reviews.indexWhere((e) => e['id'] == reviewId);
+      if (index != -1) {
+        reviews[index]['content'] = newContent;
+        reviews[index]['is_spoiler'] = isSpoiler;
+        reviews.refresh();
+      }
+
+      if (Get.isRegistered<BookDetailController>()) {
+        final bookDetail = Get.find<BookDetailController>();
+        await bookDetail.fetchReviews();
+        await bookDetail.fetchBookDetail();
+      }
+      Get.snackbar("성공", "코멘트가 수정되었습니다.");
+    } else {
+      Get.snackbar("오류", "수정 실패: ${res.statusCode}");
+    }
+  }
+
+  // ==========================
+  // 📌 코멘트 수정 Overlay
   // ==========================
   void editReview(int reviewId) {
-    Get.back(); // 바텀시트 닫기
-    Get.toNamed("/review_detail", arguments: reviewId); // 상세/수정 페이지로 이동
+    Get.back();
+
+    final target = reviews.firstWhereOrNull((element) => element['id'] == reviewId);
+    if (target == null) return;
+
+    final String currentContent = target['content'] ?? "";
+    final bool currentSpoiler = target['is_spoiler'] ?? false;
+
+    if (!Get.isRegistered<BookDetailController>()) {
+      Get.snackbar("오류", "상세 페이지 정보를 불러올 수 없습니다.");
+      return;
+    }
+
+    Get.bottomSheet(
+      CommentOverlay(
+        isEditMode: true,
+        initialText: currentContent,
+        initialSpoiler: currentSpoiler,
+        onSubmit: (newContent, newSpoiler) {
+          updateReview(reviewId, newContent, newSpoiler);
+        },
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+    );
   }
 }

@@ -4,12 +4,18 @@ import '../controllers/review_list_controller.dart';
 import '../widgets/review_card.dart';
 import '../widgets/sort_bottom_sheet.dart';
 import '../../../core/widgets/bottom_bar.dart';
+import '../../book_detail_page/controllers/book_detail_controller.dart';
 
 class ReviewListPage extends GetView<ReviewListController> {
   const ReviewListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    BookDetailController? bookDetail;
+    if (Get.isRegistered<BookDetailController>()) {
+      bookDetail = Get.find<BookDetailController>();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       // AppBar

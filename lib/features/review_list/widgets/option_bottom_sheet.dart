@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/review_list_controller.dart';
 
 class OptionBottomSheet extends StatelessWidget {
-
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
+  final int reviewId;
+  final void Function(int reviewId)? onEdit;
+  final void Function(int reviewId)? onDelete;
 
   const OptionBottomSheet({
     super.key,
+    required this.reviewId,
     this.onEdit,
     this.onDelete,
   });
@@ -31,7 +31,7 @@ class OptionBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. 헤더
+          // 헤더
           Container(
             width: double.infinity,
             height: 45,
@@ -44,7 +44,7 @@ class OptionBottomSheet extends StatelessWidget {
                     onTap: () => Get.back(),
                     child: const Text(
                       '취소',
-                      style: TextStyle(color: Color(0xFF4DB56C), fontSize: 18),
+                      style: TextStyle(color: Color(0xFF4DB56C), fontSize: 18, fontWeight: FontWeight.w400),
                     ),
                   ),
                 )
@@ -52,30 +52,115 @@ class OptionBottomSheet extends StatelessWidget {
             ),
           ),
 
-          // 2. 수정 버튼
+          // 수정 버튼
           _buildOption("수정", () {
-            Get.back(); // 시트 닫기
-            if (onEdit != null) onEdit!();
+            Get.back();
+            if (onEdit != null) onEdit!(reviewId);
           }),
 
-          // 3. 삭제 버튼
+          // 삭제 버튼
           _buildOption("삭제", () {
-            Get.back(); // 1. 시트 닫기
-            Get.defaultDialog(
-              title: "삭제",
-              middleText: "정말 삭제하시겠습니까?",
-              textConfirm: "삭제",
-              textCancel: "취소",
-              confirmTextColor: Colors.white,
-              buttonColor: Colors.red,
-              onConfirm: () {
-                Get.back();
-                if (onDelete != null) {
-                  onDelete!();
-                } else {
-                  print("❌ onDelete 함수가 연결되지 않았습니다!"); // 디버깅용 로그
-                }
-              },
+            Get.back();
+            // 다이얼로그
+            Get.dialog(
+                Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    width: 200,
+                    height: 107,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        // 안내 텍스트 영역 (상단)
+                        const Expanded(
+                          child: Center(
+                            child: Text(
+                              '코멘트를 삭제하시겠습니까',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF3F3F3F),
+                                fontSize: 15,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        Container( height: 1, color: const Color(0xFFF3F3F3),),
+
+                        // 버튼 영역 (하단)
+                        SizedBox(
+                          height: 36,
+                          child: Row(
+                            children: [
+                              // [네] 버튼
+                              Expanded(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(10),
+                                    ),
+                                    onTap: () {
+                                      Get.back();
+                                      if (onDelete != null) {
+                                        onDelete!(reviewId);
+                                      } else {
+                                        print("❌ onDelete 함수가 연결되지 않았습니다!");
+                                      }
+                                    },
+                                    child: const Center(
+                                      child: Text(
+                                        '네',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Color(0xFF4DB56C),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              Container(width: 1, color: const Color(0xFFF3F3F3),),
+
+                              // [아니오] 버튼
+                              Expanded(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: const BorderRadius.only(
+                                      bottomRight: Radius.circular(10),
+                                    ),
+                                    onTap: () => Get.back(),
+                                    child: const Center(
+                                      child: Text(
+                                        '아니오',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Color(0xFF4DB56C),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             );
           }),
         ],
@@ -88,16 +173,16 @@ class OptionBottomSheet extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: 62,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        alignment: Alignment.centerLeft,
         decoration: const BoxDecoration(
           border: Border(
-            bottom: BorderSide(width: 0.50, color: Color(0xFFABABAB)),
+            bottom: BorderSide(width: 0.5, color: Color(0xFFABABAB)),
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(color: Colors.black, fontSize: 18),
+          style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w400),
         ),
       ),
     );

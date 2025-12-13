@@ -87,7 +87,7 @@ class CommentSection extends GetView<BookDetailController> {
           // 4. 모두보기 버튼
           if (hasMoreToReviews)
             InkWell(
-              onTap: () => Get.toNamed("/review/list", arguments: controller.bookId), // ✅ 전체 페이지 이동
+              onTap: () => Get.toNamed("/review_list", arguments: controller.bookId), // ✅ 전체 페이지 이동
               child: Container(
                 width: double.infinity,
                 height: 50,
@@ -169,7 +169,10 @@ Widget _bar(double score, int count, int maxCount) {
           heightFactor: ratio, // 비율에 따라 높이 결점 (최대 1.0)
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 1), // bar 간 간격
-            color: const Color(0xFF4DB56C),
+            decoration: const BoxDecoration(
+              color: const Color(0xFF4DB56C),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+            ),
           ),
         )
     ),
