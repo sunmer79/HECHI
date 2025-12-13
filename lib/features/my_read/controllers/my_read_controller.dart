@@ -22,6 +22,7 @@ class MyReadController extends GetxController {
   RxString totalReviews = "0.0".obs;
   RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
+  RxString totalComments="0.0".obs;
 
   // 태그 클라우드 데이터
   RxList<Map<String, dynamic>> insightTags = <Map<String, dynamic>>[].obs;
@@ -134,7 +135,7 @@ class MyReadController extends GetxController {
         final stats = UserStatsResponse.fromJson(json);
 
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
-        activityStats['comments'] = stats.ratingSummary.totalReviews; // API에 코멘트 수가 없다면 리뷰 수와 동일하게 처리 중
+        activityStats['comments'] = stats.ratingSummary.totalComments; // API에 코멘트 수가 없다면 리뷰 수와 동일하게 처리 중
 
         activityStats.refresh();
 
@@ -142,7 +143,7 @@ class MyReadController extends GetxController {
         totalReviews.value = stats.ratingSummary.totalReviews.toString();
         readingRate.value = "${stats.ratingSummary.average100}%";
         mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
-
+        totalComments.value=stats.ratingSummary.totalComments.toString();
         int maxCount = 0;
         for (var d in stats.ratingDistribution) {
           if (d.count > maxCount) maxCount = d.count;
