@@ -125,46 +125,60 @@ class MyReadController extends GetxController {
         final json = jsonDecode(utf8.decode(response.bodyBytes));
         final stats = UserStatsResponse.fromJson(json);
 
+        // 디버깅 로그
         print("🔥🔥🔥 [DEBUG] 서버가 준 코멘트 개수: ${stats.ratingSummary.totalComments}");
 
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
         activityStats['comments'] = stats.ratingSummary.totalComments;
-
         activityStats.refresh();
 
         averageRating.value = stats.ratingSummary.average5.toStringAsFixed(1);
         totalReviews.value = stats.ratingSummary.totalReviews.toString();
-
-        // UI 반영을 위해 String 변수 업데이트
         totalComments.value = stats.ratingSummary.totalComments.toString();
-
         readingRate.value = "${stats.ratingSummary.average100}%";
         mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
+        // 1. 최대값 찾기 (비율 계산용)
         int maxCount = 0;
         for (var d in stats.ratingDistribution) {
           if (d.count > maxCount) maxCount = d.count;
         }
 
-        final colorMap = {
-          5: 0xFF43A047, 4: 0xFF66BB6A, 3: 0xFF81C784, 2: 0xFFA5D6A7, 1: 0xFFC8E6C9,
-        };
-
+        // 2. 0.5 ~ 5.0 까지 10개 구간 생성
         List<Map<String, dynamic>> tempDist = [];
-        for (int i = 5; i >= 1; i--) {
+        List<double> steps = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+
+        for (double score in steps) {
+          // 해당 점수의 데이터 찾기
           var apiData = stats.ratingDistribution.firstWhere(
-                (d) => d.rating == i,
-            orElse: () => RatingDist(rating: i, count: 0),
+                (d) => d.rating == score,
+            orElse: () => RatingDist(rating: score, count: 0),
           );
 
           double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
 
+          // 색상 결정 (점수가 높을수록 진해짐)
+          int colorValue;
+          if (score <= 1.5) {
+            colorValue = 0xFFC8E6C9; // 연한 초록
+          } else if (score <= 2.5) {
+            colorValue = 0xFFA5D6A7;
+          } else if (score <= 3.5) {
+            colorValue = 0xFF81C784;
+          } else if (score <= 4.5) {
+            colorValue = 0xFF66BB6A;
+          } else {
+            colorValue = 0xFF43A047; // 진한 초록 (5.0)
+          }
+
           tempDist.add({
-            "score": i,
+            "score": score,      // double (ex: 3.5)
             "ratio": ratio,
-            "color": colorMap[i]
+            "count": apiData.count,
+            "color": colorValue
           });
         }
+
         ratingDistData.value = tempDist;
       }
     } catch (e) {

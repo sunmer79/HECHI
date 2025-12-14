@@ -4,7 +4,7 @@ import '../controllers/taste_analysis_controller.dart';
 import '../../../../core/widgets/bottom_bar.dart';
 import 'dart:ui';
 import 'dart:math';
-
+import '../../../../core/widgets/star_rating_chart.dart';
 class TasteAnalysisView extends GetView<TasteAnalysisController> {
   const TasteAnalysisView({super.key});
 
@@ -156,106 +156,35 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
     );
   }
 
+  // TasteAnalysisView.dart 내부
   Widget _buildStarSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-      child: Obx(() {
-        final maxRatio = controller.starRatingDistribution.fold<double>(
-          0.0,
-              (prevMax, d) => (d['ratio'] as num).toDouble() > prevMax ? (d['ratio'] as num).toDouble() : prevMax,
-        );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("별점분포", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
+          const SizedBox(height: 5),
 
-        final displayDistribution = controller.starRatingDistribution.reversed.toList();
-        const int darkGreenColorValue = 0xFF4EB56D;
+          // ✅ 공통 위젯 사용 (그래프가 다시 나타납니다!)
+          Obx(() => StarRatingChart(
+              ratingData: controller.starRatingDistribution,
+              mostGivenRating: controller.mostGivenRating.value
+          )),
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("별점분포", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
-            const SizedBox(height: 5),
+          const SizedBox(height: 30),
 
-            SizedBox(
-              height: 105, // ⭐️ 수정: 높이를 100에서 105로 늘려 오버플로우 공간 확보
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: displayDistribution.map((d) {
-                    double ratio = (d['ratio'] as num).toDouble();
-                    double score = (d['score'] as num).toDouble();
-                    int colorValue = (d['color'] as num).toInt();
-                    Color barColor = Color(colorValue);
-                    int count = (d['count'] as num).toInt();
-
-                    final bool isMostFrequent = colorValue == darkGreenColorValue;
-                    final bool isFirstScore = score == 0.5;
-                    final bool isLastScore = score == 5.0;
-
-                    final bool showScoreText = isMostFrequent || isFirstScore || isLastScore;
-
-                    String scoreText;
-                    if (score == score.toInt()) {
-                      scoreText = score.toInt().toString();
-                    } else {
-                      scoreText = score.toStringAsFixed(1);
-                    }
-
-                    const double maxHeight = 60.0;
-                    double barHeight = count > 0 ? maxHeight * ratio : 2.0;
-
-                    return Flexible(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (showScoreText) ...[
-                              Text(
-                                  scoreText,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isMostFrequent ? barColor : Colors.grey.shade600,
-                                    fontWeight: isMostFrequent ? FontWeight.bold : FontWeight.normal,
-                                  )
-                              ),
-                              const SizedBox(height: 4),
-                            ]
-                            else
-                              const SizedBox(height: 18),
-
-                            SizedBox(
-                              height: barHeight,
-                              width: 30,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: barColor,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 5), // ⭐️ 수정: 하단 공간을 10에서 5로 줄여 오버플로우 흡수
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
-                _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
-                _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
-              ],
-            ),
-          ],
-        );
-      }),
+          // 하단 통계
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
+              _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
+              _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
