@@ -49,7 +49,7 @@ class ReviewDetailController extends GetxController {
 
     isLoadingReview.value = false;
   }
-/*
+
   // ==========================
   // 📌 코멘트 상세 조회
   // ==========================
@@ -82,48 +82,6 @@ class ReviewDetailController extends GetxController {
       Get.back();
     }
   }
-*/
-  Future<void> fetchReviewDetail() async {
-    try {
-      isLoadingReview.value = true;
-      final token = box.read('access_token');
-      final headers = {"Content-Type": "application/json"};
-      if (token != null) headers["Authorization"] = "Bearer $token";
-
-      print("📡 [FETCH] GET /reviews/$reviewId 요청 시작");
-
-      final res = await http.get(
-        Uri.parse("$baseUrl/reviews/$reviewId"),
-        headers: headers,
-      );
-
-      print("📡 상태코드: ${res.statusCode}");
-      print("📡 응답 body: ${res.body}");   // ←🔥 추가
-      print("📡 응답 bytes: ${utf8.decode(res.bodyBytes)}"); // ←🔥 추가
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(res.bodyBytes));
-        print("📡 파싱된 데이터: $data"); // ←🔥 추가
-
-        setReviewData(data);
-
-        if (data['book_id'] != null) {
-          fetchBookDetail(data['book_id']);
-        }
-        fetchComments();
-      } else {
-        print("❌ 리뷰 상세 조회 실패: ${res.statusCode}");
-        print("❌ 서버 응답 body: ${res.body}");  // ←🔥 매우 중요
-
-        Get.back();
-        Get.snackbar("오류", "리뷰를 불러오지 못했습니다.");
-      }
-    } catch (e) {
-      print("❌ 리뷰 상세 에러: $e");
-      Get.back();
-    }
-  }
-
 
   // ==========================
   // 📌 책 상세 정보 조회 (제목, 표지, 저자 등)
@@ -391,17 +349,18 @@ class ReviewDetailController extends GetxController {
   // 🔄 상태 동기화
   // ==========================
   void syncWithOtherControllers(int targetId, String content, bool isSpoiler, double rating) {
+    final bool isDelete = rating == 0.0 && content.trim().isEmpty;
+
     if (Get.isRegistered<ReviewListController>()) {
       final listCtrl = Get.find<ReviewListController>();
 
-      if (rating == 0.0 && content.isEmpty) {
+      if (isDelete) {
         listCtrl.reviews.removeWhere((r) => r['id'] == targetId);
       } else {
         final index = listCtrl.reviews.indexWhere((r) => r['id'] == targetId);
         if (index != -1) {
-          listCtrl.reviews[index]['content'] = content.trim().isEmpty ? null : content;
+          listCtrl.reviews[index]['content'] = content;
           listCtrl.reviews[index]['is_spoiler'] = isSpoiler;
-          listCtrl.reviews.refresh();
         }
       }
       listCtrl.reviews.refresh();
@@ -409,13 +368,28 @@ class ReviewDetailController extends GetxController {
 
     if (Get.isRegistered<BookDetailController>()) {
       final bookCtrl = Get.find<BookDetailController>();
-      if (bookCtrl.myReviewId == targetId) {
-        bookCtrl.myContent.value = content;
-        bookCtrl.isSpoiler.value = isSpoiler;
-        bookCtrl.isCommented.value = false;
 
-        if (rating == 0.0 && content.isEmpty) {
+      if (isDelete) {
+        bookCtrl.reviews.removeWhere((r) => r['id'] == targetId);
+      } else {
+        final index = bookCtrl.reviews.indexWhere((r) => r['id'] == targetId);
+        if (index != -1) {
+          bookCtrl.reviews[index]['content'] = content;
+          bookCtrl.reviews[index]['is_spoiler'] = isSpoiler;
+        }
+      }
+      bookCtrl.reviews.refresh();
+
+      if (bookCtrl.myReviewId == targetId) {
+        if (isDelete) {
           bookCtrl.myReviewId = -1;
+          bookCtrl.myContent.value = "";
+          bookCtrl.isCommented.value = false;
+          bookCtrl.isSpoiler.value = false;
+        } else {
+          bookCtrl.myContent.value = content;
+          bookCtrl.isCommented.value = content.trim().isNotEmpty;
+          bookCtrl.isSpoiler.value = isSpoiler;
         }
       }
     }
