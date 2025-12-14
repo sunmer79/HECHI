@@ -34,7 +34,6 @@ class AuthorSection extends GetView<BookDetailController> {
         Column(
           children: List.generate(visibleAuthors.length, (index) {
             return Padding(
-              // 리스트 아이템 간 간격 15
               padding: EdgeInsets.symmetric(horizontal: 17, vertical: 15),
               child: _buildAuthorRow(visibleAuthors[index]),
             );

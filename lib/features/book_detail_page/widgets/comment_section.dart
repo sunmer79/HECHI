@@ -60,7 +60,7 @@ class CommentSection extends GetView<BookDetailController> {
             ),
           ),
 
-          // 3. 리뷰 리스트 (ReviewCard 재사용)
+          // 3. 리뷰 리스트
           if (reviewCount == 0)
             Container(
               width: double.infinity,
@@ -113,7 +113,7 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
   final List<double> scores = List.generate(10, (index) => 0.5 + (index * 0.5));
 
   return SizedBox(
-      height: 120 + 18, // 막대 높이 + 점수 텍스
+      height: 120 + 18,
       child: Column(
           children: [
             SizedBox(
@@ -121,7 +121,6 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // 0.5점부터 5점까지 순서대로 막대 생성
                   ...scores.map(
                         (score) => _bar(
                       score,
@@ -166,7 +165,7 @@ Widget _bar(double score, int count, int maxCount) {
     child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 8),
         child: FractionallySizedBox(
-          heightFactor: ratio, // 비율에 따라 높이 결점 (최대 1.0)
+          heightFactor: ratio,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 1), // bar 간 간격
             decoration: const BoxDecoration(

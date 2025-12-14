@@ -404,14 +404,7 @@ class BookDetailController extends GetxController {
       );
     }
   }
-/*
-  // ==========================
-  // 📌 내 별점 변경
-  // ==========================
-  void updateMyRating(double rating) {
-    myRating.value = rating;
-  }
-*/
+
   // ==========================
   // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
@@ -431,12 +424,9 @@ class BookDetailController extends GetxController {
       "Authorization": "Bearer $token",
     };
 
-    final sendRating = (rating == 0.0) ? null : rating;
-
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
-      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });
@@ -452,7 +442,14 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
+      myRating.value = (data["rating"] as num?)?.toDouble() ?? 0.0;
+
+      final index = reviews.indexWhere((r) => r["id"] == myReviewId);
+      if (index != -1) {
+        reviews[index]["rating"] = myRating.value;
+      } else {
+        reviews.insert(0, Map<String, dynamic>.from(data));
+      }
 
       reviews.refresh();
 

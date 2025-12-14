@@ -27,7 +27,7 @@ class BookCoverHeader extends GetView<BookDetailController> {
               : const Center(child: Icon(Icons.book, size: 50, color: Colors.grey)),
         ),
 
-        // ====== 상단 어두운 그라데이션 (AppBar와 자연스럽게 연결) ======
+        // ====== 상단 어두운 그라데이션 ======
         Container(
           height: 120,
           decoration: const BoxDecoration(
