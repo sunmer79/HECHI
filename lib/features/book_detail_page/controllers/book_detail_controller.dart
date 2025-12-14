@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
+// ✅ [추가] 나의 독서 컨트롤러 임포트 (경로 확인 필요)
+import '../../my_read/controllers/my_read_controller.dart';
+
 import '../widgets/overlays/comment_overlay.dart';
 import '../widgets/overlays/reading_status_overlay.dart';
 import '../widgets/overlays/more_menu_overlay.dart';
@@ -95,7 +98,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 목록 조회
+  // 📌 리뷰 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -237,7 +240,10 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         Get.snackbar("완료", "상태가 변경되었습니다.");
+
+        // 🔥 서버 기준 데이터로 UI 다시 동기화 (가장 중요)
         await fetchReadingStatus();
+
       } else {
         print("❌ 실패 본문: ${res.body}");
         Get.snackbar("오류", "상태 변경 실패: ${res.statusCode}");
@@ -261,6 +267,7 @@ class BookDetailController extends GetxController {
 
     final bool before = isWishlisted.value;
 
+    // 🌟 UI를 먼저 토글
     isWishlisted.value = !before;
 
     try {
@@ -274,9 +281,12 @@ class BookDetailController extends GetxController {
         );
         print("🟥 DELETE status: ${res.statusCode}");
       } else {
+        // [추가] 찜 안했으면 -> 추가 (POST)
 
+        // 🔥 [핵심 추가] 만약 현재 '관심없음(ARCHIVED)' 상태라면 -> '읽기 전(PENDING)'으로 초기화
         if (readingStatus.value == "ARCHIVED") {
           print("🚀 '읽고싶어요' 클릭 -> '관심없음' 상태 자동 해제");
+          // API 호출하여 상태 변경 (UI 반영은 이 함수 내부에서 처리됨)
           await updateReadingStatus("PENDING");
         }
 
@@ -337,11 +347,18 @@ class BookDetailController extends GetxController {
       myReviewId = data["id"];
       await fetchReviews();
       isCommented.value = true;
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (코멘트 등록 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
+      }
     }
   }
 
   // ==========================
-  // 📌 코멘트 + 별점 삭제
+  // 📌 리뷰 삭제
   // ==========================
   Future<void> delete() async {
     final token = box.read("access_token");
@@ -357,6 +374,13 @@ class BookDetailController extends GetxController {
       await fetchBookDetail();
       await fetchReviews();
       print("🗑️ 리뷰 삭제 완료");
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (삭제 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
+      }
     }
   }
 
@@ -364,9 +388,11 @@ class BookDetailController extends GetxController {
   // 📌 코멘트 버튼 클릭 (Overlay 오픈)
   // ==========================
   Future<void> onWriteReview() async {
+    // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
       Get.toNamed("/review_detail", arguments: myReviewId);
     }
+    // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
       Get.bottomSheet(
         CommentOverlay(onSubmit: submitReview),
@@ -378,7 +404,14 @@ class BookDetailController extends GetxController {
       );
     }
   }
-
+/*
+  // ==========================
+  // 📌 내 별점 변경
+  // ==========================
+  void updateMyRating(double rating) {
+    myRating.value = rating;
+  }
+*/
   // ==========================
   // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
@@ -403,6 +436,7 @@ class BookDetailController extends GetxController {
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
+      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });
@@ -421,7 +455,15 @@ class BookDetailController extends GetxController {
       print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
 
       reviews.refresh();
+
       await fetchBookDetail(); // 통계 갱신
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (별점 저장 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
+      }
     }
   }
 
@@ -483,8 +525,8 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         // API 명세: {"average_rating": 0, "review_count": 0}
-        averageRating.value = (data["average_rating"] as num?)?.toDouble() ?? 0.0;
-        totalReviewCount.value = (data["review_count"] as num?)?.toInt() ?? 0;
+        averageRating.value = (data["average_rating"] as num).toDouble();
+        totalReviewCount.value = (data["review_count"] as num).toInt();
       }
     } catch (e) {
       print("❌ Rating Summary Error: $e");
