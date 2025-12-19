@@ -148,7 +148,7 @@ class BookStorageView extends GetView<BookStorageController> {
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 0.55,
+            childAspectRatio: 0.52, // 시간 텍스트가 추가되어 높이를 소폭 늘림
             crossAxisSpacing: 10,
             mainAxisSpacing: 20,
           ),
@@ -196,26 +196,58 @@ class _BookGridItem extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             book.title,
-            maxLines: 2,
+            maxLines: 1, // 텍스트 겹침 방지를 위해 1줄로 제한 (원할 경우 2줄 유지 가능)
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
               height: 1.2,
             ),
           ),
           const SizedBox(height: 4),
-          if (book.myRating != null)
-            Text(
-              '평가함 ★${book.myRating}',
-              style: const TextStyle(color: Color(0xFFFF7F00), fontSize: 12, fontWeight: FontWeight.bold),
-            )
-          else if (book.avgRating != null && book.avgRating! > 0)
-            Text(
-              '예상 ★${book.avgRating}',
-              style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 12, fontWeight: FontWeight.bold),
-            ),
+          _buildInfoByStatus(), // 상태별 시간/별점 표시 위젯
         ],
+      ),
+    );
+  }
+
+  /// 상태(탭)에 따른 하단 정보 표시 로직
+  Widget _buildInfoByStatus() {
+    // 1. 완독한 상태일 때 (완독 날짜 표시)
+    if (book.status == 'completed' && book.completedAt != null) {
+      return Text(
+        '${book.completedAt!.year}.${book.completedAt!.month.toString().padLeft(2, '0')}.${book.completedAt!.day.toString().padLeft(2, '0')} 완독',
+        style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
+      );
+    }
+
+    // 2. 평가한 상태일 때 (내 별점 표시)
+    if (book.myRating != null && book.myRating! > 0) {
+      return Text(
+        '평가함 ★${book.myRating}',
+        style: const TextStyle(
+          color: Color(0xFFFF7F00),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // 3. 위시리스트 상태일 때 (담은 날짜 표시)
+    if (book.status == 'wishlist' && book.addedAt != null) {
+      return Text(
+        '${book.addedAt!.month}/${book.addedAt!.day} 담음',
+        style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
+      );
+    }
+
+    // 4. 기본/읽는 중 상태 (평균 별점 표시)
+    return Text(
+      '예상 ★${book.avgRating ?? 0.0}',
+      style: const TextStyle(
+        color: Color(0xFF4DB56C),
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
