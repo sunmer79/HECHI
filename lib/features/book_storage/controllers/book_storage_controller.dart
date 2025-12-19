@@ -10,7 +10,6 @@ class BookStorageController extends GetxController {
   final RxInt currentTabIndex = 0.obs;
   final RxString currentSort = '최신 순'.obs;
   final RxString currentSortKey = 'latest'.obs;
-
   final RxList<LibraryBookModel> books = <LibraryBookModel>[].obs;
   final RxBool isLoading = false.obs;
 
@@ -21,6 +20,7 @@ class BookStorageController extends GetxController {
   }
 
   void changeTab(int index) {
+    if (currentTabIndex.value == index) return;
     currentTabIndex.value = index;
     fetchBooks();
   }
@@ -35,7 +35,7 @@ class BookStorageController extends GetxController {
     }
   }
 
-  void fetchBooks() async {
+  Future<void> fetchBooks() async {
     isLoading.value = true;
     try {
       final result = await provider.getLibraryBooks(
@@ -44,7 +44,8 @@ class BookStorageController extends GetxController {
       );
       books.assignAll(result);
     } catch (e) {
-      debugPrint("Error fetching books: $e");
+      debugPrint("Fetch Error: $e");
+      books.clear();
     } finally {
       isLoading.value = false;
     }
@@ -101,13 +102,10 @@ class BookStorageController extends GetxController {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: currentSortKey.value == key ? Colors.black : Colors.black87,
-                fontWeight: currentSortKey.value == key ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+            Text(label, style: TextStyle(
+              color: currentSortKey.value == key ? Colors.black : Colors.black87,
+              fontWeight: currentSortKey.value == key ? FontWeight.bold : FontWeight.normal,
+            )),
             if (currentSortKey.value == key)
               const Icon(Icons.check, color: Color(0xFF4DB56C), size: 20),
           ],
