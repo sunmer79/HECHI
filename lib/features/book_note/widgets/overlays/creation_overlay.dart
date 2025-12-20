@@ -160,7 +160,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
   // =========================================================
   Widget _buildBookmarkLayout(BookNoteController controller) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
         // --------------------- Header ---------------------
         _buildHeader(controller),
@@ -216,25 +215,29 @@ class _CreationOverlayState extends State<CreationOverlay> {
         ),
 
         // --------------------- 메모 입력 ---------------------
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-          child: TextField(
-            controller: memoController,
-            readOnly: _isReadOnly,
-            maxLines: 10,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: "페이지에 대한 생각을 자유롭게 적어주세요.",
-              hintStyle: TextStyle(
-                color: Color(0xFFABABAB),
-                fontSize: 13,
-                height: 2.15,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+            child: TextField(
+              controller: memoController,
+              readOnly: _isReadOnly,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: "페이지에 대한 생각을 자유롭게 적어주세요.",
+                hintStyle: TextStyle(
+                  color: Color(0xFFABABAB),
+                  fontSize: 13,
+                  height: 2.15,
+                ),
               ),
-            ),
-            style: const TextStyle(
-              color: Color(0xFF3F3F3F),
-              fontSize: 15,
-              height: 1.6,
+              style: const TextStyle(
+                color: Color(0xFF3F3F3F),
+                fontSize: 15,
+                height: 1.6,
+              ),
             ),
           ),
         ),
@@ -249,175 +252,150 @@ class _CreationOverlayState extends State<CreationOverlay> {
   Widget _buildHighlightLayout(BookNoteController controller) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 150),
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 700),
-        child: Column(
-          children: [
-            // HEADER
-            _buildHeader(controller),
+    return Column(
+      children: [
+        // --------------------- Header ---------------------
+        _buildHeader(controller),
 
-            // DIVIDER
-            Container(
-              width: double.infinity,
-              height: 1,
-              color: const Color(0xFFF3F3F3),
-            ),
+        // --------------------- Divider ---------------------
+        Container(
+          width: double.infinity,
+          height: 1,
+          color: const Color(0xFFF3F3F3),
+        ),
 
-            // CONTENT
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ==========================
-                    // 연두색 문장 입력 박스
-                    // ==========================
-                    Container(
-                      width: double.infinity,
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
-                      decoration: BoxDecoration(
-                        color: const Color(0x7FD1ECD9),
+        // --------------------- 내용 영역 ---------------------
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+                  decoration: const BoxDecoration(
+                    color: Color(0x7FD1ECD9),
+                  ),
+                  child: TextField(
+                    controller: sentenceController,
+                    readOnly: _isReadOnly,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      isCollapsed: true,
+                      border: InputBorder.none,
+                      hintText: "하이라이트 문장을 입력해주세요.",
+                      hintStyle: TextStyle(
+                        color: Color(0xFFABABAB),
+                        fontSize: 13,
+                        height: 1.9,
                       ),
-                      child:
-                      // ==========================
-                      // 문장 입력
-                      // ==========================
-                      TextField(
-                        controller: sentenceController,
-                        readOnly: _isReadOnly,
-                        maxLines: null,
-                        decoration: const InputDecoration(
-                          isCollapsed: true,
-                          border: InputBorder.none,
-                          hintText: "하이라이트 문장을 입력해주세요.",
-                          hintStyle: TextStyle(
-                            color: Color(0xFFABABAB),
-                            fontSize: 13,
-                            height: 1.9,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          color: Color(0xFF3F3F3F),
+                    ),
+                    style: const TextStyle(
+                      color: Color(0xFF3F3F3F),
+                      fontSize: 15,
+                      height: 1.67,
+                    ),
+                  ),
+                ),
+
+                // // --------------------- 페이지 입력 ---------------------
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(17, 14, 17, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "p.",
+                        style: TextStyle(
+                          color: Color(0xFFABABAB),
                           fontSize: 15,
                           height: 1.67,
                         ),
                       ),
-                    ),
-
-                    // ==========================
-                    // 페이지 입력
-                    // ==========================
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(17, 14, 17, 0),
-                      child:
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "p.",
-                            style: TextStyle(
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: TextField(
+                          controller: pageController,
+                          readOnly: _isReadOnly,
+                          maxLines: 1,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isCollapsed: true,
+                            hintText: "페이지 번호",
+                            hintStyle: TextStyle(
                               color: Color(0xFFABABAB),
-                              fontSize: 15,
-                              height: 1.67,
+                              fontSize: 13,
+                              height: 1.9,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: TextField(
-                              controller: pageController,
-                              readOnly: _isReadOnly,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                isCollapsed: true,
-                                /*
-                                hintText: "페이지 번호",
-                                hintStyle: TextStyle(
-                                  color: Color(0xFFABABAB),
-                                  fontSize: 13,
-                                  height: 1.9,
-                                ),
-                                 */
-                              ),
-                              style: const TextStyle(
-                                color: Color(0xFF3F3F3F),
-                                fontSize: 15,
-                                height: 1.67,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // ==========================
-                    // 메모 입력
-                    // ==========================
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-                      child: TextField(
-                        controller: memoController,
-                        readOnly: _isReadOnly,
-                        maxLines: 6,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "문장에 대한 생각을 자유롭게 적어주세요.",
-                          hintStyle: TextStyle(
-                            color: Color(0xFFABABAB),
-                            fontSize: 13,
+                          style: const TextStyle(
+                            color: Color(0xFF3F3F3F),
+                            fontSize: 15,
+                            height: 1.67,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: Color(0xFF3F3F3F),
-                          fontSize: 15,
-                          height: 1.6,
-                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // // --------------------- 메모 입력 ---------------------
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+                  child: TextField(
+                    controller: memoController,
+                    readOnly: _isReadOnly,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: "문장에 대한 생각을 자유롭게 적어주세요.",
+                      hintStyle: TextStyle(
+                        color: Color(0xFFABABAB),
+                        fontSize: 13,
                       ),
                     ),
-
-                    const SizedBox(height: 200),
-                  ],
-                ),
-              ),
-            ),
-
-            // ==========================
-            // 공개 여부
-            // ==========================
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Color(0xFFF3F3F3), width: 1),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("공개 여부",
-                      style:
-                      TextStyle(fontSize: 14, fontWeight: FontWeight.w400)),
-                  IgnorePointer(
-                    ignoring: _isReadOnly,
-                    child: Opacity(
-                      opacity: _isReadOnly ? 0.5 : 1.0,
-                      child: Switch(
-                        value: isPublic,
-                        onChanged: (v) => setState(() => isPublic = v),
-                      ),
+                    style: const TextStyle(
+                      color: Color(0xFF3F3F3F),
+                      fontSize: 15,
+                      height: 1.6,
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 100),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+
+        // // --------------------- 공개 여부 ---------------------
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+          decoration: const BoxDecoration(
+            border: Border(
+              top: BorderSide(color: Color(0xFFF3F3F3), width: 1),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("공개 여부",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400)),
+              IgnorePointer(
+                ignoring: _isReadOnly,
+                child: Opacity(
+                  opacity: _isReadOnly ? 0.5 : 1.0,
+                  child: Switch(
+                    value: isPublic,
+                    onChanged: (v) => setState(() => isPublic = v),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -426,7 +404,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
   // =========================================================
   Widget _buildMemoLayout(BookNoteController controller) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
         // -----------------------------------------------------
         // Header
@@ -446,26 +423,30 @@ class _CreationOverlayState extends State<CreationOverlay> {
         // -----------------------------------------------------
         // Memo 입력 영역
         // -----------------------------------------------------
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 14),
-          child: TextField(
-            controller: contentController,
-            readOnly: _isReadOnly,
-            maxLines: 10,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: "작품에 대한 생각을 자유롭게 적어주세요.",
-              hintStyle: TextStyle(
-                color: Color(0xFFABABAB),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                height: 2.15,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 14),
+            child: TextField(
+              controller: contentController,
+              readOnly: _isReadOnly,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: "작품에 대한 생각을 자유롭게 적어주세요.",
+                hintStyle: TextStyle(
+                  color: Color(0xFFABABAB),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  height: 2.15,
+                ),
               ),
-            ),
-            style: const TextStyle(
-              color: Color(0xFF3F3F3F),
-              fontSize: 15,
-              height: 1.6,
+              style: const TextStyle(
+                color: Color(0xFF3F3F3F),
+                fontSize: 15,
+                height: 1.6,
+              ),
             ),
           ),
         ),
