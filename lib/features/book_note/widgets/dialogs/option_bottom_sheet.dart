@@ -50,7 +50,7 @@ class OptionBottomSheet extends StatelessWidget {
             const Divider(height: 1, thickness: .3),
 
             _buildOption(
-              label: hasMemo || type == "memo" ? "수정" : "작성",
+              label: hasMemo || type == "memo" ? "메모 수정" : "메모 작성",
               onTap: () {
                 Get.back();
                 _openEditor();
@@ -112,6 +112,7 @@ class OptionBottomSheet extends StatelessWidget {
           type: "highlight",
           isEdit: true,
           itemId: data["id"],
+          page: data['page'],
           sentence: data["sentence"],
           memo: hasMemo ? data["memo"] : "",
           isPublic: data["is_public"] ?? false,

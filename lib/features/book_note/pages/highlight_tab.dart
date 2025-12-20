@@ -4,7 +4,6 @@ import '../controllers/book_note_controller.dart';
 import '../widgets/highlight_item.dart';
 import '../widgets/dialogs/sort_bottom_sheet.dart';
 import '../widgets/overlays/creation_overlay.dart';
-// import '../widgets/overlays/highlight_creation_overlay.dart';
 
 class HighlightTab extends GetView<BookNoteController> {
   const HighlightTab({super.key});

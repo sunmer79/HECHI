@@ -100,19 +100,7 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
         },
       );
 
-      // 메모가 있으면 notes에 추가 생성
-      if (memo.trim().isNotEmpty){
-        await api.post(
-          "/notes/",
-          {
-            "book_id": bookId,
-            "content": memo,
-          },
-        );
-      }
-
       fetchBookmarks();
-      fetchNotes(); // memo 포함 시 notes에도 반영
       Get.back();
     } catch (e) {
       print("❌ Create Bookmark Error: $e");
@@ -128,8 +116,8 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
           "memo": memo,
         },
       );
+
       fetchBookmarks();
-      fetchNotes();
       Get.back();
     } catch (e) {
       print("❌ Update Bookmark Error: $e");
@@ -140,7 +128,6 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     try {
       await api.delete("/bookmarks/$id");
       fetchBookmarks();
-      fetchNotes();
     } catch (e) {
       print("❌ Delete Bookmark Error: $e");
     }
@@ -149,9 +136,7 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   /// ===================== BOOKMARK SORT =====================
   void sortBookmarks() {
     if (sortTypeBookmark.value == "date") {
-      bookmarks.sort((a, b) =>
-          DateTime.parse(b["created_date"])
-              .compareTo(DateTime.parse(a["created_date"])));
+      bookmarks.sort((a, b) => b["id"].compareTo(a["id"]));
     } else {
       bookmarks.sort((a, b) => a["page"].compareTo(b["page"]));
     }
@@ -186,8 +171,8 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
           "is_public": isPublic,
         },
       );
+
       fetchHighlights();
-      fetchNotes();
       Get.back();
     } catch (e) {
       print("❌ Create Highlight Error: $e");
@@ -205,8 +190,8 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
           "is_public": isPublic,
         },
       );
+
       fetchHighlights();
-      fetchNotes();
       Get.back();
     } catch (e) {
       print("❌ Update Highlight Error: $e");
@@ -217,7 +202,6 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     try {
       await api.delete("/highlights/$id");
       fetchHighlights();
-      fetchNotes();
     } catch (e) {
       print("❌ Delete Highlight Error: $e");
     }
@@ -226,9 +210,7 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   /// ===================== HIGHLIGHT SORT =====================
   void sortHighlights() {
     if (sortTypeHighlight.value == "date") {
-      highlights.sort((a, b) =>
-          DateTime.parse(b["created_date"])
-              .compareTo(DateTime.parse(a["created_date"])));
+      highlights.sort((a, b) => b["id"].compareTo(a["id"]));
     } else {
       highlights.sort((a, b) => a["page"].compareTo(b["page"]));
     }

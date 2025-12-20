@@ -6,6 +6,7 @@ import '../styles/overlay_common.dart';
 class CreationOverlay extends StatefulWidget {
   final String type; // bookmark | highlight | memo
   final bool isEdit;
+  final bool isReadOnly;
 
   // 공통
   final int? itemId;
@@ -25,6 +26,7 @@ class CreationOverlay extends StatefulWidget {
     super.key,
     required this.type,
     required this.isEdit,
+    this.isReadOnly = false,
     this.itemId,
     this.page,
     this.memo,
@@ -43,6 +45,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
   late TextEditingController sentenceController;
   late TextEditingController contentController;
   late bool isPublic;
+  late bool _isReadOnly;
 
   @override
   void initState() {
@@ -53,6 +56,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
     sentenceController = TextEditingController(text: widget.sentence ?? "");
     contentController = TextEditingController(text: widget.content ?? "");
     isPublic = widget.isPublic ?? false;
+    _isReadOnly = widget.isReadOnly;
   }
 
   @override
@@ -100,16 +104,38 @@ class _CreationOverlayState extends State<CreationOverlay> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("취소", style: OverlayCommon.actionStyle),
+            onPressed: () {
+              if (_isReadOnly) {
+                setState(() {
+                  _isReadOnly = false;
+                });
+              } else {
+                Get.back();
+              }
+            },
+            child: Text(
+              _isReadOnly ? "수정" : "취소",
+              style: OverlayCommon.actionStyle,
+            ),
           ),
           Text(
             _title(),
             style: OverlayCommon.headerStyle,
           ),
           TextButton(
-            onPressed: () => _onConfirm(controller),
-            child: const Text("확인", style: OverlayCommon.actionStyle),
+            onPressed: () {
+              if (_isReadOnly) {
+                Get.back();
+              } else {
+                _onConfirm(controller);
+              }
+            },
+            child: Text(
+              _isReadOnly ? "닫기" : "확인",
+              style: OverlayCommon.actionStyle.copyWith(
+                color: Colors.black,
+              ),
+            ),
           ),
         ],
       ),
@@ -117,6 +143,8 @@ class _CreationOverlayState extends State<CreationOverlay> {
   }
 
   String _title() {
+    if (_isReadOnly) return "상세 보기";
+
     switch (widget.type) {
       case "bookmark":
         return widget.isEdit ? "북마크 수정" : "북마크 작성";
@@ -148,7 +176,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
-          color: const Color(0x80D1EDD9), // 연두색
+          color: const Color(0x80D1EDD9),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -164,6 +192,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
               Expanded(
                 child: TextField(
                   controller: pageController,
+                  readOnly: _isReadOnly,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
@@ -191,6 +220,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
           child: TextField(
             controller: memoController,
+            readOnly: _isReadOnly,
             maxLines: 10,
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -239,7 +269,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
             // CONTENT
             Expanded(
               child: SingleChildScrollView(
-                //padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -252,88 +281,87 @@ class _CreationOverlayState extends State<CreationOverlay> {
                       const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
                       decoration: BoxDecoration(
                         color: const Color(0x7FD1ECD9),
-                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          // 페이지 입력
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "p.",
-                                style: TextStyle(
-                                  color: Color(0xFFABABAB),
-                                  fontSize: 15,
-                                  height: 1.67,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: TextField(
-                                  controller: pageController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    isCollapsed: true,
-                                    /*
-                                    hintText: "페이지 번호",
-                                    hintStyle: TextStyle(
-                                      color: Color(0xFFABABAB),
-                                      fontSize: 13,
-                                      height: 1.9,
-                                    ),
-                                    */
-                                  ),
-                                  style: const TextStyle(
-                                    color: Color(0xFF3F3F3F),
-                                    fontSize: 15,
-                                    height: 1.67,
-                                  ),
-                                ),
-                              ),
-                            ],
+                      child:
+                      // ==========================
+                      // 문장 입력
+                      // ==========================
+                      TextField(
+                        controller: sentenceController,
+                        readOnly: _isReadOnly,
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: "하이라이트 문장을 입력해주세요.",
+                          hintStyle: TextStyle(
+                            color: Color(0xFFABABAB),
+                            fontSize: 13,
+                            height: 1.9,
                           ),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFF3F3F3F),
+                          fontSize: 15,
+                          height: 1.67,
+                        ),
+                      ),
+                    ),
 
-                          const SizedBox(height: 20),
-
-                          // ==========================
-                          // 문장 입력
-                          // ==========================
-                          TextField(
-                            controller: sentenceController,
-                            maxLines: null,
-                            decoration: const InputDecoration(
-                              isCollapsed: true,
-                              border: InputBorder.none,
-                              hintText: "하이라이트 문장을 입력하세요.",
-                              hintStyle: TextStyle(
-                                color: Color(0xFFABABAB),
-                                fontSize: 13,
-                                height: 1.9,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              color: Color(0xFF3F3F3F),
+                    // ==========================
+                    // 페이지 입력
+                    // ==========================
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(17, 14, 17, 0),
+                      child:
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "p.",
+                            style: TextStyle(
+                              color: Color(0xFFABABAB),
                               fontSize: 15,
                               height: 1.67,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TextField(
+                              controller: pageController,
+                              readOnly: _isReadOnly,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isCollapsed: true,
+                                /*
+                                hintText: "페이지 번호",
+                                hintStyle: TextStyle(
+                                  color: Color(0xFFABABAB),
+                                  fontSize: 13,
+                                  height: 1.9,
+                                ),
+                                 */
+                              ),
+                              style: const TextStyle(
+                                color: Color(0xFF3F3F3F),
+                                fontSize: 15,
+                                height: 1.67,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 20),
-
                     // ==========================
                     // 메모 입력
                     // ==========================
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+                      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
                       child: TextField(
                         controller: memoController,
+                        readOnly: _isReadOnly,
                         maxLines: 6,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
@@ -351,9 +379,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
-
-                    // push content to bottom
                     const SizedBox(height: 200),
                   ],
                 ),
@@ -366,15 +391,26 @@ class _CreationOverlayState extends State<CreationOverlay> {
             Container(
               padding:
               const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Color(0xFFF3F3F3), width: 1),
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("공개 여부",
                       style:
                       TextStyle(fontSize: 14, fontWeight: FontWeight.w400)),
-                  Switch(
-                    value: isPublic,
-                    onChanged: (v) => setState(() => isPublic = v),
+                  IgnorePointer(
+                    ignoring: _isReadOnly,
+                    child: Opacity(
+                      opacity: _isReadOnly ? 0.5 : 1.0,
+                      child: Switch(
+                        value: isPublic,
+                        onChanged: (v) => setState(() => isPublic = v),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -397,7 +433,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
         // -----------------------------------------------------
         _buildHeader(controller),
 
-        // Divider line (Figma 위치 동일)
         Container(
           width: double.infinity,
           decoration: const BoxDecoration(
@@ -409,12 +444,13 @@ class _CreationOverlayState extends State<CreationOverlay> {
         ),
 
         // -----------------------------------------------------
-        // 아래 Memo 입력 영역
+        // Memo 입력 영역
         // -----------------------------------------------------
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 14),
           child: TextField(
             controller: contentController,
+            readOnly: _isReadOnly,
             maxLines: 10,
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -497,49 +533,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
           controller.createMemo(content);
         }
         break;
-    }
-  }
-
-  // =========================================================
-  // highlight / memo 입력 필드
-  // =========================================================
-  Widget _buildInputFields() {
-    switch (widget.type) {
-      case "highlight":
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: sentenceController,
-              maxLines: 3,
-              decoration: OverlayCommon.input("하이라이트 문장"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: memoController,
-              maxLines: 5,
-              decoration: OverlayCommon.input("메모 내용"),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("공개 여부", style: TextStyle(fontSize: 14)),
-                Switch(
-                  value: isPublic,
-                  onChanged: (v) => setState(() => isPublic = v),
-                )
-              ],
-            )
-          ],
-        );
-
-      default: // memo
-        return TextField(
-          controller: contentController,
-          maxLines: 10,
-          decoration: OverlayCommon.input("메모 내용을 입력하세요"),
-        );
     }
   }
 }

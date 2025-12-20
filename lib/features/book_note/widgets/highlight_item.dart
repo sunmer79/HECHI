@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../widgets/dialogs/option_bottom_sheet.dart';
-import '../widgets/styles/item_common.dart';
+import '../widgets/overlays/creation_overlay.dart';
 
 class HighlightItem extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -11,76 +11,141 @@ class HighlightItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final memo = data["memo"] ?? "";
-    final hasMemo = memo.isNotEmpty;
+    final hasMemo = memo.toString().isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(context),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF9C4),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.push_pin_outlined, size: 16, color: Color(0xFFFBC02D)), // 진한 노랑
+              ),
+              Expanded(
+                child: Container(
+                  width: 1,
+                  color: const Color(0xFFF3F3F3),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
 
-        const SizedBox(height: 8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => Get.bottomSheet(
+                        OptionBottomSheet(type: "highlight", data: data),
+                        backgroundColor: Colors.transparent,
+                      ),
+                      child: const Icon(Icons.more_horiz, size: 20, color: Color(0xFFBDBDBD)),
+                    ),
+                  ),
 
-        Text(
-          data["sentence"] ?? "",
-          style: ItemCommon.titleStyle,
-        ),
+                  Text(
+                    "“${data["sentence"] ?? ""}”",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF3F3F3F),
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
-        if (hasMemo) ...[
-          const SizedBox(height: 6),
-          Text(memo, style: ItemCommon.memoStyle),
-        ],
+                  Text(
+                    "p.${data["page"]}",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
 
-        const SizedBox(height: 12),
-        _buildPublicFlag(),
+                  Text(
+                    _formatDate(data["created_date"]),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+                  ),
 
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildPublicFlag() {
-    final isPublic = data["is_public"] ?? false;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isPublic ? Colors.green[100] : Colors.grey[300],
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        isPublic ? "공개" : "비공개",
-        style: TextStyle(
-          color: isPublic ? Colors.green[700] : Colors.grey[600],
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final created = _formatDate(data["created_date"]);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(created, style: ItemCommon.subStyle),
-
-        GestureDetector(
-          onTap: () => Get.bottomSheet(
-            OptionBottomSheet(
-              type: "highlight",
-              data: data,
+                  if (hasMemo) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Get.bottomSheet(
+                          CreationOverlay(
+                            type: "highlight",
+                            isEdit: true,
+                            isReadOnly: true,
+                            itemId: data['id'],
+                            page: data['page'],
+                            sentence: data['sentence'],
+                            memo: data['memo'],
+                            isPublic: data ['is_public'],
+                          ),
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9F9F9),
+                          border: Border(
+                            left: BorderSide(
+                              color: const Color(0xFFFBC02D).withOpacity(0.5),
+                              width: 3,
+                            ),
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(4),
+                            bottomRight: Radius.circular(4),
+                          ),
+                        ),
+                        child: Text(
+                          memo,
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF3F3F3F),
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-          child: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  String _formatDate(String raw) {
-    final date = DateTime.parse(raw);
-    return "${date.year}.${date.month}.${date.day}";
+  String _formatDate(String? raw) {
+    if (raw == null) return "";
+    try {
+      final date = DateTime.parse(raw);
+      String period = date.hour >= 12 ? "오후" : "오전";
+      return "${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} $period ${date.hour}시 ${date.minute}분";
+    } catch (e) {
+      return raw;
+    }
   }
 }
