@@ -3,13 +3,25 @@ import 'package:get/get.dart';
 import '../../controllers/book_detail_controller.dart';
 
 class CommentOverlay extends StatelessWidget {
-  final Function(String, bool) onSubmit;   // content + spoiler 함께 전달
-  const CommentOverlay({super.key, required this.onSubmit});
+  final Function(String, bool) onSubmit;
+  final String initialText;
+  final bool initialSpoiler;
+  final bool isEditMode;
+
+  const CommentOverlay({
+    super.key,
+    required this.onSubmit,
+    this.initialText = "",
+    this.initialSpoiler = false,
+    this.isEditMode = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final RxString text = "".obs;
-    final RxBool isSpoiler = false.obs;
+    final RxString text = initialText.obs;
+    final RxBool isSpoiler = initialSpoiler.obs;
+    final TextEditingController textController =
+      TextEditingController(text: initialText);
     final controller = Get.find<BookDetailController>();
 
     return Padding(
@@ -31,8 +43,10 @@ class CommentOverlay extends StatelessWidget {
                       style: TextStyle(fontSize: 13, color: Colors.black)),
                 ),
                 const Spacer(),
-                const Text("코멘트 작성",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                Text(
+                    isEditMode ? "코멘트 수정" : "코멘트 등록",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)
+                ),
                 const Spacer(),
 
                 TextButton(
@@ -48,10 +62,16 @@ class CommentOverlay extends StatelessWidget {
                     controller.fetchReviews();
 
                     Get.back();
-                    Get.snackbar("완료", "리뷰가 등록되었습니다.");
+                    if (isEditMode){
+                      Get.snackbar("완료", "리뷰가 수정되었습니다.");
+                    } else {
+                      Get.snackbar("완료", "리뷰가 등록되었습니다.");
+                    }
                   },
-                  child: const Text("등록",
-                      style: TextStyle(fontSize: 13, color: Colors.black)),
+                  child: Text(
+                      isEditMode ? "수정" : "등록",
+                      style: TextStyle(fontSize: 13, color: Colors.black)
+                  ),
                 ),
               ],
             ),
@@ -61,6 +81,7 @@ class CommentOverlay extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 17),
                 child: TextField(
+                  controller: textController,
                   autofocus: true,
                   maxLines: null,
                   onChanged: (v) => text.value = v,

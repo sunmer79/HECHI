@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
+// ✅ [추가] 나의 독서 컨트롤러 임포트 (경로 확인 필요)
+import '../../my_read/controllers/my_read_controller.dart';
+
 import '../widgets/overlays/comment_overlay.dart';
 import '../widgets/overlays/reading_status_overlay.dart';
 import '../widgets/overlays/more_menu_overlay.dart';
@@ -34,6 +37,18 @@ class BookDetailController extends GetxController {
       ["READING", "COMPLETED"].contains(readingStatus.value);
 
   int myReviewId = -1;
+  final RxString myContent = "".obs;
+  final RxBool isSpoiler = false.obs;
+
+  List<Map<String, dynamic>> get bestReviews {
+    if (reviews.isEmpty) return [];
+    // 좋아요 순
+    final sortedList = List<Map<String, dynamic>>.from(reviews);
+    sortedList.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
+
+    // 상위 3개만 반환
+    return sortedList.take(3).toList();
+  }
 
   @override
   void onInit() {
@@ -97,7 +112,7 @@ class BookDetailController extends GetxController {
       );
 
       if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
+        final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
         reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
         final myUserId = box.read("user_id");
@@ -105,12 +120,21 @@ class BookDetailController extends GetxController {
                 (e) => e["is_my_review"] == true || e["user_id"] == myUserId);
 
         if (mine != null) {
-          isCommented.value = true;
           myReviewId = mine["id"];
-          myRating.value = (mine["rating"] as num).toDouble();
+          myRating.value = (mine["rating"] as num?)?.toDouble() ?? 0.0;
+          myContent.value = mine["content"] ?? "";
+
+          if (mine["content"] != null) {
+            isCommented.value = true;
+            isSpoiler.value = mine["is_spoiler"];
+          } else {
+            isCommented.value = false;
+            isSpoiler.value = false;
+          }
         } else {
           isCommented.value = false;
           myRating.value = 0.0;
+          myContent.value = "";
         }
       } else {
         print("❌ Review fetch failed: ${res.statusCode}");
@@ -136,19 +160,14 @@ class BookDetailController extends GetxController {
       if (res.statusCode != 200) return;
 
       final body = res.body.trim();
-
-      // 문자열 단독 응답 대비
       if (!body.startsWith("{")) {
         readingStatus.value = body.replaceAll('"', '');
         return;
       }
 
       final decoded = jsonDecode(body);
-
-      // 💡 서버가 주는 값 그대로 사용
       userBookId.value = decoded["user_book_id"] ?? -1;
 
-      // 서버가 status를 주면 그대로 반영
       if (decoded["status"] != null) {
         readingStatus.value = decoded["status"];
       } else {
@@ -188,13 +207,6 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 내 별점 변경
-  // ==========================
-  void updateMyRating(double rating) {
-    myRating.value = rating;
-  }
-
-  // ==========================
   // 📌 독서 상태 업데이트
   // ==========================
   Future<void> updateReadingStatus(String status) async {
@@ -208,11 +220,9 @@ class BookDetailController extends GetxController {
       final Map<String, dynamic> bodyData = {"status": status};
 
       if (userBookId.value != -1) {
-        // 기존 서재 책
         bodyData["user_book_id"] = userBookId.value;
         print("🚀 상태 변경 요청 (기존): $status / userBookId=${userBookId.value}");
       } else {
-        // 처음 추가하는 책
         bodyData["book_id"] = bookId;
         print("🚀 상태 변경 요청 (신규): $status / bookId=$bookId");
       }
@@ -306,37 +316,71 @@ class BookDetailController extends GetxController {
   // ==========================
   // 📌 코멘트 등록 함수
   // ==========================
-  Future<void> submitComment(String content, bool isSpoiler) async {
-    try {
-      final token = box.read("access_token");
-      if (token == null || userBookId.value == -1) return;
+  Future<void> submitReview(String content, bool isSpoiler) async {
+    final token = box.read("access_token");
+    if (token == null) return;
 
-      final headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      };
+    myContent.value = content;
 
-      final body = jsonEncode({
-        "user_book_id": userBookId.value,
-        "rating": myRating.value,
-        "content": content,
-        "is_spoiler": isSpoiler,
-      });
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
 
-      final res = await http.post(
-        Uri.parse("$baseUrl/reviews/upsert"),
-        headers: headers,
-        body: body,
-      );
+    final body = jsonEncode({
+      "book_id": bookId,
+      "rating": (myRating.value == 0.0) ? null : myRating.value,
+      "content": content,
+      "is_spoiler": isSpoiler,
+    });
 
-      if (res.statusCode == 200) {
-        fetchReviews();
-        print("리뷰 등록 완료");
-      } else {
-        print("리뷰 등록 실패: ${res.body}");
+    print("🚀 코멘트 등록 요청: $body"); // 디버깅용 로그
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/reviews/upsert"),
+      headers: headers,
+      body: body,
+    );
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      myReviewId = data["id"];
+      await fetchReviews();
+      isCommented.value = true;
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (코멘트 등록 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
       }
-    } catch (e) {
-      print("Error: $e");
+    }
+  }
+
+  // ==========================
+  // 📌 리뷰 삭제
+  // ==========================
+  Future<void> delete() async {
+    final token = box.read("access_token");
+    final res = await http.delete(
+      Uri.parse("$baseUrl/reviews/$myReviewId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200 || res.statusCode == 204) {
+      myRating.value = 0.0;
+      isCommented.value = false;
+      myReviewId = -1;
+      myContent.value = "";
+      await fetchBookDetail();
+      await fetchReviews();
+      print("🗑️ 리뷰 삭제 완료");
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (삭제 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
+      }
     }
   }
 
@@ -346,12 +390,12 @@ class BookDetailController extends GetxController {
   Future<void> onWriteReview() async {
     // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
-      Get.toNamed("/review/detail", arguments: myReviewId);
+      Get.toNamed("/review_detail", arguments: myReviewId);
     }
     // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
       Get.bottomSheet(
-        CommentOverlay(onSubmit: submitComment),
+        CommentOverlay(onSubmit: submitReview),
         isScrollControlled: true,
         backgroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
@@ -360,51 +404,66 @@ class BookDetailController extends GetxController {
       );
     }
   }
-
+/*
   // ==========================
-  // 📌 코멘트 버튼 클릭 (내 리뷰 열기)
+  // 📌 내 별점 변경
   // ==========================
-  void openMyReview() {
-    if (myReviewId != -1) {
-      Get.toNamed("/review/detail", arguments: myReviewId);
-    }
+  void updateMyRating(double rating) {
+    myRating.value = rating;
   }
-
+*/
   // ==========================
-  // 📌 별점 즉시 저장 (코멘트 없이 가능)
+  // 📌 별점 저장 (코멘트 없이 가능)
   // ==========================
   Future<void> submitRating(double rating) async {
-    try {
-      final token = box.read("access_token");
-      if (token == null || userBookId.value == -1) return;
+    final token = box.read("access_token");
+    if (token == null) return;
 
-      final headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      };
+    final bool hasContent = myContent.value.isNotEmpty;
 
-      final body = jsonEncode({
-        "user_book_id": userBookId.value,
-        "rating": rating,
-        "content": "",
-        "is_spoiler": false,
-      });
+    if (rating == 0.0 && !hasContent && myReviewId != -1) {
+      await delete();
+      return;
+    }
 
-      final res = await http.post(
-        Uri.parse("$baseUrl/reviews/upsert"),
-        headers: headers,
-        body: body,
-      );
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
 
-      if (res.statusCode == 200) {
-        print("⭐ Rating saved successfully");
-        fetchReviews();
-        fetchBookDetail();
-      } else {
-        print("❌ Failed to save rating: ${res.body}");
+    final sendRating = (rating == 0.0) ? null : rating;
+
+    final body = jsonEncode({
+      "book_id": bookId,
+      "rating": (rating == 0.0) ? null : rating,
+      //"rating": rating,
+      "content": hasContent ? myContent.value : null,
+      "is_spoiler": isSpoiler.value,
+    });
+
+    print("🚀 별점 등록 요청: $body"); // 디버깅용 로그
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/reviews/upsert"),
+      headers: headers,
+      body: body,
+    );
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+
+      print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
+
+      reviews.refresh();
+
+      await fetchBookDetail(); // 통계 갱신
+
+      // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (별점 저장 시)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (Get.isRegistered<MyReadController>()) {
+        await Get.find<MyReadController>().fetchMyReadData();
+        print("✅ 나의 독서 통계 갱신 요청 완료");
       }
-    } catch (e) {
-      print("🚨 Error saving rating: $e");
     }
   }
 
@@ -471,6 +530,43 @@ class BookDetailController extends GetxController {
       }
     } catch (e) {
       print("❌ Rating Summary Error: $e");
+    }
+  }
+
+  // ==========================
+  // 📌 좋아요 토글 (베스트 리뷰용)
+  // ==========================
+  Future<void> toggleLike(int reviewId) async {
+    final token = box.read("access_token");
+    if (token == null) {
+      Get.snackbar("알림", "로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      final res = await http.post(
+        Uri.parse("$baseUrl/reviews/$reviewId/like"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode == 200) {
+        print("✅ 베스트 리뷰 좋아요 성공 (ID: $reviewId)");
+
+        final index = reviews.indexWhere((element) => element['id'] == reviewId);
+        if (index != -1) {
+          var target = reviews[index];
+          bool currentLike = target['is_liked'] ?? false;
+          target['is_liked'] = !currentLike;
+          target['like_count'] = (target['like_count'] ?? 0) + (!currentLike ? 1 : -1);
+          reviews[index] = target;
+          reviews.refresh();
+        }
+      } else {
+        print("❌ 좋아요 실패: ${res.statusCode}");
+        Get.snackbar("오류", "요청 처리에 실패했습니다.");
+      }
+    } catch (e) {
+      print("❌ 좋아요 에러: $e");
     }
   }
 }

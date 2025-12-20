@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../controllers/sign_up_controller.dart';
-import '../widgets/sign_up_text_field.dart';
+
+// 분리한 위젯들 임포트
+import '../widgets/sign_up_logo.dart';
+import '../widgets/sign_up_text_field.dart'; // 기본 텍스트 필드
+import '../widgets/email_input_section.dart'; // 이메일 섹션
+import '../widgets/password_input_section.dart'; // 비밀번호 섹션
+import '../widgets/sign_up_button.dart'; // 버튼
 
 class SignUpView extends GetView<SignUpController> {
   const SignUpView({super.key});
@@ -19,87 +24,36 @@ class SignUpView extends GetView<SignUpController> {
             children: [
               const SizedBox(height: 20),
 
-
-              Text(
-                'HECHI',
-                style: GoogleFonts.sedgwickAveDisplay(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF4DB56C),
-                  letterSpacing: 1.5,
-                ),
-              ),
-
+              // 1. 로고
+              const SignUpLogo(),
               const SizedBox(height: 50),
 
-              SignUpTextField(label: '이름', hintText: '이름을 입력해주세요.', controller: controller.nameController),
-              const SizedBox(height: 20),
-              SignUpTextField(label: '닉네임', hintText: '2글자 이상(한글, 영문, 숫자 조합)', controller: controller.nicknameController),
-              const SizedBox(height: 20),
-
-              Obx(() => SignUpTextField(
-                label: '이메일(아이디)',
-                hintText: '예) hechi@kmu.ac.kr',
-                controller: controller.emailController,
-
-                suffix: Transform.translate(
-                  offset: const Offset(20, 0),
-                  child: GestureDetector(
-                    onTap: controller.checkEmailDuplicate,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      margin: const EdgeInsets.only(right: 16), // 오른쪽 여백 확보
-                      decoration: BoxDecoration(
-                        color: controller.isEmailFilled.value ? const Color(0xFF4DB56C) : const Color(0xFFC4E1CD),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text('중복 확인', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ),
-              )),
-
-              Obx(() {
-                if (controller.isEmailAvailable.value == null) return const SizedBox.shrink();
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(top: 8, left: 4),
-                  child: Text(controller.emailStatusMessage.value, style: TextStyle(color: controller.isEmailAvailable.value! ? const Color(0xFF4DB56C) : const Color(0xFFEA1717), fontSize: 12)),
-                );
-              }),
-
+              // 2. 이름 입력 (단순 필드는 SignUpTextField 바로 사용)
+              SignUpTextField(
+                  label: '이름',
+                  hintText: '이름을 입력해주세요.',
+                  controller: controller.nameController
+              ),
               const SizedBox(height: 20),
 
-              Obx(() => SignUpTextField(
-                label: '비밀번호',
-                hintText: '영문, 숫자, 특수문자 조합(8자~20자)',
-                controller: controller.passwordController,
-                isObscure: controller.isPasswordHidden.value,
+              // 3. 닉네임 입력
+              SignUpTextField(
+                  label: '닉네임',
+                  hintText: '2글자 이상(한글, 영문, 숫자 조합)',
+                  controller: controller.nicknameController
+              ),
+              const SizedBox(height: 20),
 
-                suffix: Transform.translate(
-                  offset: const Offset(10, 0),
-                  child: GestureDetector(
-                      onTap: controller.togglePasswordVisibility,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 16.0),
-                        child: Icon(controller.isPasswordHidden.value ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xFF717171)),
-                      )
-                  ),
-                ),
-              )),
+              // 4. 이메일 섹션 (중복확인 포함)
+              EmailInputSection(controller: controller),
+              const SizedBox(height: 20),
 
+              // 5. 비밀번호 섹션 (눈 아이콘 포함)
+              PasswordInputSection(controller: controller),
               const SizedBox(height: 60),
 
-              SizedBox(
-                width: double.infinity, height: 52,
-                child: Obx(() => ElevatedButton(
-                  onPressed: controller.isLoading.value ? null : controller.submitSignUp,
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4DB56C), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 0),
-                  child: controller.isLoading.value
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('가입하기', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                )),
-              ),
+              // 6. 가입하기 버튼
+              SignUpButton(controller: controller),
             ],
           ),
         ),

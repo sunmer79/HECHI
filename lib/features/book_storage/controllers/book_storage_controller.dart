@@ -10,7 +10,6 @@ class BookStorageController extends GetxController {
   final RxInt currentTabIndex = 0.obs;
   final RxString currentSort = '최신 순'.obs;
   final RxString currentSortKey = 'latest'.obs;
-
   final RxList<LibraryBookModel> books = <LibraryBookModel>[].obs;
   final RxBool isLoading = false.obs;
 
@@ -21,6 +20,7 @@ class BookStorageController extends GetxController {
   }
 
   void changeTab(int index) {
+    if (currentTabIndex.value == index) return;
     currentTabIndex.value = index;
     fetchBooks();
   }
@@ -35,7 +35,7 @@ class BookStorageController extends GetxController {
     }
   }
 
-  void fetchBooks() async {
+  Future<void> fetchBooks() async {
     isLoading.value = true;
     try {
       final result = await provider.getLibraryBooks(
@@ -44,25 +44,21 @@ class BookStorageController extends GetxController {
       );
       books.assignAll(result);
     } catch (e) {
-      print(e);
+      debugPrint("Fetch Error: $e");
+      books.clear();
     } finally {
       isLoading.value = false;
     }
   }
 
   void goToBookDetails(int bookId) {
-    const String detailRoute = '/reading_detail';
-
-    Get.toNamed(
-      detailRoute,
-      arguments: {'bookId': bookId},
-    );
-    print('도서 ID $bookId 를 가지고 $detailRoute 라우트로 이동');
+    if (bookId == 0) return;
+    Get.toNamed('/reading_detail', arguments: {'bookId': bookId});
   }
 
   void showSortBottomSheet() {
     Get.bottomSheet(
-      Container(
+      Obx(() => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -85,13 +81,11 @@ class BookStorageController extends GetxController {
             ),
             const Divider(height: 1),
             _buildSortOption('최신 순', 'latest'),
-            _buildSortOption('내 별점 높은 순', 'myRating'),
-            _buildSortOption('평균 별점 높은 순', 'avgRating'),
             _buildSortOption('가나다 순', 'title'),
             const SizedBox(height: 20),
           ],
         ),
-      ),
+      )),
     );
   }
 
@@ -108,13 +102,10 @@ class BookStorageController extends GetxController {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: currentSortKey.value == key ? Colors.black : Colors.black87,
-                fontWeight: currentSortKey.value == key ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+            Text(label, style: TextStyle(
+              color: currentSortKey.value == key ? Colors.black : Colors.black87,
+              fontWeight: currentSortKey.value == key ? FontWeight.bold : FontWeight.normal,
+            )),
             if (currentSortKey.value == key)
               const Icon(Icons.check, color: Color(0xFF4DB56C), size: 20),
           ],

@@ -3,7 +3,7 @@ class UserStatsResponse {
   final RatingSummary ratingSummary;
   final ReadingTime readingTime;
   final List<GenreStat> topLevelGenres;
-  final List<GenreStat> subGenres; // ✅ Dart에서는 변수명을 subGenres로 정의함
+  final List<GenreStat> subGenres;
 
   UserStatsResponse({
     required this.ratingDistribution,
@@ -21,22 +21,22 @@ class UserStatsResponse {
       readingTime: ReadingTime.fromJson(json['reading_time'] ?? {}),
       topLevelGenres: (json['top_level_genres'] as List? ?? [])
           .map((e) => GenreStat.fromJson(e)).toList(),
-      // ✅ JSON의 'sub_genres'를 Dart의 'subGenres'로 매핑
       subGenres: (json['sub_genres'] as List? ?? [])
           .map((e) => GenreStat.fromJson(e)).toList(),
     );
   }
 }
 
-// ... (나머지 클래스들 RatingDist, GenreStat 등은 기존과 동일)
 class RatingDist {
-  final int rating;
+  final double rating; // ✅ [수정 완료] int -> double (0.5 단위 처리를 위해 필수)
   final int count;
+
   RatingDist({required this.rating, required this.count});
 
   factory RatingDist.fromJson(Map<String, dynamic> json) {
     return RatingDist(
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      // ✅ [수정 완료] num으로 받아서 double로 변환
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       count: (json['count'] as num?)?.toInt() ?? 0,
     );
   }
@@ -47,12 +47,14 @@ class RatingSummary {
   final int totalReviews;
   final double mostFrequentRating;
   final int average100;
+  final int totalComments; // ✅ [추가 완료] 코멘트 개수 필드
 
   RatingSummary({
     required this.average5,
     required this.totalReviews,
     required this.mostFrequentRating,
     required this.average100,
+    required this.totalComments,
   });
 
   factory RatingSummary.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,8 @@ class RatingSummary {
       totalReviews: (json['total_reviews'] as num?)?.toInt() ?? 0,
       mostFrequentRating: (json['most_frequent_rating'] as num?)?.toDouble() ?? 0.0,
       average100: (json['average_100'] as num?)?.toInt() ?? 0,
+      // ✅ [핵심] JSON의 'total_comments'를 매핑
+      totalComments: (json['total_comments'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -95,6 +99,36 @@ class GenreStat {
       name: json['name'] ?? '',
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
       average5: (json['average_5'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class UserInsightResponse {
+  final String analysis;
+  final List<InsightTag> tags;
+
+  UserInsightResponse({required this.analysis, required this.tags});
+
+  factory UserInsightResponse.fromJson(Map<String, dynamic> json) {
+    return UserInsightResponse(
+      analysis: json['analysis'] ?? '',
+      tags: (json['tags'] as List? ?? [])
+          .map((e) => InsightTag.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class InsightTag {
+  final String label;
+  final double weight;
+
+  InsightTag({required this.label, required this.weight});
+
+  factory InsightTag.fromJson(Map<String, dynamic> json) {
+    return InsightTag(
+      label: json['label'] ?? '',
+      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
