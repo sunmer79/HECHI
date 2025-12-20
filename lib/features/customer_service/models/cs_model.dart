@@ -2,13 +2,11 @@ class FaqModel {
   final int id;
   final String question;
   final String answer;
-  final bool isPinned;
 
   FaqModel({
     required this.id,
     required this.question,
     required this.answer,
-    required this.isPinned,
   });
 
   factory FaqModel.fromJson(Map<String, dynamic> json) {
@@ -16,24 +14,23 @@ class FaqModel {
       id: json['id'] ?? 0,
       question: json['question'] ?? '',
       answer: json['answer'] ?? '',
-      isPinned: json['is_pinned'] ?? false,
     );
   }
 }
 
 class TicketModel {
   final int id;
-  final int userId;
   final String title;
   final String description;
+  final String? fileUrl;
   final String status;
   final String createdAt;
 
   TicketModel({
     required this.id,
-    required this.userId,
     required this.title,
     required this.description,
+    this.fileUrl,
     required this.status,
     required this.createdAt,
   });
@@ -41,9 +38,9 @@ class TicketModel {
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
       id: json['id'] ?? 0,
-      userId: json['user_id'] ?? 0,
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
+      title: json['inquiryTitle'] ?? json['title'] ?? '',
+      description: json['inquiryDescription'] ?? json['description'] ?? '',
+      fileUrl: json['inquiryFileUrl'],
       status: json['status'] ?? 'open',
       createdAt: json['created_at'] ?? '',
     );
@@ -55,7 +52,7 @@ class TicketModel {
       final date = DateTime.parse(createdAt);
       return "${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}";
     } catch (e) {
-      return createdAt.substring(0, 10);
+      return createdAt.length > 10 ? createdAt.substring(0, 10) : createdAt;
     }
   }
 
@@ -64,9 +61,9 @@ class TicketModel {
       case 'answered':
         return '답변 완료';
       case 'open':
-        return '답변 안 됨';
-      default:
         return '접수 완료';
+      default:
+        return '처리 중';
     }
   }
 }

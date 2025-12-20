@@ -8,15 +8,18 @@ class CustomerServiceController extends GetxController {
 
   var currentViewIndex = 0.obs;
   var isLoading = false.obs;
+  var isAdminMode = false.obs;
 
   var faqList = <FaqModel>[].obs;
   var myInquiries = <TicketModel>[].obs;
+  var adminInquiries = <TicketModel>[].obs;
 
   var selectedInquiry = Rxn<TicketModel>();
   var selectedFaq = Rxn<FaqModel>();
 
   final titleController = TextEditingController();
   final contentController = TextEditingController();
+  final answerController = TextEditingController();
 
   @override
   void onInit() {
@@ -30,6 +33,7 @@ class CustomerServiceController extends GetxController {
       await Future.wait([
         fetchFaqs(),
         fetchMyTickets(),
+        if (isAdminMode.value) fetchAdminTickets(),
       ]);
     } finally {
       isLoading.value = false;
@@ -38,7 +42,7 @@ class CustomerServiceController extends GetxController {
 
   Future<void> fetchFaqs() async {
     final response = await _provider.getFaqs();
-    if (!response.status.hasError) {
+    if (!response.status.hasError && response.body != null) {
       List<dynamic> data = response.body;
       faqList.value = data.map((json) => FaqModel.fromJson(json)).toList();
     }
@@ -46,8 +50,7 @@ class CustomerServiceController extends GetxController {
 
   Future<void> fetchMyTickets() async {
     final response = await _provider.getMyTickets();
-
-    if (!response.status.hasError) {
+    if (!response.status.hasError && response.body != null) {
       List<dynamic> data = response.body;
       var list = data.map((json) => TicketModel.fromJson(json)).toList();
       list.sort((a, b) => b.id.compareTo(a.id));
@@ -55,8 +58,22 @@ class CustomerServiceController extends GetxController {
     }
   }
 
+  Future<void> fetchAdminTickets() async {
+    final response = await _provider.getAdminTickets();
+    if (!response.status.hasError && response.body != null) {
+      List<dynamic> data = response.body;
+      adminInquiries.value = data.map((json) => TicketModel.fromJson(json)).toList();
+    }
+  }
+
+  void toggleAdminMode() {
+    isAdminMode.value = !isAdminMode.value;
+    fetchData();
+    currentViewIndex.value = 0;
+  }
+
   void changeView(int index) {
-    if (index == 1) fetchMyTickets();
+    if (index == 1) isAdminMode.value ? fetchAdminTickets() : fetchMyTickets();
     currentViewIndex.value = index;
   }
 
@@ -72,30 +89,30 @@ class CustomerServiceController extends GetxController {
 
   Future<void> submitInquiry() async {
     if (titleController.text.isEmpty || contentController.text.isEmpty) {
-      Get.snackbar('알림', '제목과 내용을 입력해주세요.', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('알림', '제목과 내용을 입력해주세요.');
       return;
     }
-
     isLoading.value = true;
-
-    final response = await _provider.createTicket(
-      titleController.text,
-      contentController.text,
-    );
-
+    final response = await _provider.createTicket(titleController.text, contentController.text);
     isLoading.value = false;
-
-    if (response.status.hasError) {
-      Get.snackbar('등록 실패', '코드: ${response.statusCode} / 메시지: ${response.statusText}',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
-    } else {
-      Get.snackbar('성공', '문의가 등록되었습니다.',
-          backgroundColor: const Color(0xFF4DB56C), colorText: Colors.white);
-
+    if (!response.status.hasError) {
+      Get.snackbar('성공', '문의가 등록되었습니다.');
       titleController.clear();
       contentController.clear();
-
       await fetchMyTickets();
+      changeView(1);
+    }
+  }
+
+  Future<void> submitAdminAnswer() async {
+    if (answerController.text.isEmpty || selectedInquiry.value == null) return;
+    isLoading.value = true;
+    final response = await _provider.postAdminAnswer(selectedInquiry.value!.id, answerController.text);
+    isLoading.value = false;
+    if (!response.status.hasError) {
+      Get.snackbar('성공', '답변이 등록되었습니다.');
+      answerController.clear();
+      fetchAdminTickets();
       changeView(1);
     }
   }
@@ -104,6 +121,7 @@ class CustomerServiceController extends GetxController {
   void onClose() {
     titleController.dispose();
     contentController.dispose();
+    answerController.dispose();
     super.onClose();
   }
 }
