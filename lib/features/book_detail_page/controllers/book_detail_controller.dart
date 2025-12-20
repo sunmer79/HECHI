@@ -42,11 +42,10 @@ class BookDetailController extends GetxController {
 
   List<Map<String, dynamic>> get bestReviews {
     if (reviews.isEmpty) return [];
-    // 좋아요 순
+
     final sortedList = List<Map<String, dynamic>>.from(reviews);
     sortedList.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
 
-    // 상위 3개만 반환
     return sortedList.take(3).toList();
   }
 
@@ -63,7 +62,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 책 상세 조회 (Histogram 파싱 추가)
+  // 책 상세 조회 (Histogram 파싱 추가)
   // ==========================
   Future<void> fetchBookDetail() async {
     try {
@@ -98,7 +97,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 목록 조회
+  // 리뷰 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -145,7 +144,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 조회
+  // 독서 상태 조회
   // ==========================
   Future<void> fetchReadingStatus() async {
     try {
@@ -182,7 +181,7 @@ class BookDetailController extends GetxController {
 
 
   // ==========================
-  // 📌 위시리스트 반영
+  // 위시리스트 반영
   // ==========================
   Future<void> fetchWishlistStatus() async {
     final token = box.read("access_token");
@@ -207,7 +206,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 업데이트
+  // 독서 상태 업데이트
   // ==========================
   Future<void> updateReadingStatus(String status) async {
     final token = box.read("access_token");
@@ -241,7 +240,6 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200 || res.statusCode == 201) {
         Get.snackbar("완료", "상태가 변경되었습니다.");
 
-        // 🔥 서버 기준 데이터로 UI 다시 동기화 (가장 중요)
         await fetchReadingStatus();
 
       } else {
@@ -256,7 +254,7 @@ class BookDetailController extends GetxController {
 
 
   // ==========================
-  // 📌 읽고싶어요
+  // 읽고싶어요
   // ==========================
   Future<void> onWantToRead() async {
     final token = box.read("access_token");
@@ -267,26 +265,20 @@ class BookDetailController extends GetxController {
 
     final bool before = isWishlisted.value;
 
-    // 🌟 UI를 먼저 토글
     isWishlisted.value = !before;
 
     try {
       http.Response res;
 
       if (before) {
-        // [삭제] 기존에 찜했으면 -> 해제 (DELETE)
         res = await http.delete(
           Uri.parse("$baseUrl/wishlist/$bookId"),
           headers: {"Authorization": "Bearer $token"},
         );
         print("🟥 DELETE status: ${res.statusCode}");
       } else {
-        // [추가] 찜 안했으면 -> 추가 (POST)
-
-        // 🔥 [핵심 추가] 만약 현재 '관심없음(ARCHIVED)' 상태라면 -> '읽기 전(PENDING)'으로 초기화
         if (readingStatus.value == "ARCHIVED") {
           print("🚀 '읽고싶어요' 클릭 -> '관심없음' 상태 자동 해제");
-          // API 호출하여 상태 변경 (UI 반영은 이 함수 내부에서 처리됨)
           await updateReadingStatus("PENDING");
         }
 
@@ -297,7 +289,6 @@ class BookDetailController extends GetxController {
         print("🟩 POST status: ${res.statusCode}");
       }
 
-      // 실패 → UI rollback
       if (res.statusCode != 200 &&
           res.statusCode != 201 &&
           res.statusCode != 204) {
@@ -314,7 +305,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 등록 함수
+  // 코멘트 등록 함수
   // ==========================
   Future<void> submitReview(String content, bool isSpoiler) async {
     final token = box.read("access_token");
@@ -358,7 +349,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 삭제
+  // 리뷰 삭제
   // ==========================
   Future<void> delete() async {
     final token = box.read("access_token");
@@ -385,14 +376,12 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 버튼 클릭 (Overlay 오픈)
+  // 코멘트 버튼 클릭 (Overlay 오픈)
   // ==========================
   Future<void> onWriteReview() async {
-    // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
       Get.toNamed("/review_detail", arguments: myReviewId);
     }
-    // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
       Get.bottomSheet(
         CommentOverlay(onSubmit: submitReview),
@@ -406,7 +395,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 별점 저장 (코멘트 없이 가능)
+  // 별점 저장 (코멘트 없이 가능)
   // ==========================
   Future<void> submitRating(double rating) async {
     final token = box.read("access_token");
@@ -453,7 +442,7 @@ class BookDetailController extends GetxController {
 
       reviews.refresh();
 
-      await fetchBookDetail(); // 통계 갱신
+      await fetchBookDetail();
 
       // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (별점 저장 시)
       await Future.delayed(const Duration(milliseconds: 500));
@@ -465,7 +454,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 Overlay 띄우기
+  // 독서 상태 Overlay 띄우기
   // ==========================
   void onReadingStatus() {
     Get.bottomSheet(
@@ -478,7 +467,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 더보기 메뉴
+  // 더보기 메뉴
   // ==========================
   void openMoreMenu() {
     Get.bottomSheet(
@@ -491,7 +480,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 더보기 메뉴 오버레이 선택 (Overlay에서 호출)
+  // 더보기 메뉴 오버레이 선택 (Overlay에서 호출)
   // ==========================
   void selectedMenu() async {
     Get.back(); // 오버레이 닫기
@@ -499,7 +488,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 관심없어요 (모든 상태 해제)
+  // 관심없어요 (모든 상태 해제)
   // ==========================
   Future<void> onNotInterested() async {
     // 1. '읽고싶어요'가 체크되어 있다면 DELETE 요청
@@ -512,7 +501,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 [추가] 평점 요약 정보 조회 (GET /reviews/books/{id}/summary)
+  // 평점 요약 정보 조회 (GET /reviews/books/{id}/summary)
   // ==========================
   Future<void> fetchRatingSummary() async {
     try {
@@ -531,7 +520,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 좋아요 토글 (베스트 리뷰용)
+  // 좋아요 토글 (베스트 리뷰용)
   // ==========================
   Future<void> toggleLike(int reviewId) async {
     final token = box.read("access_token");

@@ -27,7 +27,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 목록 조회
+  // 코멘트 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -59,7 +59,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 정렬 로직
+  // 정렬 로직
   // ==========================
   void _applySort() {
     if (currentSort.value == "likes") { // 좋아요 많은 순 (내림차순)
@@ -71,7 +71,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 정렬 변경
+  // 정렬 변경
   // ==========================
   void changeSort(String type) {
     currentSort.value = type;
@@ -80,14 +80,14 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 스포일러 보기 토글
+  // 스포일러 보기 토글
   // ==========================
   void unlockSpoiler(int reviewId) {
     unlockedSpoilers.add(reviewId);
   }
 
   // ==========================
-  // 📌 좋아요 토글 API 호출
+  // 좋아요 토글 API 호출
   // ==========================
   Future<void> toggleLike(int reviewId) async {
     final index = reviews.indexWhere((r) => r["id"] == reviewId);
@@ -123,7 +123,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 삭제
+  // 코멘트 삭제
   // ==========================
   Future<void> deleteReview(int reviewId) async {
     try {
@@ -192,7 +192,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 수정
+  // 코멘트 수정
   // ==========================
   Future<void> updateReview(int reviewId, String newContent, bool isSpoiler) async {
     final token = box.read("access_token");
@@ -241,7 +241,7 @@ class ReviewListController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 수정 Overlay
+  // 코멘트 수정 Overlay
   // ==========================
   void editReview(int reviewId) {
     Get.back();

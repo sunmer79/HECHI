@@ -16,6 +16,16 @@ class MoreMenuOverlay extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 8),
           menuItem("독서 등록", Icons.book),
           menuItem("읽은 날짜 수정", Icons.calendar_month),
           menuItem("캘린더", Icons.event),

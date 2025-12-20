@@ -39,7 +39,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 데이터 세팅
+  // 리뷰 데이터 세팅
   // ==========================
   void setReviewData(Map<String, dynamic> data) {
     review.value = data;
@@ -51,7 +51,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 상세 조회
+  // 코멘트 상세 조회
   // ==========================
   Future<void> fetchReviewDetail() async {
     try {
@@ -84,7 +84,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 책 상세 정보 조회 (제목, 표지, 저자 등)
+  // 책 상세 정보 조회 (제목, 표지, 저자 등)
   // ==========================
   Future<void> fetchBookDetail(int? bookId) async {
     if (bookId == null) return;
@@ -103,7 +103,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 삭제
+  // 코멘트 삭제
   // ==========================
   Future<void> deleteReview() async {
     if (isLoadingReview.value) return;
@@ -161,7 +161,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 수정
+  // 코멘트 수정
   // ==========================
   Future<void> updateReview(String newContent, bool isSpoiler) async {
     final rating = (review["rating"] as num?)?.toDouble() ?? 0.0;
@@ -205,7 +205,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 수정 Overlay
+  // 코멘트 수정 Overlay
   // ==========================
   void showEditOverlay() {
     Get.bottomSheet(
@@ -226,7 +226,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 댓글 목록 조회
+  // 댓글 목록 조회
   // ==========================
   Future<void> fetchComments() async {
     try {
@@ -258,7 +258,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 댓글 작성
+  // 댓글 작성
   // ==========================
   Future<void> postComment() async {
     final content = commentInputController.text.trim();
@@ -292,7 +292,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 댓글 삭제
+  // 댓글 삭제
   // ==========================
   Future<void> deleteComment(int commentId) async {
     try {
@@ -317,7 +317,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 좋아요 토글
+  // 좋아요 토글
   // ==========================
   Future<void> toggleLike() async {
     final token = box.read('access_token');
@@ -346,7 +346,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 🔄 상태 동기화
+  // 상태 동기화
   // ==========================
   void syncWithOtherControllers(int targetId, String content, bool isSpoiler, double rating) {
     final bool isDelete = rating == 0.0 && content.trim().isEmpty;
@@ -396,7 +396,7 @@ class ReviewDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 댓글 카운트 동기화
+  // 댓글 카운트 동기화
   // ==========================
   void syncCommentCount(int reviewId, int count) {
     if (Get.isRegistered<ReviewListController>()) {

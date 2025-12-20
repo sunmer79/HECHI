@@ -95,7 +95,7 @@ class CommentOverlay extends StatelessWidget {
               ),
             ),
 
-            // ===== 스포일러 토글 (하단 배치) =====
+            // ===== 스포일러 토글 =====
             Padding(
               padding: const EdgeInsets.fromLTRB(17, 0, 17, 20),
               child: Row(
