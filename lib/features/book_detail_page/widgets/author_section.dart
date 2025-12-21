@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/book_detail_controller.dart';
+import '../widgets/overlays/author_list_overlay.dart';
 
 class AuthorSection extends GetView<BookDetailController> {
   const AuthorSection({super.key});
@@ -43,7 +44,11 @@ class AuthorSection extends GetView<BookDetailController> {
         if (hasMoreAuthors)
           InkWell(
             onTap: () {
-              Get.toNamed('/authors');  // 전체 작가 페이지로 이동
+              Get.bottomSheet(
+                AuthorListOverlay(authors: displayAuthors),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+              );
             },
             child: Container(
               width: double.infinity,
@@ -122,11 +127,13 @@ Widget _buildAuthorRow(String name){
       ),
 
       // 화살표
+      /*
       const Icon(
         Icons.arrow_forward_ios,
         size: 20,
         color: Color(0xFF717171),
       ),
+       */
     ],
   );
 }

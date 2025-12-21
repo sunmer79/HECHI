@@ -24,6 +24,7 @@ class ActionButtons extends GetView<BookDetailController> {
               label: "코멘트",
               isActive: controller.isCommented.value,
               onTap: controller.onWriteReview,
+              //onTap: () { Get.toNamed('/book_note', arguments: {'bookId': controller.bookId, 'tabIndex': 0}); },
             ),
             _buildBtn(
               icon: Icons.remove_red_eye,
