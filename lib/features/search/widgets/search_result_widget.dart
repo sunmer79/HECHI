@@ -10,30 +10,10 @@ class SearchResultWidget extends GetView<BookSearchController> {
     return Container(
       width: 412,
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: controller.backToSearch,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Obx(() => Text(
-                  '"${controller.currentKeyword.value}" 검색 결과',
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                )),
-              ),
-            ],
-          ),
           const SizedBox(height: 10),
           Expanded(
             child: Obx(() {
@@ -46,13 +26,12 @@ class SearchResultWidget extends GetView<BookSearchController> {
                 separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEEEEEE)),
                 itemBuilder: (context, index) {
                   final book = controller.searchResults[index];
-
-                  // InkWell로 감싸서 책 전체 클릭 시 상세페이지 이동
                   return InkWell(
-                    onTap: () {
+                    onTap: () async {
                       print("📖 '${book.title}' 상세 페이지로 이동");
-                      Get.toNamed('/book_detail_page', arguments: book.id); //  ⭐ 변경
-                    },
+                      await Get.toNamed('/book_detail_page', arguments: book.id);
+                      controller.refreshSearch();
+                      },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
@@ -60,10 +39,7 @@ class SearchResultWidget extends GetView<BookSearchController> {
                         children: [
                           Container(
                             width: 60, height: 86,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
                             child: (book.thumbnail != null)
                                 ? Image.network(book.thumbnail!, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image))
                                 : const Icon(Icons.book, color: Colors.grey),
@@ -81,29 +57,17 @@ class SearchResultWidget extends GetView<BookSearchController> {
                               ],
                             ),
                           ),
-
-                          // [수정] 체크 버튼 영역
-                          // Obx로 감싸서 상태 변화(등록됨/안됨)를 즉시 반영
                           Obx(() {
                             final isRegistered = controller.registeredBookIds.contains(book.id);
-
                             return InkWell(
                               onTap: () {
-                                if (!isRegistered) {
-                                  // 등록 안 된 상태면 팝업 띄우기
-                                  controller.showRegisterDialog(book);
-                                } else {
-                                  // 이미 등록된 상태라면? (지금은 그냥 안내 메시지)
-                                  Get.snackbar("알림", "이미 등록된 도서입니다.", duration: const Duration(seconds: 1));
-                                }
+                                if (!isRegistered) controller.showRegisterDialog(book);
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 child: Icon(
-                                  // 등록되었으면 채워진 원, 아니면 빈 원
                                   isRegistered ? Icons.check_circle : Icons.check_circle_outline,
-                                  // 등록되었으면 진한 회색, 아니면 연한 회색
                                   color: isRegistered ? const Color(0xFF555555) : const Color(0xFF888888),
                                   size: 28,
                                 ),

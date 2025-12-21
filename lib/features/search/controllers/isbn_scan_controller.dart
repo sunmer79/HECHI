@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-// ⚠️ 이 파일이 없으면 에러가 날 수 있습니다. 실제 경로로 수정하거나 파일 생성 필요
 import '../data/search_repository.dart';
 import '../../book_detail_page/pages/book_detail_page.dart';
 import '../../book_detail_page/bindings/book_detail_binding.dart';
 
 class IsbnScanController extends GetxController {
-  // 1. 실제 카메라 컨트롤러 (EAN-13 포맷으로 고정하여 정확도 높임)
+  // 1. 실제 카메라 컨트롤러
   final MobileScannerController cameraController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     returnImage: false,
     autoStart: true,
-    // ✅ 충돌 해결: EAN-13 포맷 유지
     formats: const [BarcodeFormat.ean13],
   );
 
-  // ⚠️ SearchRepository 경로가 맞는지 확인해주세요.
   final SearchRepository _repository = SearchRepository();
   final RxBool isScanning = false.obs;
 
@@ -56,7 +53,7 @@ class IsbnScanController extends GetxController {
   Future<void> testScan(String virtualCode) async {
     if (isScanning.value) return;
     print("⚡ [윈도우 테스트] 가짜 바코드 입력됨: $virtualCode");
-    await _processIsbn(virtualCode); // 공통 처리 함수 호출
+    await _processIsbn(virtualCode);
   }
 
   // 4. [공통 로직] ISBN으로 API 호출 및 이동
@@ -67,7 +64,7 @@ class IsbnScanController extends GetxController {
       final book = await _repository.searchByBarcode(isbn);
 
       if (book != null) {
-        Get.back(); // 스캔 화면 닫기
+        Get.back();
         print("📖 스캔 성공: ${book.title} (ID: ${book.id})");
 
         Get.off(
