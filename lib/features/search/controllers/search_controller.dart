@@ -11,15 +11,11 @@ class BookSearchController extends GetxController {
   final TextEditingController searchTextController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
   final RxBool isTextEmpty = true.obs;
-
   final RxList<SearchHistoryItem> recentSearches = <SearchHistoryItem>[].obs;
   final RxString currentKeyword = ''.obs;
   final SearchRepository _repository = SearchRepository();
   final RxList<Book> searchResults = <Book>[].obs;
   final RxBool isLoading = false.obs;
-
-  // [추가] 등록된 도서 ID 관리 (체크 표시 변경용)
-  // 실제 앱에서는 서버에서 받아와야 하지만, 지금은 로컬에서 관리
   final RxSet<int> registeredBookIds = <int>{}.obs;
 
   @override
@@ -32,7 +28,6 @@ class BookSearchController extends GetxController {
     loadServerHistory();
   }
 
-  // ... (loadServerHistory, _onFocusChange, _checkHistoryState 등 기존 코드 유지) ...
   Future<void> loadServerHistory() async {
     final history = await _repository.getSearchHistory();
     recentSearches.assignAll(history);
@@ -81,8 +76,8 @@ class BookSearchController extends GetxController {
     try {
       final books = await _repository.searchBooks(value);
       searchResults.assignAll(books);
+      await _syncReadingStatus(books);
       await loadServerHistory();
-
     } catch (e) {
       print("에러 발생: $e");
     } finally {
@@ -90,8 +85,33 @@ class BookSearchController extends GetxController {
     }
   }
 
+  Future<void> refreshSearch() async {
+    if (currentKeyword.value.isNotEmpty) {
+      print("🔄 검색 결과 새로고침 중...");
+      final books = await _repository.searchBooks(currentKeyword.value);
+      searchResults.assignAll(books);
+      await _syncReadingStatus(books);
+    }
+  }
+
+  Future<void> _syncReadingStatus(List<Book> books) async {
+    final List<int> myReadingIds = await _repository.getMyReadingBookIds();
+    final Set<int> newRegisteredIds = {};
+
+    for (var book in books) {
+      if (myReadingIds.contains(book.id)) {
+        newRegisteredIds.add(book.id);
+      }
+    }
+
+    registeredBookIds.assignAll(newRegisteredIds);
+
+    print("🔄 UI 동기화 완료: 체크된 도서 ${registeredBookIds.length}권");
+  }
+
   Future<void> clearAllHistory() async {
     final success = await _repository.deleteAllHistory();
+
     if (success) {
       recentSearches.clear();
       currentView.value = SearchState.emptyHistory;
@@ -102,7 +122,6 @@ class BookSearchController extends GetxController {
     final success = await _repository.deleteHistoryItem(historyId);
 
     if (success) {
-      // 로컬 리스트에서도 해당 ID를 가진 항목 삭제
       recentSearches.removeWhere((item) => item.id == historyId);
 
       if (recentSearches.isEmpty) {
@@ -120,7 +139,6 @@ class BookSearchController extends GetxController {
     loadServerHistory();
   }
 
-  // 독서 등록 팝업 띄우기
   void showRegisterDialog(Book book) {
     Get.dialog(
       Dialog(
@@ -130,7 +148,6 @@ class BookSearchController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 30),
-            // 제목
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -144,11 +161,10 @@ class BookSearchController extends GetxController {
               ),
             ),
             const SizedBox(height: 10),
-            // 설명 텍스트
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                '해당 도서는 도서 보관함 \'읽고 있는\'에 포함되고,\n북스토퍼에 등록됩니다.',
+                '해당 도서는 도서 보관함 \'읽는 중\'에 포함되고,\n북스토퍼에 등록됩니다.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -160,25 +176,32 @@ class BookSearchController extends GetxController {
             const SizedBox(height: 30),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
 
-            // 버튼 영역
             SizedBox(
               height: 50,
               child: Row(
                 children: [
-                  // '예' 버튼
                   Expanded(
                     child: InkWell(
-                      onTap: () {
-                        // 1. 등록 처리 (ID 저장)
-                        registeredBookIds.add(book.id);
-                        Get.back(); // 팝업 닫기
-
-                        // (선택) 하단 스낵바 알림
-                        Get.snackbar("알림", "'${book.title}' 도서가 등록되었습니다.",
+                      onTap: () async {
+                        bool success = await _repository.registerReadingBook(book.id);
+                        if (success) {
+                          registeredBookIds.add(book.id);
+                          Get.back();
+                          Get.snackbar(
+                            "알림",
+                            "'${book.title}' 도서가 등록되었습니다.",
                             snackPosition: SnackPosition.BOTTOM,
                             backgroundColor: Colors.black87,
                             colorText: Colors.white,
-                            margin: const EdgeInsets.all(20));
+                            margin: const EdgeInsets.all(20),
+                          );
+                        } else {
+                          Get.snackbar(
+                            "오류",
+                            "도서 등록에 실패했습니다. 다시 시도해 주세요.",
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        }
                       },
                       borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16)),
                       child: const Center(
@@ -186,7 +209,7 @@ class BookSearchController extends GetxController {
                           '예',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF4CAF50), // 초록색 (이미지 참고)
+                            color: Color(0xFF4CAF50),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -194,13 +217,13 @@ class BookSearchController extends GetxController {
                     ),
                   ),
                   const VerticalDivider(width: 1, color: Color(0xFFEEEEEE)),
-                  // '도서 상세' 버튼
                   Expanded(
                     child: InkWell(
-                      onTap: () {
-                        Get.back(); // 팝업 닫기
-                        print("📖 상세 페이지 연결 예정");
-                        Get.snackbar("알림", "상세 페이지는 준비 중입니다.");
+                      onTap: () async {
+                        Get.back();
+                        print("📖 '${book.title}' 상세 페이지로 이동");
+                        await Get.toNamed('/book_detail_page', arguments: book.id);
+                        refreshSearch();
                       },
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
                       child: const Center(
@@ -208,7 +231,7 @@ class BookSearchController extends GetxController {
                           '도서 상세',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF4CAF50), // 초록색
+                            color: Color(0xFF4CAF50),
                             fontWeight: FontWeight.w500,
                           ),
                         ),

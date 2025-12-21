@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/search_controller.dart';
 import '../widgets/search_header_widget.dart';
-import '../widgets/search_empty_widget.dart';
 import '../widgets/search_history_list_widget.dart';
 import '../widgets/search_result_widget.dart';
 
@@ -11,42 +10,58 @@ class SearchView extends GetView<BookSearchController> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if(Get.currentRoute != '/search'){
-        controller.searchFocusNode.unfocus();
-      }
-    });
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 412),
+            color: Colors.white,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 60.0,
+                  child: Container(
+                    color: Colors.white,
+                  ),
+                ),
 
-    return Center(
-      child: Container(
-        width: 412,
-        height: 917,
-        clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(color: Colors.white),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => controller.searchFocusNode.unfocus(),
-                behavior: HitTestBehavior.translucent,
-                child: Container(color: Colors.transparent),
-              ),
+                Positioned(
+                  top: 60.0,
+                  left: 0,
+                  right: 0,
+                  child: const SearchHeaderWidget(),
+                ),
+
+                Positioned(
+                  top: 125.0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Obx(() => _buildBody()),
+                ),
+              ],
             ),
-            const Positioned(left: 0, top: 0, child: SearchHeaderWidget()),
-            Positioned(
-              left: 0, top: 90, bottom: 0,
-              child: Obx(() {
-                switch (controller.currentView.value) {
-                  case SearchState.initial: return const SizedBox();
-                  case SearchState.emptyHistory: return const Padding(padding: EdgeInsets.only(top: 20), child: SearchEmptyWidget());
-                  case SearchState.hasHistory: return const Padding(padding: EdgeInsets.only(top: 20), child: SearchHistoryListWidget());
-                  case SearchState.result: return const Padding(padding: EdgeInsets.only(top: 20), child: SearchResultWidget());
-                }
-              }),
-            ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildBody() {
+    switch (controller.currentView.value) {
+      case SearchState.initial:
+        return const Center(child: Text('검색어를 입력하세요', style: TextStyle(color: Colors.grey)));
+      case SearchState.emptyHistory:
+        return const Center(child: Text('최근 검색 기록이 없습니다.', style: TextStyle(color: Colors.grey)));
+      case SearchState.hasHistory:
+        return const SearchHistoryListWidget();
+      case SearchState.result:
+        return const SearchResultWidget();
+    }
   }
 }
