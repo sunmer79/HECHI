@@ -172,48 +172,28 @@ class CurrentReadingBookWidget extends StatelessWidget {
               ],
             ),
 
-            // [하단] 제어 버튼 영역
             const SizedBox(height: 20),
             const Divider(height: 1, thickness: 0.5),
             const SizedBox(height: 10),
 
             if (isReadingNow) ...[
-              // Case 1: 독서 중일 때 (일시정지 / 그만읽기)
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => controller.togglePause(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: Icon(
-                        controller.isPaused.value ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                        size: 24,
-                      ),
-                      label: Text(
-                        controller.isPaused.value ? "재개하기" : "일시정지",
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+              // Case 1: 독서 중일 때 (그만 읽기 버튼만 표시)
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () => controller.showStopDialog(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    backgroundColor: Colors.redAccent.withOpacity(0.1), // 빨간 배경색 은은하게 추가
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  Container(width: 1, height: 24, color: Colors.grey[300]),
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => controller.showStopDialog(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.stop_rounded, size: 24),
-                      label: const Text(
-                        "그만 읽기",
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                  icon: const Icon(Icons.stop_rounded, size: 26),
+                  label: const Text(
+                    "그만 읽기",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                ],
+                ),
               )
             ] else ...[
               // Case 2: 독서 중이 아닐 때 (독서 시작 버튼)

@@ -41,7 +41,7 @@ class ReadingRegistrationView extends GetView<ReadingRegistrationController> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text(
-                    "보관함의 책들",
+                    "읽는 중 보관함",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),

@@ -10,15 +10,16 @@ class ReadingRegistrationController extends GetxController {
   final ReadingRegistrationRepository repository;
   ReadingRegistrationController({required this.repository});
 
+  // State
   var libraryReadingItems = <ReadingLibraryItem>[].obs;
   var isLoading = false.obs;
 
+  // 현재 위젯에 표시되는 책
   var currentActiveBook = Rxn<ReadingLibraryItem>();
 
+  // Active Session (타이머 관련)
   var currentSession = Rxn<ReadingRegistrationSession>();
   var elapsedSeconds = 0.obs;
-
-  var isPaused = false.obs;
 
   Timer? _timer;
 
@@ -131,26 +132,15 @@ class ReadingRegistrationController extends GetxController {
 
       final session = await repository.startSession(bookId, startPage);
 
-      Get.back();
+      Get.back(); // 로딩 닫기
 
       currentSession.value = session;
       elapsedSeconds.value = 0;
-      isPaused.value = false;
       _startTimer();
 
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
       Get.snackbar("오류", "독서를 시작할 수 없습니다.");
-    }
-  }
-
-  void togglePause() {
-    if (isPaused.value) {
-      isPaused.value = false;
-      _startTimer();
-    } else {
-      isPaused.value = true;
-      _timer?.cancel();
     }
   }
 
@@ -193,6 +183,7 @@ class ReadingRegistrationController extends GetxController {
       _timer?.cancel();
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
 
+      // 낙관적 업데이트 (UI 즉시 반영)
       if (currentActiveBook.value != null) {
         final currentItem = currentActiveBook.value!;
         final totalPages = currentItem.book.totalPages;
@@ -210,11 +201,10 @@ class ReadingRegistrationController extends GetxController {
 
       await repository.endSession(currentSession.value!.id, endPage, elapsedSeconds.value);
 
-      Get.back();
+      Get.back(); // 로딩 닫기
 
       currentSession.value = null;
       elapsedSeconds.value = 0;
-      isPaused.value = false;
 
       Get.snackbar("완료", "독서가 기록되었습니다.");
       await refreshData(showLoading: false);
