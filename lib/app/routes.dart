@@ -27,7 +27,6 @@ import '../features/splash/pages/splash_view.dart';
 import '../features/settings/pages/settings_view.dart';
 import '../features/settings/bindings/settings_binding.dart';
 
-
 import '../features/review_list/bindings/review_list_binding.dart';
 import '../features/review_list/pages/review_list_page.dart';
 import '../features/review_detail/bindings/review_detail_binding.dart';
@@ -36,6 +35,9 @@ import '../features/review_detail/pages/review_detail_page.dart';
 import '../features/calendar/pages/calendar_view.dart';
 import '../features/calendar/bindings/calendar_binding.dart';
 
+// ✅ 추가
+import '../features/book_note/bindings/book_note_binding.dart';
+import '../features/book_note/pages/book_note_page.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -60,6 +62,9 @@ abstract class Routes {
   static const reviewDetail = '/review_detail';
 
   static const calendar = '/calendar';
+
+  // ✅ 추가
+  static const bookNote = '/book_note';
 }
 
 class AppPages {
@@ -81,8 +86,12 @@ class AppPages {
     GetPage(name: Routes.tasteAnalysis, page: () => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
     GetPage(name: Routes.settings, page: () => const SettingsView(), binding: SettingsBinding()),
     GetPage(name: Routes.bookStorage, page: () => const BookStorageView(), binding: BookStorageBinding()),
+
     GetPage(name: Routes.reviewList, page: () => const ReviewListPage(), binding: ReviewListBinding()),
     GetPage(name: Routes.reviewDetail, page: () => const ReviewDetailPage(), binding: ReviewDetailBinding()),
     GetPage(name: Routes.calendar, page: () => const CalendarView(), binding: CalendarBinding()),
+
+    // ✅ 추가
+    GetPage(name: Routes.bookNote, page: () => const BookNotePage(), binding: BookNoteBinding()),
   ];
 }

@@ -16,19 +16,14 @@ class LibraryBookModel {
   });
 
   factory LibraryBookModel.fromJson(Map<String, dynamic> json) {
-    final bookData = json['book'] ?? {};
-
-    final idValue = bookData['id'] ?? bookData['book_id'];
-
+    final bookData = json['book'] is Map ? json['book'] : {};
     return LibraryBookModel(
-      // idValue가 num 타입일 경우 정수로 변환하고, 그 외의 경우 (null 포함) 0을 할당합니다.
-      id: (idValue is num) ? idValue.toInt() : 0,
-
-      title: bookData['title'] ?? '',
-      thumbnail: bookData['thumbnail'] ?? '',
-      myRating: (json['my_rating'] as num?)?.toDouble(),
-      avgRating: (json['avg_rating'] as num?)?.toDouble(),
-      status: json['status'] ?? 'reading',
+      id: (bookData['id'] ?? 0) as int,
+      title: (bookData['title'] ?? '제목 없음').toString(),
+      thumbnail: (bookData['thumbnail'] ?? '').toString(),
+      myRating: json['my_rating'] != null ? (json['my_rating'] as num).toDouble() : null,
+      avgRating: json['avg_rating'] != null ? (json['avg_rating'] as num).toDouble() : null,
+      status: (json['status'] ?? '').toString(),
     );
   }
 }

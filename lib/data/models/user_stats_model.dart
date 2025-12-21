@@ -27,15 +27,16 @@ class UserStatsResponse {
   }
 }
 
-// ... (RatingDist 등 다른 클래스는 기존 유지) ...
 class RatingDist {
-  final int rating;
+  final double rating; // ✅ [수정 완료] int -> double (0.5 단위 처리를 위해 필수)
   final int count;
+
   RatingDist({required this.rating, required this.count});
 
   factory RatingDist.fromJson(Map<String, dynamic> json) {
     return RatingDist(
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      // ✅ [수정 완료] num으로 받아서 double로 변환
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       count: (json['count'] as num?)?.toInt() ?? 0,
     );
   }
@@ -46,14 +47,14 @@ class RatingSummary {
   final int totalReviews;
   final double mostFrequentRating;
   final int average100;
-  final int totalComments; // ✅ [추가] 코멘트 개수 필드
+  final int totalComments; // ✅ [추가 완료] 코멘트 개수 필드
 
   RatingSummary({
     required this.average5,
     required this.totalReviews,
     required this.mostFrequentRating,
     required this.average100,
-    required this.totalComments, // ✅ [추가] 생성자
+    required this.totalComments,
   });
 
   factory RatingSummary.fromJson(Map<String, dynamic> json) {
@@ -62,7 +63,7 @@ class RatingSummary {
       totalReviews: (json['total_reviews'] as num?)?.toInt() ?? 0,
       mostFrequentRating: (json['most_frequent_rating'] as num?)?.toDouble() ?? 0.0,
       average100: (json['average_100'] as num?)?.toInt() ?? 0,
-      // ✅ [핵심] JSON의 'total_comments'를 가져옵니다.
+      // ✅ [핵심] JSON의 'total_comments'를 매핑
       totalComments: (json['total_comments'] as num?)?.toInt() ?? 0,
     );
   }

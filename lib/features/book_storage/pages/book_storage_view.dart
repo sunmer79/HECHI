@@ -29,78 +29,39 @@ class BookStorageView extends GetView<BookStorageController> {
     return Container(
       height: 50,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(color: Colors.white),
       child: Stack(
         children: [
-          const Center(
-            child: Text(
-              '도서 보관함',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontFamily: 'Roboto',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Get.back(),
-            ),
-          ),
+          const Center(child: Text('도서 보관함', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+          Positioned(left: 0, child: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
         ],
       ),
     );
   }
 
   Widget _buildTabBar() {
+    final labels = ['읽는 중', '완독한', '평가한', '위시리스트'];
     return Container(
       height: 50,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFDADADA), width: 1)),
-      ),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFDADADA), width: 1))),
       child: Obx(() => Row(
-        children: [
-          _buildTabItem(0, '읽는 중'),
-          _buildTabItem(1, '완독한'),
-          _buildTabItem(2, '평가한'),
-          _buildTabItem(3, '위시리스트'),
-        ],
-      )),
-    );
-  }
-
-  Widget _buildTabItem(int index, String label) {
-    bool isSelected = controller.currentTabIndex.value == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => controller.changeTab(index),
-        child: Container(
-          color: Colors.white,
-          alignment: Alignment.center,
-          child: Container(
-            height: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              border: isSelected
-                  ? const Border(bottom: BorderSide(color: Colors.black, width: 2))
-                  : null,
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.black : const Color(0xFF888888),
-                fontSize: 15,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        children: List.generate(4, (index) {
+          bool isSelected = controller.currentTabIndex.value == index;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => controller.changeTab(index),
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(border: isSelected ? const Border(bottom: BorderSide(color: Colors.black, width: 2)) : null),
+                child: Text(labels[index], style: TextStyle(
+                  color: isSelected ? Colors.black : const Color(0xFF888888),
+                  fontSize: 15,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                )),
               ),
             ),
-          ),
-        ),
-      ),
+          );
+        }),
+      )),
     );
   }
 
@@ -112,10 +73,7 @@ class BookStorageView extends GetView<BookStorageController> {
       child: Row(
         children: [
           const Spacer(),
-          Obx(() => Text(
-            '${controller.books.length} 개',
-            style: const TextStyle(fontSize: 14, color: Color(0xFF555555)),
-          )),
+          Obx(() => Text('${controller.books.length} 개', style: const TextStyle(fontSize: 14, color: Color(0xFF555555)))),
           const SizedBox(width: 16),
           GestureDetector(
             onTap: controller.showSortBottomSheet,
@@ -123,10 +81,7 @@ class BookStorageView extends GetView<BookStorageController> {
               children: [
                 const Icon(Icons.sort, size: 18, color: Color(0xFF555555)),
                 const SizedBox(width: 4),
-                Obx(() => Text(
-                  controller.currentSort.value,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF555555)),
-                )),
+                Obx(() => Text(controller.currentSort.value, style: const TextStyle(fontSize: 14, color: Color(0xFF555555)))),
               ],
             ),
           ),
@@ -138,24 +93,18 @@ class BookStorageView extends GetView<BookStorageController> {
   Widget _buildBookList() {
     return Expanded(
       child: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB56C)));
-        }
-        if (controller.books.isEmpty) {
-          return const Center(child: Text('보관된 도서가 없습니다.'));
-        }
+        if (controller.isLoading.value) return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB56C)));
+        if (controller.books.isEmpty) return const Center(child: Text('보관된 도서가 없습니다.'));
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 0.55,
+            childAspectRatio: 0.52,
             crossAxisSpacing: 10,
             mainAxisSpacing: 20,
           ),
           itemCount: controller.books.length,
-          itemBuilder: (context, index) {
-            return _BookGridItem(book: controller.books[index]);
-          },
+          itemBuilder: (context, index) => _BookGridItem(book: controller.books[index]),
         );
       }),
     );
@@ -169,54 +118,53 @@ class _BookGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Get.find<BookStorageController>().goToBookDetails(book.id);
-      },
+      onTap: () => Get.find<BookStorageController>().goToBookDetails(book.id),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          AspectRatio(
+            aspectRatio: 0.7,
             child: Container(
-              width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: const Color(0xFFE0E0E0), width: 0.5),
-                image: book.thumbnail.isNotEmpty
-                    ? DecorationImage(
-                  image: NetworkImage(book.thumbnail),
-                  fit: BoxFit.cover,
-                )
-                    : null,
+                image: book.thumbnail.isNotEmpty ? DecorationImage(image: NetworkImage(book.thumbnail), fit: BoxFit.cover) : null,
               ),
-              child: book.thumbnail.isEmpty
-                  ? const Icon(Icons.book, color: Colors.grey)
-                  : null,
+              child: book.thumbnail.isEmpty ? const Icon(Icons.book, color: Colors.grey) : null,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             book.title,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              height: 1.2,
-            ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black),
           ),
           const SizedBox(height: 4),
-          if (book.myRating != null)
-            Text(
-              '평가함 ★${book.myRating}',
-              style: const TextStyle(color: Color(0xFFFF7F00), fontSize: 12, fontWeight: FontWeight.bold),
-            )
-          else if (book.avgRating != null && book.avgRating! > 0)
-            Text(
-              '예상 ★${book.avgRating}',
-              style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 12, fontWeight: FontWeight.bold),
-            ),
+          _buildRatingInfo(),
         ],
       ),
+    );
+  }
+
+  Widget _buildRatingInfo() {
+    final bool hasMyRating = book.myRating != null && book.myRating! > 0;
+    final double rating = hasMyRating ? book.myRating! : (book.avgRating ?? 0.0);
+    final Color ratingColor = hasMyRating ? const Color(0xFFFF7F00) : const Color(0xFFAAAAAA);
+
+    if (rating == 0 && !hasMyRating) {
+      return const Text('평가 없음', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11));
+    }
+
+    return Row(
+      children: [
+        Icon(Icons.star, size: 12, color: ratingColor),
+        const SizedBox(width: 2),
+        Text(
+          rating.toStringAsFixed(1),
+          style: TextStyle(color: ratingColor, fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }
