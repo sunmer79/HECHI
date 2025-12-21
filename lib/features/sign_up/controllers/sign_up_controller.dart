@@ -30,6 +30,7 @@ class SignUpController extends GetxController {
     });
   }
 
+  // ✅ [수정] 텍스트 컨트롤러는 여기서 dispose 해도 안전합니다. (SignUpView는 1회성이므로)
   @override
   void onClose() {
     nameController.dispose();
@@ -70,7 +71,6 @@ class SignUpController extends GetxController {
   }
 
   Future<void> submitSignUp() async {
-    // 빈칸 체크
     if (nameController.text.isEmpty ||
         nicknameController.text.isEmpty ||
         !isEmailFilled.value ||
@@ -95,7 +95,6 @@ class SignUpController extends GetxController {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // ✨ [디자인 유지] 사용자분이 작성하신 팝업 UI 그대로 사용
         Get.dialog(
           Dialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -141,19 +140,12 @@ class SignUpController extends GetxController {
                   ),
                   const SizedBox(height: 24),
 
-                  // ✅ [수정] 여기가 핵심!
-                  // 디자인은 그대로 두고, 클릭했을 때 '안전하게 이동하는 로직'만 추가함
                   GestureDetector(
-                    onTap: () async {
+                    onTap: () {
                       Get.back(); // 팝업 닫기
 
-                      // 🚨 [안전장치] 팝업이 닫히는 애니메이션을 기다림 (빨간 바 방지)
-                      await Future.delayed(const Duration(milliseconds: 200));
-
-                      // 기존 컨트롤러 삭제 후 이동
-                      if (Get.isRegistered<SignUpController>()) {
-                        Get.delete<SignUpController>();
-                      }
+                      // 🚨 [수정] 복잡한 로직 제거하고 가장 단순하고 강력한 이동 명령 사용
+                      // offAllNamed는 이전 스택을 다 지우고 이동하므로 가장 깔끔합니다.
                       Get.offAllNamed(Routes.login);
                     },
                     child: Container(

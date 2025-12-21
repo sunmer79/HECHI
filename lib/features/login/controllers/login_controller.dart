@@ -24,8 +24,7 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    // 🚨 [핵심 수정] 화면 빌드가 끝난 후 리스너 등록 (Render 에러 방지)
+    // 화면 빌드 후 리스너 등록 (안전장치)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       emailController.addListener(() {
         if (emailError.isNotEmpty) emailError.value = '';
@@ -36,10 +35,13 @@ class LoginController extends GetxController {
     });
   }
 
+  // 🚨 [핵심 수정] onClose에서 dispose()를 제거했습니다.
+  // 페이지가 전환되는 동안 View가 Controller를 참조할 때 에러가 나는 것을 방지합니다.
+  // Dart의 가비지 컬렉터가 나중에 메모리를 알아서 정리해주므로 안전합니다.
   @override
   void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
+    // emailController.dispose();  <-- 삭제됨
+    // passwordController.dispose(); <-- 삭제됨
     super.onClose();
   }
 
@@ -50,7 +52,6 @@ class LoginController extends GetxController {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
-    // 간단 유효성 검사
     if (!GetUtils.isEmail(email)) {
       emailError.value = "이메일 형식이 올바르지 않습니다.";
       return;
@@ -76,29 +77,22 @@ class LoginController extends GetxController {
 
       if (loginResponse.statusCode == 200) {
         final loginData = jsonDecode(utf8.decode(loginResponse.bodyBytes));
-        String accessToken = loginData['access_token'];
-        String refreshToken = loginData['refresh_token'];
 
-        // 토큰 저장
-        await box.write('access_token', accessToken);
-        await box.write('refresh_token', refreshToken);
+        await box.write('access_token', loginData['access_token']);
+        await box.write('refresh_token', loginData['refresh_token']);
         await box.write('is_auto_login', isAutoLogin.value);
-
-        // 로컬 캐시 정리
         await box.remove('is_taste_analyzed_local');
 
-        print("✅ 로그인 성공, 유저 정보 동기화 시작...");
+        print("✅ 로그인 성공");
 
-        // 앱 컨트롤러에 유저 정보 로드 요청
         final appController = Get.find<AppController>();
         await appController.fetchUserProfile();
 
-        // ✅ MyReadController 초기화 (재진입 시 데이터 갱신을 위해)
+        // 재진입 시 데이터 갱신을 위해 기존 컨트롤러 삭제
         if (Get.isRegistered<MyReadController>()) {
           Get.delete<MyReadController>();
         }
 
-        // 취향 분석 여부에 따라 이동
         final profile = appController.userProfile;
         bool isAnalyzed = profile['taste_analyzed'] ?? false;
 
@@ -109,11 +103,9 @@ class LoginController extends GetxController {
         }
 
       } else {
-        print("❌ 로그인 실패: ${loginResponse.body}");
         passwordError.value = "이메일 혹은 비밀번호를 확인해주세요.";
       }
     } catch (e) {
-      print("🚨 통신 오류: $e");
       Get.snackbar("오류", "서버와 연결할 수 없습니다.", snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
