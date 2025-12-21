@@ -38,6 +38,8 @@ import '../features/calendar/bindings/calendar_binding.dart';
 // ✅ 추가
 import '../features/book_note/bindings/book_note_binding.dart';
 import '../features/book_note/pages/book_note_page.dart';
+import '../features/reading_registration/bindings/reading_registration_binding.dart';
+import '../features/reading_registration/pages/reading_registration_view.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -65,6 +67,7 @@ abstract class Routes {
 
   // ✅ 추가
   static const bookNote = '/book_note';
+  static const readingRegistration = '/reading_registration';
 }
 
 class AppPages {
@@ -93,5 +96,6 @@ class AppPages {
 
     // ✅ 추가
     GetPage(name: Routes.bookNote, page: () => const BookNotePage(), binding: BookNoteBinding()),
+    GetPage(name: Routes.readingRegistration, page: () => const ReadingRegistrationView(), binding: ReadingRegistrationBinding(),),
   ];
 }
