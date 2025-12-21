@@ -10,11 +10,9 @@ class MyReadController extends GetxController {
   final box = GetStorage();
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
 
-  // 전역 상태 연결
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
   RxString get description => Get.find<AppController>().description;
 
-  // 통계 변수
   final RxMap<String, int> activityStats = <String, int>{'evaluations': 0, 'comments': 0}.obs;
   RxList<Map<String, dynamic>> ratingDistData = <Map<String, dynamic>>[].obs;
 
@@ -22,9 +20,8 @@ class MyReadController extends GetxController {
   RxString totalReviews = "0".obs;
   RxString readingRate = "0%".obs;
   RxString mostGivenRating = "0.0".obs;
-  RxString totalComments = "0".obs; // ✅ 개별 변수
+  RxString totalComments = "0".obs;
 
-  // 태그 클라우드 데이터
   RxList<Map<String, dynamic>> insightTags = <Map<String, dynamic>>[].obs;
 
   // 캘린더 관련 변수
@@ -34,6 +31,9 @@ class MyReadController extends GetxController {
 
   RxMap<int, String> calendarBooks = <int, String>{}.obs;
   RxMap<int, List<dynamic>> dailyBooks = <int, List<dynamic>>{}.obs;
+
+  // ✅ [추가] 캘린더 로딩 상태 관리
+  RxBool isCalendarLoading = false.obs;
 
   @override
   void onInit() {
@@ -72,6 +72,11 @@ class MyReadController extends GetxController {
   }
 
   Future<void> fetchCalendarData(String token) async {
+    // ✅ [수정] 로딩 시작 & 기존 데이터 즉시 삭제 (유령 데이터 방지)
+    isCalendarLoading.value = true;
+    calendarBooks.clear();
+    dailyBooks.clear();
+
     final queryParams = {
       'year': currentYear.value.toString(),
       'month': currentMonth.value.toString(),
@@ -113,20 +118,20 @@ class MyReadController extends GetxController {
       }
     } catch (e) {
       print("Calendar fetch error: $e");
+    } finally {
+      // ✅ [추가] 로딩 종료
+      isCalendarLoading.value = false;
     }
   }
 
-  // ✅ [수정됨] 디버그 로그 추가
   Future<void> _fetchStats(String token) async {
+    // (기존 코드 유지)
     try {
       final response = await http.get(Uri.parse('$baseUrl/analytics/my-stats'), headers: {"Authorization": "Bearer $token"});
 
       if (response.statusCode == 200) {
         final json = jsonDecode(utf8.decode(response.bodyBytes));
         final stats = UserStatsResponse.fromJson(json);
-
-        // 디버깅 로그
-        print("🔥🔥🔥 [DEBUG] 서버가 준 코멘트 개수: ${stats.ratingSummary.totalComments}");
 
         activityStats['evaluations'] = stats.ratingSummary.totalReviews;
         activityStats['comments'] = stats.ratingSummary.totalComments;
@@ -138,18 +143,15 @@ class MyReadController extends GetxController {
         readingRate.value = "${stats.ratingSummary.average100}%";
         mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-        // 1. 최대값 찾기 (비율 계산용)
         int maxCount = 0;
         for (var d in stats.ratingDistribution) {
           if (d.count > maxCount) maxCount = d.count;
         }
 
-        // 2. 0.5 ~ 5.0 까지 10개 구간 생성
         List<Map<String, dynamic>> tempDist = [];
         List<double> steps = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
 
         for (double score in steps) {
-          // 해당 점수의 데이터 찾기
           var apiData = stats.ratingDistribution.firstWhere(
                 (d) => d.rating == score,
             orElse: () => RatingDist(rating: score, count: 0),
@@ -157,10 +159,9 @@ class MyReadController extends GetxController {
 
           double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
 
-          // 색상 결정 (점수가 높을수록 진해짐)
           int colorValue;
           if (score <= 1.5) {
-            colorValue = 0xFFC8E6C9; // 연한 초록
+            colorValue = 0xFFC8E6C9;
           } else if (score <= 2.5) {
             colorValue = 0xFFA5D6A7;
           } else if (score <= 3.5) {
@@ -168,17 +169,16 @@ class MyReadController extends GetxController {
           } else if (score <= 4.5) {
             colorValue = 0xFF66BB6A;
           } else {
-            colorValue = 0xFF43A047; // 진한 초록 (5.0)
+            colorValue = 0xFF43A047;
           }
 
           tempDist.add({
-            "score": score,      // double (ex: 3.5)
+            "score": score,
             "ratio": ratio,
             "count": apiData.count,
             "color": colorValue
           });
         }
-
         ratingDistData.value = tempDist;
       }
     } catch (e) {
@@ -187,10 +187,10 @@ class MyReadController extends GetxController {
   }
 
   Future<void> _fetchInsightTags(String token) async {
+    // (기존 코드 유지 - 내용 생략 가능)
     final url = Uri.parse('$baseUrl/analytics/my-insights');
     try {
       final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
-
       if (response.statusCode == 200) {
         final json = jsonDecode(utf8.decode(response.bodyBytes));
         final insightData = UserInsightResponse.fromJson(json);
