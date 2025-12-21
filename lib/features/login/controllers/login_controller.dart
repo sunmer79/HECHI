@@ -24,11 +24,15 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    emailController.addListener(() {
-      if (emailError.isNotEmpty) emailError.value = '';
-    });
-    passwordController.addListener(() {
-      if (passwordError.isNotEmpty) passwordError.value = '';
+
+    // 🚨 [핵심 수정] 화면 빌드가 끝난 후 리스너 등록 (Render 에러 방지)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      emailController.addListener(() {
+        if (emailError.isNotEmpty) emailError.value = '';
+      });
+      passwordController.addListener(() {
+        if (passwordError.isNotEmpty) passwordError.value = '';
+      });
     });
   }
 
@@ -46,6 +50,7 @@ class LoginController extends GetxController {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
+    // 간단 유효성 검사
     if (!GetUtils.isEmail(email)) {
       emailError.value = "이메일 형식이 올바르지 않습니다.";
       return;
@@ -74,23 +79,26 @@ class LoginController extends GetxController {
         String accessToken = loginData['access_token'];
         String refreshToken = loginData['refresh_token'];
 
+        // 토큰 저장
         await box.write('access_token', accessToken);
         await box.write('refresh_token', refreshToken);
         await box.write('is_auto_login', isAutoLogin.value);
 
+        // 로컬 캐시 정리
         await box.remove('is_taste_analyzed_local');
 
         print("✅ 로그인 성공, 유저 정보 동기화 시작...");
 
+        // 앱 컨트롤러에 유저 정보 로드 요청
         final appController = Get.find<AppController>();
         await appController.fetchUserProfile();
 
-        // ✅ [핵심 수정] 기존에 남아있을 수 있는 MyReadController 강제 삭제
-        // 이렇게 해야 홈 화면 진입 시 onInit()이 다시 실행되어 데이터를 새로 불러옵니다.
+        // ✅ MyReadController 초기화 (재진입 시 데이터 갱신을 위해)
         if (Get.isRegistered<MyReadController>()) {
           Get.delete<MyReadController>();
         }
 
+        // 취향 분석 여부에 따라 이동
         final profile = appController.userProfile;
         bool isAnalyzed = profile['taste_analyzed'] ?? false;
 
