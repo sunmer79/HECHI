@@ -67,6 +67,12 @@ class ReviewDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
+
+        // ✅ 디버깅
+        print("📥 [reviewDetail] reviewId=${data['id']}");
+        print("   ▶ comment_count=${data['comment_count']}");
+        print("   ▶ comments_len=${data['comments']?.length}");
+
         setReviewData(data);
         if (data['book_id'] != null) {
           fetchBookDetail(data['book_id']);
@@ -244,6 +250,12 @@ class ReviewDetailController extends GetxController {
       if (res.statusCode == 200) {
         final List<dynamic> list = jsonDecode(utf8.decode(res.bodyBytes));
         comments.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
+
+        // --- 디버깅 코드 ---
+        print("📥 전체 리뷰 개수: ${list.length}");
+        if (list.isNotEmpty) {
+          print("🔍 첫 번째 리뷰 ID: ${list[0]['id']}, 댓글 수: ${list[0]['comment_count']}");
+        }
 
         final int count = comments.length;
         review["comment_count"] = count;

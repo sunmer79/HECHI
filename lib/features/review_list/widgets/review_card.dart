@@ -192,7 +192,9 @@ class ReviewCard extends StatelessWidget {
             itemCount: 5,
             itemSize: 14.0,
             direction: Axis.horizontal,
-          ),
+          )
+        else
+          const SizedBox(),
         Row(
           children: [
             Text(

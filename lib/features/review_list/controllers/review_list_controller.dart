@@ -43,9 +43,16 @@ class ReviewListController extends GetxController {
 
       if (res.statusCode == 200) {
         final List<dynamic> list = jsonDecode(res.body);
+
+        // ✅ 디버깅 로그
+        print("📥 [fetchReviews] 리뷰 ${list.length}개 수신");
+        for (final r in list) {
+          print("🧾 reviewId=${r['id']} comment_count=${r['comment_count']}");
+        }
+
         reviews.value = list
             .map((e) => Map<String, dynamic>.from(e))
-            .where((e) => (e["content"] ?? "").toString().isNotEmpty)
+            // .where((e) => (e["content"] ?? "").toString().isNotEmpty)
             .toList();
         _applySort();
       } else {

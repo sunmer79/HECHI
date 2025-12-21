@@ -112,6 +112,13 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
+
+        // ✅ 디버깅 로그
+        print("📥 [fetchReviews] 리뷰 ${list.length}개 수신");
+        for (final r in list) {
+          print("🧾 reviewId=${r['id']} comment_count=${r['comment_count']}");
+        }
+
         reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
         final myUserId = box.read("user_id");
