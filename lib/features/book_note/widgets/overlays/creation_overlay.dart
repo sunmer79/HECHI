@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/book_note_controller.dart';
 import '../styles/overlay_common.dart';
@@ -62,33 +63,22 @@ class _CreationOverlayState extends State<CreationOverlay> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<BookNoteController>();
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return SafeArea(
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 150),
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.9,
-            /*
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.9,
-              minHeight: MediaQuery.of(context).size.height * 0.6,
-            ),
-             */
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-            ),
-            child: widget.type == "bookmark"
-                ? _buildBookmarkLayout(controller)
-                : widget.type == "highlight"
-                    ? _buildHighlightLayout(controller)
-                    : _buildMemoLayout(controller),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
           ),
+          child: widget.type == "bookmark"
+              ? _buildBookmarkLayout(controller)
+              : widget.type == "highlight"
+              ? _buildHighlightLayout(controller)
+              : _buildMemoLayout(controller),
         ),
       ),
     );
@@ -193,6 +183,9 @@ class _CreationOverlayState extends State<CreationOverlay> {
                   controller: pageController,
                   readOnly: _isReadOnly,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     isCollapsed: true,
@@ -250,8 +243,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
   // =========================================================
 
   Widget _buildHighlightLayout(BookNoteController controller) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return Column(
       children: [
         // --------------------- Header ---------------------
@@ -466,6 +457,19 @@ class _CreationOverlayState extends State<CreationOverlay> {
           Get.snackbar("오류", "페이지 번호를 입력해주세요.");
           return;
         }
+
+        final isDuplicate = controller.bookmarks.any((bookmark) {
+          if (widget.isEdit && bookmark['id'] == widget.itemId) {
+            return false;
+          }
+          return bookmark['page'] == page;
+        });
+
+        if (isDuplicate) {
+          Get.snackbar("알림", "이미 등록된 페이지입니다.");
+          return;
+        }
+
         final memo = memoController.text.trim();
 
         if (widget.isEdit) {

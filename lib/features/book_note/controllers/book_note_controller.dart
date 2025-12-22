@@ -78,7 +78,7 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
     try {
       final data = await api.get("/bookmarks/books/$bookId");
       bookmarks.value = List<Map<String, dynamic>>.from(data);
-      sortBookmarks(); // 정렬 적용
+      sortBookmarks();
     } catch (e) {
       print("❌ Fetch Bookmarks Error: $e");
     }
@@ -86,6 +86,12 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   }
 
   Future<void> createBookmark(int page, String memo) async {
+    final isDuplicate = bookmarks.any((element) => element['page'] == page);
+
+    if (isDuplicate){
+      return;
+    }
+
     try {
       await api.post(
         "/bookmarks/",

@@ -20,7 +20,6 @@ class CommentOverlay extends StatelessWidget {
     final RxString text = initialText.obs;
     final RxBool isSpoiler = initialSpoiler.obs;
     final TextEditingController textController = TextEditingController(text: initialText);
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       height: Get.height * 0.9,
@@ -95,10 +94,10 @@ class CommentOverlay extends StatelessWidget {
           ),
 
           // ===== 스포일러 토글 =====
-          Padding(
-            padding: const EdgeInsets.fromLTRB(17, 0, 17, 20),
+          Container(
+            padding: const EdgeInsets.fromLTRB(17, 5, 17, 20),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   "스포일러",
@@ -113,7 +112,6 @@ class CommentOverlay extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: bottomInset),
         ],
       ),
     );
