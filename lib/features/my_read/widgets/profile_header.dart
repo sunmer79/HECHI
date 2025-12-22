@@ -1,3 +1,4 @@
+//상단 프로필 정보
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/my_read_controller.dart';
