@@ -12,7 +12,7 @@ class ThemeListPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Obx(() => Text(
-          controller.currentThemeTitle.value,
+          '# ${controller.currentThemeTitle.value}',
           style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
         )),
         centerTitle: true,

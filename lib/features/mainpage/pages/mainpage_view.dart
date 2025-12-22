@@ -58,42 +58,6 @@ class MainpageView extends GetView<MainpageController> {
             const SizedBox(height: 40),
 
             // ==========================================
-            // 3️⃣ [Personal] 사용자 맞춤 영역 (Lock-in)
-            // ==========================================
-            // 장르별 베스트셀러 (유저 취향 저격)
-
-            // ⭐ 4. [NEW] 장르별 베스트셀러 (수정됨)
-            Obx(() {
-              if (controller.genreBestsellerList.isEmpty) return const SizedBox();
-
-              return Column(
-                children: controller.genreBestsellerList.map((section) {
-                  return Column(
-                    children: [
-                      BookListSection(
-                        title: "${section['title']} 베스트", // 예: 소설 베스트
-                        bookList: section['books'],
-
-                        // 💥 [핵심 수정] 전체 장르 페이지가 아니라, '이 장르' 상세 페이지로 이동!
-                        onHeaderTap: () {
-                          Get.to(
-                                () => const SingleGenreListPage(),
-                            // 데이터를 짐싸서 보냅니다 (제목, 책 리스트)
-                            arguments: {
-                              'title': "${section['title']} 베스트",
-                              'books': section['books'],
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  );
-                }).toList(),
-              );
-            }),
-
-            // ==========================================
             // 4️⃣ [Social Proof] 평점/리뷰 기반
             // ==========================================
             // 인기 순위 (평점/리뷰가 좋은 책)
@@ -131,13 +95,43 @@ class MainpageView extends GetView<MainpageController> {
             Obx(() {
               if (controller.trendingBookList.isEmpty) return const SizedBox();
               return BookListSection(
-                title: "지금 많이 찾는 도서",
+                title: "급상승 검색",
                 bookList: controller.trendingBookList,
                 onHeaderTap: () => Get.to(() => const TrendingListPage()),
               );
             }),
 
             const SizedBox(height: 40),
+
+            Obx(() {
+              if (controller.genreBestsellerList.isEmpty) return const SizedBox();
+
+              return Column(
+                children: controller.genreBestsellerList.map((section) {
+                  return Column(
+                    children: [
+                      BookListSection(
+                        title: "${section['title']} 베스트", // 예: 소설 베스트
+                        bookList: section['books'],
+
+                        // 💥 [핵심 수정] 전체 장르 페이지가 아니라, '이 장르' 상세 페이지로 이동!
+                        onHeaderTap: () {
+                          Get.to(
+                                () => const SingleGenreListPage(),
+                            // 데이터를 짐싸서 보냅니다 (제목, 책 리스트)
+                            arguments: {
+                              'title': "${section['title']} 베스트",
+                              'books': section['books'],
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  );
+                }).toList(),
+              );
+            }),
 
             // ==========================================
             // 6️⃣ [Curated] 깊이 있는 추천 (Editorial)
@@ -151,7 +145,7 @@ class MainpageView extends GetView<MainpageController> {
                   return Column(
                     children: [
                       BookListSection(
-                        title: curation['title'],
+                        title: '# ${curation['title']}',
                         bookList: curation['books'],
                         onHeaderTap: () {
                           controller.fetchThemeDetail(curation['title']);

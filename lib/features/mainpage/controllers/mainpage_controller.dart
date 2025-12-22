@@ -9,6 +9,7 @@ class MainpageController extends GetxController {
       '수소와 산소에 마법적인 요소는 아무것도 없습니다. 당연히 지구의 생명체에는 그 물이 필요하겠죠. 하지만 다른 행성은 환경이 완전히 다를 수 있어요.'.obs;
   final RxString highlightBookTitle = '프로젝트 헤일메리'.obs;
   final RxString highlightAuthor = '앤디 위어'.obs;
+  final RxInt highlightBookId = 10.obs;
   final RxString headerLogo = 'HECHI'.obs;
   final RxString userProfileUrl = 'https://picsum.photos/30/30'.obs;
 
