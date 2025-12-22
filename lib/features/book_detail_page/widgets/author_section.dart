@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/book_detail_controller.dart';
+import '../widgets/overlays/author_list_overlay.dart';
 
 class AuthorSection extends GetView<BookDetailController> {
   const AuthorSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authors = List<String>.from(controller.book.value["authors"] ?? []);
+    final authors = List<String>.from(controller.book["authors"] ?? []);
 
     final displayAuthors = authors.isEmpty ? ["작가 미상"] : authors;
     final hasMoreAuthors = displayAuthors.length >= 3;
@@ -34,7 +35,6 @@ class AuthorSection extends GetView<BookDetailController> {
         Column(
           children: List.generate(visibleAuthors.length, (index) {
             return Padding(
-              // 리스트 아이템 간 간격 15
               padding: EdgeInsets.symmetric(horizontal: 17, vertical: 15),
               child: _buildAuthorRow(visibleAuthors[index]),
             );
@@ -44,17 +44,21 @@ class AuthorSection extends GetView<BookDetailController> {
         if (hasMoreAuthors)
           InkWell(
             onTap: () {
-              Get.toNamed('/authors');  // 전체 작가 페이지로 이동
+              Get.bottomSheet(
+                AuthorListOverlay(authors: displayAuthors),
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+              );
             },
             child: Container(
               width: double.infinity,
               height: 50,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x66D1ECD9),
+                color: const Color(0xFFC8E6C9).withValues(alpha: 0.3),
                 border: Border(
-                  top: BorderSide(width: 1, color: Color(0xFFABABAB)),
-                  bottom: BorderSide(width: 1, color: Color(0xFFABABAB)),
+                  top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                  bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
                 ),
               ),
               child: const Text(
@@ -74,22 +78,18 @@ Widget _buildAuthorRow(String name){
     children: [
       // 프로필 아이콘
       Container(
-        width: 60,
-        height: 60,
+        width: 50,
+        height: 50,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFF89C99C),
+          color: const Color(0xFF89C99C).withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-            color: Color(0xFFD4D4D4),
-            width: 1,
-          ),
         ),
         child: const Center(
           child: Icon(
               Icons.person,
               color: Colors.white,
-              size: 50
+              size: 40
           ),
         ),
       ),
@@ -123,11 +123,13 @@ Widget _buildAuthorRow(String name){
       ),
 
       // 화살표
+      /*
       const Icon(
         Icons.arrow_forward_ios,
         size: 20,
         color: Color(0xFF717171),
       ),
+       */
     ],
   );
 }

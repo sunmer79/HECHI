@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/book_detail_controller.dart';
 
 class CommentOverlay extends StatelessWidget {
   final Function(String, bool) onSubmit;
@@ -20,22 +19,22 @@ class CommentOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final RxString text = initialText.obs;
     final RxBool isSpoiler = initialSpoiler.obs;
-    final TextEditingController textController =
-      TextEditingController(text: initialText);
-    final controller = Get.find<BookDetailController>();
+    final TextEditingController textController = TextEditingController(text: initialText);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+    return Container(
+      height: Get.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SizedBox(
-        height: Get.height * 0.9,
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             // ===== 헤더 =====
-            Row(
+            child: Row(
               children: [
                 TextButton(
                   onPressed: Get.back,
@@ -56,10 +55,8 @@ class CommentOverlay extends StatelessWidget {
                       return;
                     }
 
+                    FocusManager.instance.primaryFocus?.unfocus();
                     await onSubmit(text.value.trim(), isSpoiler.value);
-
-                    controller.isCommented.value = true;
-                    controller.fetchReviews();
 
                     Get.back();
                     if (isEditMode){
@@ -75,47 +72,49 @@ class CommentOverlay extends StatelessWidget {
                 ),
               ],
             ),
+          ),
 
-            // ===== 내용 입력 =====
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 17),
-                child: TextField(
-                  controller: textController,
-                  autofocus: true,
-                  maxLines: null,
-                  onChanged: (v) => text.value = v,
-                  decoration: const InputDecoration(
-                    hintText: "작품에 대한 생각을 자유롭게 적어주세요",
-                    hintStyle:
-                    TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w400),
-                    border: InputBorder.none,
-                  ),
+          // ===== 내용 입력 =====
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+              child: TextField(
+                controller: textController,
+                autofocus: true,
+                maxLines: null,
+                expands: true,
+                onChanged: (v) => text.value = v,
+                decoration: const InputDecoration(
+                  hintText: "작품에 대한 생각을 자유롭게 적어주세요",
+                  hintStyle:
+                  TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w400),
+                  border: InputBorder.none,
                 ),
               ),
             ),
+          ),
 
-            // ===== 스포일러 토글 (하단 배치) =====
-            Padding(
-              padding: const EdgeInsets.fromLTRB(17, 0, 17, 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Text(
-                    "스포일러",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(width: 10),
-                  Obx(() => Switch(
-                    value: isSpoiler.value,
-                    onChanged: (v) => isSpoiler.value = v,
-                    activeColor: Colors.green,
-                  )),
-                ],
-              ),
+          // ===== 스포일러 토글 =====
+          Padding(
+            padding: const EdgeInsets.fromLTRB(17, 0, 17, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Text(
+                  "스포일러",
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(width: 10),
+                Obx(() => Switch(
+                  value: isSpoiler.value,
+                  onChanged: (v) => isSpoiler.value = v,
+                  activeColor: Colors.green,
+                )),
+              ],
             ),
-          ],
-        ),
+          ),
+          SizedBox(height: bottomInset),
+        ],
       ),
     );
   }

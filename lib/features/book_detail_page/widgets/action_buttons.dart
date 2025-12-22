@@ -65,7 +65,7 @@ class ActionButtons extends GetView<BookDetailController> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: 8, // Flutter 3.10+ 에서 지원 (이전 버전은 SizedBox 사용)
+          spacing: 8,
           children: [
             Icon(
               icon,
