@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/my_read_controller.dart';
-import '../../../../core/widgets/star_rating_chart.dart';
+import '../../taste_analysis/widgets/star_rating_chart.dart';
 
 class TasteAnalysisPreview extends StatelessWidget {
   final MyReadController controller;
@@ -23,15 +23,29 @@ class TasteAnalysisPreview extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // 하단 통계 (기존 유지)
+
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
+                // 1. 별점 평균 (1/3 공간 차지)
+                Expanded(
+                  child: _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
+                ),
+
+                // 구분선
                 Container(width: 1, height: 30, color: const Color(0xFFEEEEEE)),
-                _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
+
+                // 2. 별점 개수 (1/3 공간 차지)
+                Expanded(
+                  child: _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
+                ),
+
+                // 구분선
                 Container(width: 1, height: 30, color: const Color(0xFFEEEEEE)),
-                _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
+
+                // 3. 많이 준 별점 (1/3 공간 차지)
+                Expanded(
+                  child: _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
+                ),
               ],
             ),
           ],
@@ -43,9 +57,22 @@ class TasteAnalysisPreview extends StatelessWidget {
   Widget _buildBottomStatItem(String value, String label) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
+        Text(
+            value,
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF3F3F3F)
+            )
+        ),
         const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        Text(
+            label,
+            style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey
+            )
+        ),
       ],
     );
   }

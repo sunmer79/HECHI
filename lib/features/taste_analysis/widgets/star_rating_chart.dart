@@ -23,7 +23,7 @@ class StarRatingChart extends StatelessWidget {
     var sortedData = List<Map<String, dynamic>>.from(ratingData);
     sortedData.sort((a, b) => (a['score'] as num).compareTo(b['score'] as num));
 
-    // 2. 최대 비율 찾기 (그래프 높이용)
+    // 2. 최대 비율 찾기 (이 값을 기준으로 그래프 높이를 꽉 채웁니다)
     double maxRatio = 0.0;
     for (var d in sortedData) {
       double r = (d['ratio'] as num).toDouble();
@@ -33,7 +33,7 @@ class StarRatingChart extends StatelessWidget {
     // 3. 최빈값 (가장 많이 준 점수) 찾기
     double mostFrequentScore = double.tryParse(mostGivenRating) ?? 0.0;
 
-    // ✅ [피그마 색상 정의]
+    // ✅ [색상 정의]
     const Color figmaDarkGreen = Color(0xFF4EB56D);  // 진한 초록 (강조)
     const Color figmaLightGreen = Color(0xFFC8E6C9); // 연한 초록 (기본)
 
@@ -55,20 +55,25 @@ class StarRatingChart extends StatelessWidget {
                 double ratio = (d['ratio'] as num).toDouble();
                 double score = (d['score'] as num).toDouble();
 
-                // ✅ [색상 로직] 위젯에서 직접 결정!
-                // 현재 점수가 최빈값과 같으면 진한 색, 아니면 연한 색
+                // 그래프 바 색상 로직
                 Color barColor = (score == mostFrequentScore)
                     ? figmaDarkGreen
                     : figmaLightGreen;
 
-                // 데이터가 0이면 아주 연한 회색 (배경처럼)
                 if (ratio == 0) barColor = const Color(0xFFF5F5F5);
 
-                // 높이 계산 (최대 60.0)
+                // ✅ [높이 계산 로직 변경] 절대 비율 -> 상대 비율 (Max 기준)
+                // 가장 높은 막대는 무조건 maxHeight(60.0)까지 올라가게 하여
+                // 작은 차이도 시각적으로 더 잘 보이게 만듭니다.
                 const double maxHeight = 60.0;
-                double barHeight = ratio > 0 ? maxHeight * ratio : 2.0;
+                double barHeight = 2.0; // 기본 최소 높이
 
-                // 라벨 표시 (최빈값, 0.5, 5.0)
+                if (maxRatio > 0 && ratio > 0) {
+                  // (내 비율 / 1등 비율) * 최대 높이
+                  barHeight = (ratio / maxRatio) * maxHeight;
+                }
+
+                // 라벨 표시 조건
                 bool isMostFrequentBar = (ratio == maxRatio && ratio > 0);
                 bool isFirst = idx == 0;
                 bool isLast = idx == sortedData.length - 1;
@@ -84,21 +89,21 @@ class StarRatingChart extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        // 라벨
+                        // 텍스트 (프로필 스타일 적용됨)
                         if (showLabel) ...[
                           Text(
                             scoreText,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isMostFrequentBar ? figmaDarkGreen : Colors.grey.shade600,
-                              fontWeight: isMostFrequentBar ? FontWeight.bold : FontWeight.normal,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF3F3F3F),
                             ),
                           ),
                           const SizedBox(height: 4),
                         ] else
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 25),
 
-                        // 막대
+                        // 막대 그래프
                         SizedBox(
                           width: 30,
                           height: barHeight,

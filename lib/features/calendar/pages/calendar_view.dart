@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/calendar_controller.dart';
 import '../../../../core/widgets/bottom_bar.dart';
-import '../../../../core/widgets/common_calendar_widget.dart';
+import '../widgets/common_calendar_widget.dart';
 import '../widgets/calendar_app_bar.dart';
 import '../widgets/monthly_summary_section.dart';
 
