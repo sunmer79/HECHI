@@ -7,7 +7,7 @@ import '../widgets/book_info_section.dart';
 import '../widgets/action_buttons.dart';
 import '../widgets/author_section.dart';
 import '../widgets/comment_section.dart';
-
+import '../widgets/meta_info_section.dart';
 import '../../../core/widgets/bottom_bar.dart';
 
 class BookDetailPage extends StatefulWidget {
@@ -76,9 +76,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
             children: [
               const BookCoverHeader(),
               const BookInfoSection(),
-              ActionButtons(),
-              const Divider(thickness: 0.5, color: Color(0xFFD4D4D4)),
+              const Divider(thickness: 2, color: Color(0xFFF5F5F5)),
               _buildInteractiveRatingBar(),
+              const Divider(thickness: 2, color: Color(0xFFF5F5F5)),
+              ActionButtons(),
+              const MetaInfoSection(),
               Container(height: 8, color: const Color(0xFFF5F5F5)),
               const AuthorSection(),
               Container(height: 8, color: const Color(0xFFF5F5F5)),
@@ -95,7 +97,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final controller = Get.find<BookDetailController>();
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 17,),
       alignment: Alignment.center,
       child: Obx(() => RatingBar(
         initialRating: controller.myRating.value,
@@ -104,13 +106,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
         itemCount: 5,
         itemPadding: const EdgeInsets.symmetric(horizontal: 2),
         ratingWidget: RatingWidget(
-          full: const Icon(Icons.star_rounded, color: Color(0xFFFFD700)),
-          half: const Icon(Icons.star_half_rounded, color: Color(0xFFFFD700)),
-          empty: const Icon(Icons.star_rounded, color: Color(0xFFD4D4D4)),
+          full: const Icon(Icons.star, color: Color(0xFFFFD700)),
+          half: const Icon(Icons.star_half, color: Color(0xFFFFD700)),
+          empty: const Icon(Icons.star, color: Color(0xFFD4D4D4)),
         ),
         glow: false,
         onRatingUpdate: (rating) {
-          // controller.updateMyRating(rating);
           controller.myRating.value = rating;
           controller.submitRating(rating);
         },
