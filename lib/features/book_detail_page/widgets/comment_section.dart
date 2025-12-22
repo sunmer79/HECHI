@@ -30,9 +30,6 @@ class CommentSection extends GetView<BookDetailController> {
           Container(
               height: 55,
               padding: const EdgeInsets.symmetric(horizontal: 17),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4))),
-              ),
               alignment: Alignment.centerLeft,
               child: Row(
                   children: [
@@ -46,8 +43,14 @@ class CommentSection extends GetView<BookDetailController> {
           // 2. 평점 그래프
           Container(
             width: double.infinity,
-            color: const Color(0x4CD1ECD9),
+            color: const Color(0xFFF5F5F5),
             padding: const EdgeInsets.fromLTRB(17, 20, 17, 8),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+                top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+              ),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -100,10 +103,10 @@ class CommentSection extends GetView<BookDetailController> {
                 height: 50,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: Color(0x66D1ECD9),
+                  color: Color(0xFFC8E6C9),
                   border: Border(
-                    top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
-                    bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                    top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+                    bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
                   ),
                 ),
                 child: const Text('모두보기', style: TextStyle(color: Colors.black, fontSize: 15)),
@@ -167,16 +170,21 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
 Widget _bar(double score, int count, int maxCount) {
   final double ratio = maxCount > 0 ? count / maxCount: 0.0;
 
+  const Color DarkGreen = Color(0xFF4EB56D);
+  const Color LightGreen = Color(0xFFC8E6C9);
+
+  final bool isMostFrequent = (maxCount > 0) && (count == maxCount);
+
   return Expanded(
     child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 8),
         child: FractionallySizedBox(
           heightFactor: ratio,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 1), // bar 간 간격
-            decoration: const BoxDecoration(
-              color: const Color(0xFF4DB56C),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: isMostFrequent ? DarkGreen : LightGreen,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
             ),
           ),
         )

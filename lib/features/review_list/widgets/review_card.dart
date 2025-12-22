@@ -274,7 +274,7 @@ class ReviewCard extends StatelessWidget {
         Row(
           children: [
             Text(
-                review['user_nickname'] ?? "User ${review['user_id']}",
+                review['nickname'] ?? "User ${review['user_id']}",
                 style: const TextStyle(
                     color: Color(0xFF717171),
                     fontSize: 13,
@@ -316,7 +316,7 @@ class ReviewCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    review['user_nickname'] ?? "User ${review['user_id']}",
+                    review['nickname'] ?? "User ${review['user_id']}",
                     style: const TextStyle(
                         color: Colors.black,
                         fontSize: 14,

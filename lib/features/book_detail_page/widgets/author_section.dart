@@ -55,10 +55,10 @@ class AuthorSection extends GetView<BookDetailController> {
               height: 50,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x66D1ECD9),
+                color: const Color(0xFFC8E6C9),
                 border: Border(
-                  top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
-                  bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                  top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+                  bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
                 ),
               ),
               child: const Text(

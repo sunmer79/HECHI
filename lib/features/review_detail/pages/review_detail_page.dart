@@ -36,9 +36,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         ),
         actions: [
           Obx(() {
-            // if (!controller.isMyReview.value) return const SizedBox.shrink();
-            final isMyReview =
-                controller.review['is_my_review'] ?? false;
+            final isMyReview = controller.review['is_my_review'] ?? false;
 
             if (!isMyReview) return const SizedBox.shrink();
 
@@ -96,7 +94,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
     final book = controller.book;
 
     final double rating = (review['rating'] as num?)?.toDouble() ?? 0.0;
-    final String nickname = review['user_nickname'] ?? "User ${review['user_id']}";
+    final String nickname = review['nickname'] ?? "User ${review['user_id']}";
 
     final String date = (review['created_at'] ?? '').toString().split('T')[0];
     final String content = review['content'] ?? "";
