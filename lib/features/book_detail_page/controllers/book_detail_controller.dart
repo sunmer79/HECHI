@@ -430,7 +430,7 @@ class BookDetailController extends GetxController {
     final token = box.read("access_token");
     if (token == null) return;
 
-    final bool hasContent = isCommented.value;
+    final bool hasContent = myContent.isNotEmpty;
 
     if (rating == 0.0 && !hasContent && myReviewId != -1) {
       await delete();

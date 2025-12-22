@@ -142,8 +142,11 @@ class HighlightItem extends StatelessWidget {
     if (raw == null) return "";
     try {
       final date = DateTime.parse(raw);
+      /*
       String period = date.hour >= 12 ? "오후" : "오전";
       return "${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} $period ${date.hour}시 ${date.minute}분";
+       */
+      return "${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}";
     } catch (e) {
       return raw;
     }

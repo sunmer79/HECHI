@@ -9,7 +9,6 @@ class BookCoverHeader extends GetView<ReadingDetailController> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // ====== 이미지 영역 ======
         Obx(() {
           final coverUrl = controller.coverImageUrl.value;
           return Container(
@@ -21,18 +20,21 @@ class BookCoverHeader extends GetView<ReadingDetailController> {
               coverUrl,
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                );
+              },
               errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(Icons.broken_image, color: Colors.grey)),
+                child: Icon(Icons.broken_image, color: Colors.grey, size: 40),
+              ),
             )
-                : Image.asset(
-              "assets/icons/ex_bookdetailcover.png",
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
+                : const Center(
+              child: Icon(Icons.book, color: Colors.grey, size: 40),
             ),
           );
         }),
-
-        // ====== 상단 어두운 그라데이션 (뒤로가기 아이콘 시인성) ======
         Container(
           height: 120,
           decoration: const BoxDecoration(
@@ -46,8 +48,6 @@ class BookCoverHeader extends GetView<ReadingDetailController> {
             ),
           ),
         ),
-
-        // ====== 하단 흰색 그라데이션 (본문과 이어지는 부분) ======
         Positioned(
           bottom: 0,
           left: 0,

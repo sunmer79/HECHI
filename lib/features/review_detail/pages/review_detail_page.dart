@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../controllers/review_detail_controller.dart';
 import '../../review_list/widgets/option_bottom_sheet.dart';
-import '../../../core/widgets/bottom_bar.dart';
 
 class ReviewDetailPage extends GetView<ReviewDetailController> {
   const ReviewDetailPage({super.key});
@@ -12,6 +11,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -56,7 +56,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
           }),
         ],
       ),
-      bottomNavigationBar: const BottomBar(),
       body: SafeArea(
         child: Column(
           children: [
@@ -66,6 +65,8 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -355,7 +356,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
   }
 
   // ==========================
-  // 5. 하단 입력창 (고정)
+  // 5. 하단 입력창
   // ==========================
   Widget _buildBottomInputField() {
     return Container(
@@ -365,22 +366,31 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         border: Border(top: BorderSide(color: Color(0xFFF3F3F3))),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Color(0xFF4DB56C).withOpacity(0.5),
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: const Color(0xFF4DB56C).withOpacity(0.5),
+              child: const Icon(Icons.person, color: Colors.white, size: 20),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 15),
+              constraints: const BoxConstraints(
+                maxHeight: 120,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: TextField(
                 controller: controller.commentInputController,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
                 decoration: const InputDecoration(
                   hintText: "코멘트에 댓글을 남겨보세요",
                   border: InputBorder.none,

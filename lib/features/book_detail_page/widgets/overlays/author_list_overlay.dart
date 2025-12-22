@@ -10,41 +10,44 @@ class AuthorListOverlay extends StatelessWidget {
   Widget build(BuildContext context){
     return Container(
         height: Get.height * 0.9,
+        padding: const EdgeInsets.only(bottom: 30),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      child: Column(
-        children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              itemCount: authors.length,
-              separatorBuilder: (_, __) => Column(
-                children: [
-                  const SizedBox(height: 10),
-                  const Divider(height: 1, thickness: 1, color: Color(0xFFF3F3F3)),
-                  const SizedBox(height: 10),
-                ],
+      child: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
               ),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
-                  child: _buildAuthorRow(authors[index]),
-                );
-              },
             ),
-          ),
-        ],
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                itemCount: authors.length,
+                separatorBuilder: (_, __) => Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    const Divider(height: 1, thickness: 1, color: Color(0xFFF3F3F3)),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
+                    child: _buildAuthorRow(authors[index]),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

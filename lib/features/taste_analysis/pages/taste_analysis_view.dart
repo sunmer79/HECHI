@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../controllers/taste_analysis_controller.dart';
 import '../../../../core/widgets/bottom_bar.dart';
 
-// 분리한 위젯들 import
 import '../widgets/taste_header.dart';
 import '../widgets/evaluation_count_card.dart';
 import '../widgets/star_rating_section.dart';
@@ -24,14 +23,19 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
         centerTitle: true,
         title: Obx(() => Text(
           '${controller.userProfile['nickname'] ?? 'HECHI'}님의 취향분석',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         )),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Get.back(),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.share_outlined, color: Colors.white), onPressed: () {}),
+          IconButton(
+              icon: const Icon(Icons.share_outlined, color: Colors.white),
+              onPressed: () {
+                // 공유 기능 추후 구현
+              }
+          ),
         ],
       ),
       bottomNavigationBar: const BottomBar(),
@@ -52,9 +56,9 @@ class TasteAnalysisView extends GetView<TasteAnalysisController> {
               children: [
                 TasteHeader(),
                 EvaluationCountCard(),
-                Divider(height: 1, thickness: 8, color: Color(0xFFF5F5F5)),
+                Divider(height: 8, thickness: 8, color: Color(0xFFF5F5F5)), // 두꺼운 구분선
                 StarRatingSection(),
-                Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)), // 얇은 구분선
                 ReadingTimeSection(),
                 Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
                 PreferredTagCloud(),
