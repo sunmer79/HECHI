@@ -35,7 +35,7 @@ class CommentSection extends GetView<BookDetailController> {
                   children: [
                     const Text('코멘트', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
-                    Text("$commentCount", style: const TextStyle(fontSize: 18, color: Color(0xFF717171), fontWeight: FontWeight.w500)),
+                    Text("$commentCount", style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w400)),
                   ]
               )
           ),
@@ -44,8 +44,8 @@ class CommentSection extends GetView<BookDetailController> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(17, 20, 17, 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F5F5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5).withValues(alpha: 0.7),
               border: Border(
                 bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
                 top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
@@ -147,16 +147,15 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // 1.0, 2.0, 3.0, 4.0, 5.0 만 표시
                     const Expanded(child:SizedBox()),
                     Expanded(child: Text('1.0', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey))),
-                    const Expanded(child:SizedBox()), // 1.0과 2.0 사이 간격
+                    const Expanded(child:SizedBox()),
                     Expanded(child: Text('2.0', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey))),
-                    const Expanded(child:SizedBox()), // 2.0과 3.0 사이 간격
+                    const Expanded(child:SizedBox()),
                     Expanded(child: Text('3.0', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey))),
-                    const Expanded(child:SizedBox()), // 3.0과 4.0 사이 간격
+                    const Expanded(child:SizedBox()),
                     Expanded(child: Text('4.0', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey))),
-                    const Expanded(child:SizedBox()), // 4.0과 5.0 사이 간격
+                    const Expanded(child:SizedBox()),
                     Expanded(child: Text('5.0', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey))),
                   ]
               ),
