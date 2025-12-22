@@ -7,6 +7,7 @@ import 'package:hechi/core/widgets/bottom_bar.dart';
 import '../features/mainpage/pages/mainpage_view.dart';
 import '../features/my_read/pages/my_read_view.dart';
 import '../features/search/pages/search_view.dart';
+import '../features/reading_registration/pages/reading_registration_view.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -38,8 +39,7 @@ class MainWrapper extends GetView<AppController> {
           children: [
             const MainpageView(),
             const SearchView(),
-            _buildPlaceholder("독서 등록 페이지"),
-            _buildPlaceholder("리워드 페이지"),
+            const ReadingRegistrationView(),            _buildPlaceholder("리워드 페이지"),
             MyReadView(),
           ],
         )),

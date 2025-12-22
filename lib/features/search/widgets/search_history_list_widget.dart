@@ -13,7 +13,6 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
       color: Colors.white,
       child: Column(
         children: [
-          // 헤더
           Container(
             width: 412,
             height: 60,
@@ -35,7 +34,6 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
               ],
             ),
           ),
-          // 리스트
           Expanded(
             child: Obx(() {
               if (controller.recentSearches.isEmpty) return const SizedBox();
@@ -60,7 +58,6 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
       color: Colors.white,
       child: InkWell(
         onTap: () {
-          // 검색어 클릭 시 검색 실행
           controller.searchTextController.text = item.query;
           controller.onSubmit(item.query);
         },
@@ -78,7 +75,7 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
                     const SizedBox(width: 15),
                     Expanded(
                       child: Text(
-                        item.query, // 검색어 텍스트
+                        item.query,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Color(0xFF3F3F3F), fontSize: 16, fontFamily: 'Roboto'),
                       ),
@@ -87,13 +84,11 @@ class SearchHistoryListWidget extends GetView<BookSearchController> {
                 ),
               ),
 
-              // 개별 삭제 버튼
               Material(
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
-                    // [핵심] 삭제 함수에 'ID'를 넘겨줍니다.
                     controller.deleteOneHistory(item.id);
                   },
                   child: Container(

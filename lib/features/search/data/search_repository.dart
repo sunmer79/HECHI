@@ -3,13 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'book_model.dart';
 
-// 히스토리 데이터 모델 (ID와 검색어 저장)
 class SearchHistoryItem {
   final int id;
   final String query;
-
   SearchHistoryItem({required this.id, required this.query});
-
   factory SearchHistoryItem.fromJson(Map<String, dynamic> json) {
     return SearchHistoryItem(
       id: json['id'] ?? 0,
@@ -20,16 +17,13 @@ class SearchHistoryItem {
 
 class SearchRepository {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
-
   String get _token => GetStorage().read('access_token') ?? "";
-
   Map<String, String> get _headers => {
     "Content-Type": "application/json",
     "Accept": "application/json",
     "Authorization": "Bearer $_token",
   };
 
-  // 1. 책 검색 (디버깅 모드)
   Future<List<Book>> searchBooks(String query) async {
     try {
       final uri = Uri.parse('$baseUrl/search/query');
@@ -49,19 +43,17 @@ class SearchRepository {
       print("📡 [응답 상태코드] ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        // 한글 깨짐 방지 디코딩
         final String decodedBody = utf8.decode(response.bodyBytes);
-        print("📄 [서버 응답 원본]: $decodedBody"); // ★ 여기가 제일 중요합니다!
+        print("📄 [서버 응답 원본]: $decodedBody");
 
         final Map<String, dynamic> data = json.decode(decodedBody);
 
-        // 데이터 구조 확인
         if (data.containsKey('books')) {
           final List<dynamic> list = data['books'];
           print("✅ 'books' 리스트 발견! 개수: ${list.length}개");
 
           if (list.isEmpty) {
-            print("⚠️ 근데 리스트가 비어있음 (검색 결과 없음)");
+            print("⚠️ 리스트가 비어있음 (검색 결과 없음)");
             return [];
           }
 
@@ -69,7 +61,6 @@ class SearchRepository {
             return list.map((json) => Book.fromJson(json)).toList();
           } catch (e) {
             print("💥 [파싱 에러] Book 모델 변환 실패: $e");
-            // 어떤 데이터 때문에 에러 났는지 확인
             print("💥 문제의 데이터: ${list.first}");
             return [];
           }
@@ -87,7 +78,6 @@ class SearchRepository {
     }
   }
 
-  // 2. 검색 기록 가져오기 (중복 제거 및 파싱)
   Future<List<SearchHistoryItem>> getSearchHistory() async {
     try {
       final uri = Uri.parse('$baseUrl/search/history').replace(queryParameters: {'limit': '20'});
@@ -124,7 +114,6 @@ class SearchRepository {
     }
   }
 
-  // 3. 전체 삭제
   Future<bool> deleteAllHistory() async {
     try {
       final uri = Uri.parse('$baseUrl/search/history');
@@ -135,10 +124,8 @@ class SearchRepository {
     }
   }
 
-  // 4. 단건 삭제 API 연결 (DELETE /search/history/{id})
   Future<bool> deleteHistoryItem(int historyId) async {
     try {
-      // URL 경로에 ID 포함
       final uri = Uri.parse('$baseUrl/search/history/$historyId');
       print("🗑️ 단건 삭제 요청: $uri");
 
@@ -156,7 +143,6 @@ class SearchRepository {
     }
   }
 
-  // 5. 바코드 검색
   Future<Book?> searchByBarcode(String isbn) async {
     try {
       final uri = Uri.parse('$baseUrl/search/barcode').replace(queryParameters: {
@@ -171,6 +157,65 @@ class SearchRepository {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+  Future<bool> registerReadingBook(int bookId) async {
+    try {
+      final uri = Uri.parse('$baseUrl/search/register-reading').replace(
+        queryParameters: {'book_id': bookId.toString()},
+      );
+
+      print("🚀 [독서 등록 요청] $uri");
+
+      final response = await http.post(uri, headers: _headers);
+
+      if (response.statusCode == 200) {
+        print("✅ 독서 등록 성공");
+        return true;
+      } else {
+        print("🚨 독서 등록 실패: ${utf8.decode(response.bodyBytes)}");
+        return false;
+      }
+    } catch (e) {
+      print("🚨 API 통신 오류: $e");
+      return false;
+    }
+  }
+
+  Future<List<int>> getMyReadingBookIds() async {
+    try {
+      final uri = Uri.parse('$baseUrl/library/').replace(queryParameters: {
+        'shelf': 'reading',
+        'limit': '100',
+      });
+
+      print("📚 [보관함 조회] 요청 시작: $uri");
+
+      final response = await http.get(uri, headers: _headers);
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final Map<String, dynamic> data = json.decode(decodedBody);
+
+        if (data['items'] != null) {
+          final List<dynamic> items = data['items'];
+
+          final List<int> ids = items.map<int>((item) {
+            final book = item['book'];
+            if (book == null || book['id'] == null) return -1;
+            return int.parse(book['id'].toString());
+          }).where((id) => id != -1).toList();
+
+          print("✅ [성공] 서버에 등록된 읽는 중 ID 목록(${ids.length}개): $ids");
+          return ids;
+        }
+      } else {
+        print("🚨 보관함 조회 실패: 상태코드 ${response.statusCode} / 내용: ${response.body}");
+      }
+      return [];
+    } catch (e) {
+      print("🚨 보관함 조회 중 치명적 오류: $e");
+      return [];
     }
   }
 }

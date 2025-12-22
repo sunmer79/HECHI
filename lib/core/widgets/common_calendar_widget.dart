@@ -19,7 +19,6 @@ class CommonCalendarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 1. 요일 헤더
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
           child: Row(
@@ -35,8 +34,6 @@ class CommonCalendarWidget extends StatelessWidget {
             ],
           ),
         ),
-
-        // 2. 캘린더 그리드
         _buildCalendarGrid(context),
       ],
     );
@@ -83,7 +80,8 @@ class CommonCalendarWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 3, offset: const Offset(0, 1)),
+                      // ✅ [수정] withValues 사용
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 3, offset: const Offset(0, 1)),
                     ],
                   ),
                   child: ClipRRect(
@@ -104,11 +102,9 @@ class CommonCalendarWidget extends StatelessWidget {
     );
   }
 
-  // ✅ [수정됨] 높이를 0.5 -> 0.75로 변경하여 더 시원하게 보여줍니다.
   void _showDailyListSheet(BuildContext context, int day, List<dynamic> books) {
     Get.bottomSheet(
       Container(
-        // 화면 높이의 75% 사용 (책 5권 정도 충분히 보임)
         height: MediaQuery.of(context).size.height * 0.75,
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         decoration: const BoxDecoration(
@@ -118,7 +114,6 @@ class CommonCalendarWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 드래그 핸들
             Center(
               child: Container(
                 width: 40, height: 4,
@@ -126,8 +121,6 @@ class CommonCalendarWidget extends StatelessWidget {
                 decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
               ),
             ),
-
-            // 1. 헤더 (날짜 + 작품 수)
             Text(
               "$currentMonth월 ${day.toString().padLeft(2, '0')}일",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -138,8 +131,6 @@ class CommonCalendarWidget extends StatelessWidget {
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 20),
-
-            // 2. 리스트 (책 목록)
             Expanded(
               child: books.isEmpty
                   ? const Center(child: Text("기록된 책이 없습니다."))
@@ -165,7 +156,6 @@ class CommonCalendarWidget extends StatelessWidget {
 
                   return Row(
                     children: [
-                      // 썸네일
                       ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: Image.network(
@@ -176,8 +166,6 @@ class CommonCalendarWidget extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-
-                      // 정보
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,11 +174,11 @@ class CommonCalendarWidget extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(author, style: const TextStyle(fontSize: 13, color: Colors.grey)),
                             const SizedBox(height: 6),
-                            // 별점 뱃지
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.amber.withOpacity(0.1),
+                                // ✅ [수정] withValues 사용
+                                color: Colors.amber.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
@@ -213,7 +201,7 @@ class CommonCalendarWidget extends StatelessWidget {
           ],
         ),
       ),
-      isScrollControlled: true, // 이게 켜져 있어야 높이 조절이 자유롭습니다.
+      isScrollControlled: true,
     );
   }
 }

@@ -30,22 +30,22 @@ class LoginView extends GetView<LoginController> {
                   const LoginLogo(),
                   const SizedBox(height: 60),
 
-                  // 2. 이메일 입력 (에러 메시지 반응형 처리를 위해 Obx로 감싸기)
+                  // 2. 이메일 입력
                   Obx(() => LoginTextField(
                     label: '이메일(아이디)',
                     controller: controller.emailController,
                     hintText: "이메일을 입력해주세요",
                     keyboardType: TextInputType.emailAddress,
-                    errorText: controller.emailError.value, // RxString의 값 전달
+                    errorText: controller.emailError.value,
                   )),
                   const SizedBox(height: 20),
 
-                  // 3. 비밀번호 입력 (비밀번호 숨김/표시 상태 반응형 처리)
+                  // 3. 비밀번호 입력
                   Obx(() => LoginTextField(
                     label: '비밀번호',
                     controller: controller.passwordController,
                     hintText: "비밀번호를 입력해주세요",
-                    isPassword: true, // 눈 아이콘 표시용
+                    isPassword: true,
                     obscureText: controller.isPasswordHidden.value,
                     onToggleVisibility: controller.togglePasswordVisibility,
                     errorText: controller.passwordError.value,
@@ -66,7 +66,7 @@ class LoginView extends GetView<LoginController> {
                   )),
                   const SizedBox(height: 24),
 
-                  // 6. 하단 링크 (회원가입/비번찾기)
+                  // 6. 하단 링크
                   LoginBottomLinks(
                     onSignUp: controller.goToSignUp,
                     onFindPassword: controller.goToForgetPassword,

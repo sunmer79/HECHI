@@ -18,7 +18,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   void initState() {
     super.initState();
     nameController = TextEditingController(text: controller.userProfile['nickname']);
-    descController = TextEditingController(text: controller.description.value);
+
+    String currentDesc = controller.description.value;
+    if (currentDesc == "나만의 소개글을 입력해주세요!") {
+      descController = TextEditingController(text: "");
+    } else {
+      descController = TextEditingController(text: currentDesc);
+    }
   }
 
   @override
@@ -60,7 +66,12 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   Positioned.fill(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Icon(Icons.camera_alt_rounded, color: Colors.white.withOpacity(0.8), size: 40),
+                      // ✅ [수정 완료] withOpacity 대신 withValues 사용 (경고 해결)
+                      child: Icon(
+                          Icons.person,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 60
+                      ),
                     ),
                   ),
                 ],
@@ -70,13 +81,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
 
             const Text("이름(닉네임)", style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F))),
             const SizedBox(height: 8),
-            _buildTextField(nameController, "이름(닉네임)을 입력해주세요"),
+            _buildTextField(nameController, "이름(닉네임)을 입력해주세요."),
 
             const SizedBox(height: 24),
 
             const Text("소개", style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F))),
             const SizedBox(height: 8),
-            _buildTextField(descController, "소개글을 입력해주세요"),
+            _buildTextField(descController, "나만의 소개글을 입력해주세요!"),
 
             const SizedBox(height: 60),
 

@@ -22,7 +22,7 @@ class BookStorageLink extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 40), // 제목과 버튼 사이 간격 (사진처럼 넓게)
+          const SizedBox(height: 20), // 제목과 버튼 사이 간격 (사진처럼 넓게)
 
           // 2. 버튼: 보관함으로 이동하기 > (중앙 정렬)
           Center(
