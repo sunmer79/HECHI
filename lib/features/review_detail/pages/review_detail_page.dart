@@ -203,9 +203,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
               // 좋아요 버튼
               Expanded(
                 child: Obx(() {
-                  // final isLiked = controller.isLiked.value;
-                  final isLiked =
-                      controller.review['is_liked'] ?? false;
+                  final isLiked = controller.review['is_liked'] ?? false;
 
                   return InkWell(
                     onTap: controller.toggleLike,
@@ -235,7 +233,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
               Expanded(
                 child: InkWell(
                   onTap: () {
-                    // 댓글 입력창으로 포커스 이동 기능 등을 넣을 수 있음
+                    // 댓글 입력창으로 포커스 이동 기능 추가
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +261,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Obx(() => Text(
-        // "좋아요 ${controller.likeCount.value}   댓글 ${controller.review['comment_count'] ?? 0}",
         "좋아요 ${controller.review['like_count'] ?? 0}   "
             "댓글 ${controller.review['comment_count'] ?? 0}",
         style: const TextStyle(color: Color(0xFF717171), fontSize: 13),
@@ -296,14 +293,8 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         itemBuilder: (context, index) {
           final comment = controller.comments[index];
-          final myUserId = controller.box.read("user_id") ?? 2;
-          final isMyComment =
-              int.tryParse(comment['user_id'].toString()) == myUserId;
-
-          print("comment user_id: ${comment['user_id']} (${comment['user_id'].runtimeType})");
-          print("myUserId: $myUserId (${myUserId.runtimeType})");
-
-
+          final myUserId = controller.box.read("user_id") ?? -1;
+          final isMyComment = int.tryParse(comment['user_id'].toString()) == myUserId;
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

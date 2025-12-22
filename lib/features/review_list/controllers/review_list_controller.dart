@@ -253,7 +253,7 @@ class ReviewListController extends GetxController {
           "status": "updated",
           "content": newContent,
           "is_spoiler": isSpoiler,
-          // 필요하다면 rating, like_count 등도 전달
+          // rating, like_count 등도 전달
         });
       }
     } else {

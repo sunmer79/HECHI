@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/book_detail_controller.dart';
 
 class AuthorListOverlay extends StatelessWidget {
   final List<String> authors;
@@ -17,14 +16,29 @@ class AuthorListOverlay extends StatelessWidget {
         ),
       child: Column(
         children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 20),
               itemCount: authors.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 20),
+              separatorBuilder: (_, __) => Column(
+                children: [
+                  const SizedBox(height: 10),
+                  const Divider(height: 1, thickness: 1, color: Color(0xFFF3F3F3)),
+                  const SizedBox(height: 10),
+                ],
+              ),
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 17),
+                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
                   child: _buildAuthorRow(authors[index]),
                 );
               },
@@ -46,18 +60,14 @@ Widget _buildAuthorRow(String name){
         height: 45,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFF89C99C),
+          color: const Color(0xFF89C99C).withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-            color: Color(0xFFD4D4D4),
-            width: 1,
-          ),
         ),
         child: const Center(
           child: Icon(
               Icons.person,
               color: Colors.white,
-              size: 30
+              size: 35
           ),
         ),
       ),

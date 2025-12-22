@@ -7,6 +7,8 @@ class MoreMenuOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<BookDetailController>();
+
     return Container(
       padding: const EdgeInsets.only(bottom: 30),
       decoration: const BoxDecoration(
@@ -26,11 +28,20 @@ class MoreMenuOverlay extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          menuItem("독서 등록", Icons.book),
-          menuItem("읽은 날짜 수정", Icons.calendar_month),
-          menuItem("캘린더", Icons.event),
+          /*
+          Obx(() {
+            final bool hasRated = controller.myRating.value > 0.0;
+
+            return menuItem(
+              hasRated ? "본 날짜 수정" : "본 날짜 추가",
+              hasRated ? Icons.calendar_month : Icons.event,
+              onTap: () {
+                print(hasRated ? "날짜 수정" : "날짜 추가");
+              },
+            );
+          }),
+           */
           menuItem("관심없어요", Icons.remove_circle_outline, onTap: () {
-            final controller = Get.find<BookDetailController>();
             controller.onNotInterested();
           }),
         ],

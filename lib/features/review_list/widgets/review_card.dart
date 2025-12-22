@@ -64,8 +64,6 @@ class ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("🔍 [ReviewCard] ID: ${review['id']} / 서버값: like_count: ${review['like_count']} comment_count: ${review['comment_count']}");
-
     final String content = (review['content'] ?? '').toString();
     if (content.trim().isEmpty) {
       return const SizedBox.shrink();

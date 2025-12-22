@@ -43,9 +43,9 @@ class CommentSection extends GetView<BookDetailController> {
           // 2. 평점 그래프
           Container(
             width: double.infinity,
-            color: const Color(0xFFF5F5F5),
             padding: const EdgeInsets.fromLTRB(17, 20, 17, 8),
             decoration: const BoxDecoration(
+              color: Color(0xFFF5F5F5),
               border: Border(
                 bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
                 top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
@@ -102,11 +102,11 @@ class CommentSection extends GetView<BookDetailController> {
                 width: double.infinity,
                 height: 50,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFC8E6C9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC8E6C9).withValues(alpha: 0.3),
                   border: Border(
-                    top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
-                    bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+                    top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                    bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
                   ),
                 ),
                 child: const Text('모두보기', style: TextStyle(color: Colors.black, fontSize: 15)),

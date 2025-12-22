@@ -50,11 +50,6 @@ class ReviewDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
-
-        print("🔍 리뷰 상세 API 응답: $data");
-        print("🔢 서버가 준 댓글 개수(comment_count): ${data['comment_count']}");
-        print("🔢 서버가 준 좋아요 개수(like_count): ${data['like_count']}");
-
         review.value = data;
 
         if (data['book_id'] != null) {
@@ -240,11 +235,6 @@ class ReviewDetailController extends GetxController {
       if (res.statusCode == 200) {
         final List list = jsonDecode(utf8.decode(res.bodyBytes));
         comments.value = list.cast<Map<String, dynamic>>();
-
-        if (review['comment_count'] != comments.length) {
-          review['comment_count'] = comments.length;
-          review.refresh();
-        }
       }
     } finally {
       isLoadingComments.value = false;
@@ -258,7 +248,6 @@ class ReviewDetailController extends GetxController {
     final text = commentInputController.text.trim();
     if (text.isEmpty) return;
 
-    // optimistic
     review['comment_count'] = (review['comment_count'] ?? 0) + 1;
     review.refresh();
 
