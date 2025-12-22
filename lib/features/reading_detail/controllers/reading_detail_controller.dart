@@ -13,6 +13,7 @@ class ReadingDetailController extends GetxController {
 
   final isLoading = true.obs;
 
+  final bookId = 0.obs; // 이 라인이 반드시 있어야 합니다.
   final bookTitle = ''.obs;
   final authorName = ''.obs;
   final translatorName = ''.obs;
@@ -30,73 +31,62 @@ class ReadingDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
     final arguments = Get.arguments;
-    int bookId = 0;
 
     if (arguments != null && arguments is Map && arguments.containsKey('bookId')) {
       final dynamic receivedId = arguments['bookId'];
-
       if (receivedId is int) {
-        bookId = receivedId;
+        bookId.value = receivedId;
       } else if (receivedId is num) {
-        bookId = receivedId.toInt();
+        bookId.value = receivedId.toInt();
       }
     }
 
-    if (bookId > 0) {
-      _loadAllData(bookId);
+    if (bookId.value > 0) {
+      _loadAllData(bookId.value);
     } else {
       isLoading(false);
-      print('⚠️ 수신된 bookId가 유효하지 않습니다: $bookId. 데이터 로드 건너뜀.');
     }
   }
 
-  void _loadAllData(int bookId) async {
+  void _loadAllData(int id) async {
     try {
       isLoading(true);
       await Future.wait([
-        fetchBookDetail(bookId),
-        fetchReadingSessions(bookId),
+        fetchBookDetail(id),
+        fetchReadingSessions(id),
       ]);
     } finally {
       isLoading(false);
     }
   }
 
-  Future<void> fetchBookDetail(int bookId) async {
-    BookDetailModel? book = await _bookProvider.getBookDetail(bookId);
-
+  Future<void> fetchBookDetail(int id) async {
+    BookDetailModel? book = await _bookProvider.getBookDetail(id);
     if (book != null) {
       bookTitle.value = book.title;
       authorName.value = book.authors.isNotEmpty ? book.authors.join(', ') : '저자 미상';
       category.value = book.category;
       publishDate.value = book.publishedDate;
       _totalPages = book.totalPages;
-
       if (book.thumbnail != null && book.thumbnail!.isNotEmpty) {
         coverImageUrl.value = book.thumbnail!;
       }
-
       translatorName.value = book.publisher;
     }
   }
 
-  Future<void> fetchReadingSessions(int bookId) async {
-    List<ReadingSessionModel> mySessions = await _readingProvider.getSessions(bookId);
-
+  Future<void> fetchReadingSessions(int id) async {
+    List<ReadingSessionModel> mySessions = await _readingProvider.getSessions(id);
     if (mySessions.isNotEmpty) {
       isReading.value = true;
-
       int totalSec = mySessions.fold(0, (sum, item) => sum + item.totalSeconds);
       timeSpent.value = '${(totalSec / 60).round()}분';
-
       int lastReadPage = mySessions.last.endPage;
       if (_totalPages > 0) {
         int percent = ((lastReadPage / _totalPages) * 100).round();
         progressPercent.value = '$percent%';
       }
-
       DateTime start = DateTime.parse(mySessions.first.startTime);
       DateTime end = DateTime.parse(mySessions.last.endTime);
       DateFormat formatter = DateFormat('yyyy.MM.dd');

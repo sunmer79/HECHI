@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:999191142208:android:5be4c9c5047f8a6cf7a4a5",
+        "mobilesdk_app_id": "1:999191142208:android:9d33b6c8c77c0efbf7a4a5",
         "android_client_info": {
-          "package_name": "com.bookstopper.app"
+          "package_name": "com.example.hechi"
         }
       },
       "oauth_client": [],
