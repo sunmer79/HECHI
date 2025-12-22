@@ -10,29 +10,64 @@ class SplashView extends StatefulWidget {
 }
 
 class _SplashViewState extends State<SplashView> {
+  bool _animate = false;
+  final int _animDuration = 700;
+
   @override
   void initState() {
     super.initState();
-    // 화면 빌드 후 자동 로그인 검사 실행
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.put(AppController()).checkAutoLogin();
+      if (mounted) {
+        setState(() => _animate = true);
+        _startLogicWithDelay();
+      }
     });
   }
 
+  Future<void> _startLogicWithDelay() async {
+    await Future.delayed(Duration(milliseconds: _animDuration + 200));
+    await _prepareApp();
+  }
+
+  Future<void> _prepareApp() async {
+    final controller = Get.put(AppController());
+    await controller.checkAutoLogin();
+  }
+
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF4DB56C),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFF4DB56C)),
-            SizedBox(height: 20),
-            CircularProgressIndicator(color: Color(0xFF4DB56C)),
-            SizedBox(height: 20),
-            Text("HECHI 실행 중...", style: TextStyle(color: Colors.grey)),
-          ],
+        child: AnimatedOpacity(
+          opacity: _animate ? 1.0 : 0.0,
+          duration: Duration(milliseconds: _animDuration),
+          curve: Curves.easeOut,
+          child: AnimatedScale(
+            scale: _animate ? 1.0 : 0.9,
+            duration: Duration(milliseconds: _animDuration),
+            curve: Curves.easeOut,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/icons/hechi_logo.png',
+                  width: 160,
+                ),
+                const SizedBox(height: 25),
+                const Text(
+                  "HECHI",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
