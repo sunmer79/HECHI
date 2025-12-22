@@ -8,19 +8,20 @@ class BookCoverHeader extends GetView<BookDetailController> {
   @override
   Widget build(BuildContext context) {
     final book = controller.book;
-    final coverUrl = book.value["thumbnail"] ?? "";
+    final coverUrl = book["thumbnail"] ?? "";
 
     return Stack(
       children: [
         // ====== 이미지 영역 ======
         Container(
           width: double.infinity,
-          height: 260,
+          height: 200,
           color: const Color(0xFFF0F0F0),
           child: coverUrl.isNotEmpty
               ? Image.network(
             coverUrl,
             fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
             errorBuilder: (_, __, ___) =>
             const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
           )

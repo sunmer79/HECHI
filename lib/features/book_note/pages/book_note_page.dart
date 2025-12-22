@@ -5,6 +5,7 @@ import '../widgets/book_info_header.dart';
 import 'bookmark_tab.dart';
 import 'highlight_tab.dart';
 import 'memo_tab.dart';
+import '../../../core/widgets/bottom_bar.dart';
 
 class BookNotePage extends GetView<BookNoteController> {
   const BookNotePage({super.key});
@@ -22,6 +23,9 @@ class BookNotePage extends GetView<BookNoteController> {
           onPressed: () => Get.back(),
         ),
       ),
+
+      bottomNavigationBar: const BottomBar(),
+
       body: Column(
         children: [
           // 2. 책 정보 헤더 (제목, 작가, 표지)

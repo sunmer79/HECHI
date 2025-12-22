@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/book_note_controller.dart';
 
 class SortBottomSheet extends StatelessWidget {
-  final String type; // bookmark | highlight | memo
+  final String type; // bookmark | highlight
 
   const SortBottomSheet({super.key, required this.type});
 
@@ -32,8 +32,6 @@ class SortBottomSheet extends StatelessWidget {
         return _bookmarkOptions(controller);
       case "highlight":
         return _highlightOptions(controller);
-      case "memo":
-        return _memoOptions(controller);
       default:
         return const SizedBox.shrink();
     }
@@ -96,31 +94,6 @@ class SortBottomSheet extends StatelessWidget {
             controller.sortTypeHighlight.value = "page";
             controller.sortTextHighlight.value = "페이지 순";
             controller.sortHighlights();
-            Get.back();
-          },
-        ),
-
-        const Divider(height: 1),
-
-        _cancelButton(),
-      ],
-    );
-  }
-
-  // =====================================================
-  // MEMO 정렬 옵션
-  // 날짜 순만 가능
-  // =====================================================
-  Widget _memoOptions(BookNoteController controller) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          title: const Text("날짜 순"),
-          onTap: () {
-            controller.sortTypeMemo.value = "date";
-            controller.sortTextMemo.value = "날짜 순";
-            controller.sortMemos();
             Get.back();
           },
         ),
