@@ -11,10 +11,10 @@ class MiniCalendarSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
       child: Column(
         children: [
-          // 1. 헤더
+          // 1. 헤더 (그대로 유지)
           Obx(() => Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -41,7 +41,7 @@ class MiniCalendarSection extends StatelessWidget {
 
           const SizedBox(height: 25),
 
-          // 2. 요일 표시
+          // 2. 요일 표시 (그대로 유지)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) {
@@ -66,7 +66,7 @@ class MiniCalendarSection extends StatelessWidget {
 
           const SizedBox(height: 5),
 
-          // 3. 날짜 그리드 (로딩 상태 적용)
+          // 3. 날짜 그리드 (그대로 유지)
           Obx(() {
             if (controller.isCalendarLoading.value) {
               return const SizedBox(
@@ -79,22 +79,35 @@ class MiniCalendarSection extends StatelessWidget {
             return _buildCalendarGrid(context);
           }),
 
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
 
-          // 4. 푸터
-          GestureDetector(
+          // 4. 푸터: ✅ [수정] 박스형 버튼 (슬림 버전)
+          InkWell(
             onTap: () => Get.toNamed(Routes.calendar),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              // ✅ [수정] 상하 패딩 축소 (14 -> 11)
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F7),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
                   Text(
                     "캘린더 전체 보기",
-                    style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 13,      // ✅ [수정] 글씨 축소 (14 -> 13)
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  SizedBox(width: 4),
-                  Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,           // ✅ [수정] 아이콘 축소 (18 -> 16)
+                    color: Colors.grey,
+                  ),
                 ],
               ),
             ),
@@ -105,6 +118,7 @@ class MiniCalendarSection extends StatelessWidget {
   }
 
   Widget _buildCalendarGrid(BuildContext context) {
+    // (기존 그리드 코드 유지)
     final year = controller.currentYear.value;
     final month = controller.currentMonth.value;
     final firstDay = DateTime(year, month, 1);
@@ -112,7 +126,6 @@ class MiniCalendarSection extends StatelessWidget {
 
     final int weekday = firstDay.weekday;
     final int startOffset = (weekday == 7) ? 0 : weekday;
-
     final totalDays = lastDay.day;
 
     return GridView.builder(
@@ -135,16 +148,14 @@ class MiniCalendarSection extends StatelessWidget {
         if (index % 7 == 0) dayColor = Colors.red;
         else if (index % 7 == 6) dayColor = Colors.blue;
 
-        // ✅ [수정] GestureDetector 추가: 클릭 시 상세 목록 띄우기
         return GestureDetector(
           onTap: () {
-            // 해당 날짜에 읽은 책 리스트 가져오기
             final books = controller.dailyBooks[day] ?? [];
             if (books.isNotEmpty) {
               _showDailyListSheet(context, day, books);
             }
           },
-          behavior: HitTestBehavior.opaque, // 터치 영역 확보
+          behavior: HitTestBehavior.opaque,
           child: Column(
             children: [
               Text("$day", style: TextStyle(color: dayColor, fontSize: 13, fontWeight: FontWeight.w400)),
@@ -176,8 +187,8 @@ class MiniCalendarSection extends StatelessWidget {
     );
   }
 
-  // ✅ [추가] 상세 목록 바텀시트 (CommonCalendarWidget에서 가져옴)
   void _showDailyListSheet(BuildContext context, int day, List<dynamic> books) {
+    // (기존 바텀시트 코드 유지)
     Get.bottomSheet(
       Container(
         height: MediaQuery.of(context).size.height * 0.75,

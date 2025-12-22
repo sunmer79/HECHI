@@ -31,8 +31,6 @@ class MyReadController extends GetxController {
 
   RxMap<int, String> calendarBooks = <int, String>{}.obs;
   RxMap<int, List<dynamic>> dailyBooks = <int, List<dynamic>>{}.obs;
-
-  // ✅ [추가] 캘린더 로딩 상태 관리
   RxBool isCalendarLoading = false.obs;
 
   @override
@@ -72,7 +70,6 @@ class MyReadController extends GetxController {
   }
 
   Future<void> fetchCalendarData(String token) async {
-    // ✅ [수정] 로딩 시작 & 기존 데이터 즉시 삭제 (유령 데이터 방지)
     isCalendarLoading.value = true;
     calendarBooks.clear();
     dailyBooks.clear();
@@ -119,13 +116,11 @@ class MyReadController extends GetxController {
     } catch (e) {
       print("Calendar fetch error: $e");
     } finally {
-      // ✅ [추가] 로딩 종료
       isCalendarLoading.value = false;
     }
   }
 
   Future<void> _fetchStats(String token) async {
-    // (기존 코드 유지)
     try {
       final response = await http.get(Uri.parse('$baseUrl/analytics/my-stats'), headers: {"Authorization": "Bearer $token"});
 
@@ -160,17 +155,11 @@ class MyReadController extends GetxController {
           double ratio = maxCount > 0 ? (apiData.count / maxCount) : 0.0;
 
           int colorValue;
-          if (score <= 1.5) {
-            colorValue = 0xFFC8E6C9;
-          } else if (score <= 2.5) {
-            colorValue = 0xFFA5D6A7;
-          } else if (score <= 3.5) {
-            colorValue = 0xFF81C784;
-          } else if (score <= 4.5) {
-            colorValue = 0xFF66BB6A;
-          } else {
-            colorValue = 0xFF43A047;
-          }
+          if (score <= 1.5) colorValue = 0xFFC8E6C9;
+          else if (score <= 2.5) colorValue = 0xFFA5D6A7;
+          else if (score <= 3.5) colorValue = 0xFF81C784;
+          else if (score <= 4.5) colorValue = 0xFF66BB6A;
+          else colorValue = 0xFF43A047;
 
           tempDist.add({
             "score": score,
@@ -187,7 +176,6 @@ class MyReadController extends GetxController {
   }
 
   Future<void> _fetchInsightTags(String token) async {
-    // (기존 코드 유지 - 내용 생략 가능)
     final url = Uri.parse('$baseUrl/analytics/my-insights');
     try {
       final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
@@ -215,12 +203,12 @@ class MyReadController extends GetxController {
           final tag = topTags[i];
           final double size = 40.0 - (i * 4.0);
           int color;
-          if (i == 0) { color = 0xFF2E7D32; }
-          else if (i == 1) { color = 0xFF388E3C; }
-          else if (i == 2) { color = 0xFF43A047; }
-          else if (i == 3) { color = 0xFF4DB56C; }
-          else if (i == 4) { color = 0xFF66BB6A; }
-          else { color = 0xFF81C784; }
+          if (i == 0) color = 0xFF2E7D32;
+          else if (i == 1) color = 0xFF388E3C;
+          else if (i == 2) color = 0xFF43A047;
+          else if (i == 3) color = 0xFF4DB56C;
+          else if (i == 4) color = 0xFF66BB6A;
+          else color = 0xFF81C784;
 
           newTags.add({
             'text': tag.label,

@@ -2,14 +2,15 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
+import 'dart:ui';
 import '../../../data/models/user_stats_model.dart';
 import '../../../app/controllers/app_controller.dart';
-import 'dart:ui';
 
 class TasteAnalysisController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
   final box = GetStorage();
   RxBool isLoading = true.obs;
+
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
 
   RxList<Map<String, dynamic>> starRatingDistribution = <Map<String, dynamic>>[
@@ -51,10 +52,9 @@ class TasteAnalysisController extends GetxController {
           _fetchInsightTags(token),
         ]);
       } catch (e) {
-        print("오류");
+        print("데이터 로딩 오류: $e");
       }
     }
-
     isLoading.value = false;
   }
 
@@ -71,8 +71,47 @@ class TasteAnalysisController extends GetxController {
       readingRate.value = "${stats.ratingSummary.average100}%";
       mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-      String timeText = stats.readingTime.human;
-      totalReadingTime.value = timeText.replaceAll("시간", "").trim();
+      // ✅ [시간 텍스트 포맷팅 로직 수정]
+      String rawTime = stats.readingTime.human; // 예: "총 0분. 감상하였습니다"
+
+      // 1. 불필요한 글자와 마침표 제거
+      String cleaned = rawTime
+          .replaceAll("총", "")
+          .replaceAll("감상하였습니다", "")
+          .replaceAll("감상하셨습니다", "")
+          .replaceAll("동안", "")
+          .replaceAll(".", "") // ✅ 마침표 제거
+          .trim();
+
+      // 2. 시간/분 변환 로직 (1시간 미만은 분, 이상은 시간)
+      if (cleaned.contains("분") && !cleaned.contains("시간")) {
+        // "90분" -> "1시간 30분" 변환 시도
+        String numStr = cleaned.replaceAll("분", "").trim();
+        int? mins = int.tryParse(numStr);
+        if (mins != null) {
+          if (mins < 60) {
+            totalReadingTime.value = "${mins}분";
+          } else {
+            int h = mins ~/ 60;
+            int m = mins % 60;
+            if (m == 0) {
+              totalReadingTime.value = "${h}시간";
+            } else {
+              totalReadingTime.value = "${h}시간 ${m}분";
+            }
+          }
+        } else {
+          totalReadingTime.value = cleaned;
+        }
+      }
+      else if (cleaned == "0시간") {
+        // "0시간"으로 올 경우 "0분"으로 변경
+        totalReadingTime.value = "0분";
+      }
+      else {
+        // 이미 "1시간 20분" 형태라면 그대로 사용
+        totalReadingTime.value = cleaned;
+      }
 
       _updateDistribution(stats.ratingDistribution);
 
@@ -104,24 +143,17 @@ class TasteAnalysisController extends GetxController {
 
       genreRankings.value = mergedList;
       genreRankings.sort((a, b) => b.average5.compareTo(a.average5));
-    } else {
-      throw Exception("API call failed with status: ${response.statusCode}");
     }
   }
 
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
 
+    // (기존 코드 유지)
     final List<Offset> presetPositions = [
-      Offset(0.50, 0.45),
-      Offset(0.40, 0.60),
-      Offset(0.60, 0.30),
-      Offset(0.75, 0.50),
-      Offset(0.25, 0.50),
-      Offset(0.30, 0.20),
-      Offset(0.70, 0.70),
-      Offset(0.50, 0.85),
-      Offset(0.20, 0.80),
+      const Offset(0.50, 0.45), const Offset(0.40, 0.60), const Offset(0.60, 0.30),
+      const Offset(0.75, 0.50), const Offset(0.25, 0.50), const Offset(0.30, 0.20),
+      const Offset(0.70, 0.70), const Offset(0.50, 0.85), const Offset(0.20, 0.80),
     ];
 
     try {
@@ -176,27 +208,22 @@ class TasteAnalysisController extends GetxController {
           });
           tagIndex++;
         }
-
         tags.value = newTags;
       }
     } catch (e) {
-      print("오류");
+      print("태그 로딩 오류: $e");
     }
   }
 
   void _updateDistribution(List<RatingDist> distData) {
     int maxCount = 0;
-
     final bool useIndexMapping = distData.length == 10;
 
     for (var d in distData) {
-      if (d.count > maxCount) {
-        maxCount = d.count;
-      }
+      if (d.count > maxCount) maxCount = d.count;
     }
 
     double mostFrequentRatingScore = double.tryParse(mostGivenRating.value) ?? 0.0;
-
     const int darkGreenColor = 0xFF4EB56D;
     const int lightGreenColor = 0xFFAAD2B6;
 
@@ -226,7 +253,6 @@ class TasteAnalysisController extends GetxController {
       }
 
       double ratio = 0.0;
-
       if (count == 0) {
         ratio = 0.0;
       } else {
@@ -240,10 +266,8 @@ class TasteAnalysisController extends GetxController {
       if ((score - mostFrequentRatingScore).abs() < 0.001 && count > 0) {
         color = darkGreenColor;
       }
-
       newDist.add({'score': score, 'ratio': ratio, 'color': color, 'count': count});
     }
-
     starRatingDistribution.value = newDist;
   }
 }
