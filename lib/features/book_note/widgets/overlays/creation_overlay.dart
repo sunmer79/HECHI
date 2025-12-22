@@ -492,7 +492,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
           return;
         }
 
-        final int totalPage = controller.bookInfo['total_page'] ?? 0;
+        final int totalPage = controller.bookInfo['total_pages'] ?? 0;
         if (page <= 0 || page > totalPage){
           Get.snackbar("오류", "정확한 페이지 번호를 입력해주세요.");
           return;
