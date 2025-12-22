@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LoginLogo extends StatelessWidget {
   const LoginLogo({super.key});
@@ -9,10 +8,12 @@ class LoginLogo extends StatelessWidget {
     return Center(
       child: Text(
         "HECHI",
-        style: GoogleFonts.sedgwickAveDisplay(
-          fontSize: 40,
-          fontWeight: FontWeight.w400,
-          color: const Color(0xFF4DB56C),
+        style: const TextStyle(
+
+          fontFamily: 'MoveSans',
+          fontSize: 45,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF4DB56C),
           letterSpacing: 1.5,
         ),
       ),
