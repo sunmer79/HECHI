@@ -22,6 +22,7 @@ class ReadingRegistrationController extends GetxController {
   var currentSession = Rxn<ReadingRegistrationSession>();
   var elapsedSeconds = 0.obs;
 
+  DateTime? _sessionStartTime;
   Timer? _timer;
 
   @override
@@ -272,8 +273,25 @@ class ReadingRegistrationController extends GetxController {
                   const VerticalDivider(width: 1, color: Color(0xFFEEEEEE)),
                   Expanded(
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
+                        print("👉 1. [Popup] 닫기 요청 시작");
+
                         Get.back();
+
+                        int safetyCount = 0;
+                        while (Get.isDialogOpen == true) {
+                          await Future.delayed(const Duration(milliseconds: 50));
+                          safetyCount++;
+
+                          if (safetyCount > 20) {
+                            print("⚠️ [Popup] 닫힘 감지 실패! 강제로 진행합니다.");
+                            Get.back();
+                            break;
+                          }
+                        }
+
+                        print("👉 3. [Popup] 완전히 닫힘 확인 완료. (isDialogOpen: ${Get.isDialogOpen})");
+
                         startReadingSession(item.book.id, startPage);
                       },
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
@@ -295,28 +313,37 @@ class ReadingRegistrationController extends GetxController {
           ],
         ),
       ),
+      barrierDismissible: true,
     );
   }
 
   Future<void> startReadingSession(int bookId, int? startPage) async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      _sessionStartTime = DateTime.now();
 
       final session = await repository.startSession(bookId, startPage);
-
-      Get.back(); // 로딩 닫기
 
       currentSession.value = session;
       elapsedSeconds.value = 0;
       _startTimer();
 
     } catch (e) {
-      if (Get.isDialogOpen ?? false) Get.back();
+      print("Error: $e");
+      if (Get.isDialogOpen == true) Get.back();
+      await Future.delayed(const Duration(milliseconds: 100));
       Get.snackbar("오류", "독서를 시작할 수 없습니다.");
+    } finally {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
     }
   }
 
-  // [수정 3] 독서 종료 다이얼로그 (TextField 포함) 디자인 적용
   void showStopDialog() {
     final currentSimulatedPage = currentActiveBook.value?.currentPage ?? 0;
     final pageCtrl = TextEditingController(text: currentSimulatedPage.toString());
