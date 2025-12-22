@@ -1,30 +1,55 @@
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:get_storage/get_storage.dart'; // ✅ 토큰 사용을 위해 추가
 
 class MainpageController extends GetxController {
+  // --- 기존 변수들 ---
   final RxString highlightQuote =
       '수소와 산소에 마법적인 요소는 아무것도 없습니다. 당연히 지구의 생명체에는 그 물이 필요하겠죠. 하지만 다른 행성은 환경이 완전히 다를 수 있어요.'.obs;
   final RxString highlightBookTitle = '프로젝트 헤일메리'.obs;
   final RxString highlightAuthor = '앤디 위어'.obs;
   final RxString headerLogo = 'HECHI'.obs;
   final RxString userProfileUrl = 'https://picsum.photos/30/30'.obs;
+
+  // --- 리스트 데이터 ---
   final RxList<Map<String, dynamic>> popularBookList = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> trendingBookList = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> curationList = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> currentThemeBooks = <Map<String, dynamic>>[].obs;
+
+  // ✅ [NEW] 새로 추가된 섹션 데이터
+  final RxList<Map<String, dynamic>> bestsellerList = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> newBookList = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> genreBestsellerList = <Map<String, dynamic>>[].obs;
+
   final RxString currentThemeTitle = ''.obs;
   final RxBool isThemeLoading = false.obs;
   final RxBool isLoading = false.obs;
 
+  // ✅ [NEW] 토큰 및 헤더 헬퍼 (API 호출 시 인증 필요)
+  String get _token => GetStorage().read('access_token') ?? "";
+  Map<String, String> get _headers => {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Authorization": "Bearer $_token",
+  };
+
   @override
   void onReady() {
     super.onReady();
+    // 기존 API 호출
     fetchPopularBooks();
     fetchTrendingBooks();
     fetchCurations();
+
+    // ✅ [NEW] 신규 API 호출
+    fetchBestsellers();
+    fetchNewBooks();
+    fetchGenreBestsellers();
   }
 
+  // 1. 인기 순위 API
   Future<void> fetchPopularBooks() async {
     isLoading.value = true;
     const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/popular?days=30&limit=20';
@@ -50,6 +75,7 @@ class MainpageController extends GetxController {
     }
   }
 
+  // 2. 검색 순위 API
   Future<void> fetchTrendingBooks() async {
     const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/trending-search?days=30&limit=20';
 
@@ -72,6 +98,7 @@ class MainpageController extends GetxController {
     }
   }
 
+  // 3. 큐레이션(테마) 목록 API
   Future<void> fetchCurations() async {
     const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/curations';
 
@@ -102,6 +129,7 @@ class MainpageController extends GetxController {
     }
   }
 
+  // 4. 테마 상세 API
   Future<void> fetchThemeDetail(String themeTitle) async {
     isThemeLoading.value = true;
     currentThemeTitle.value = themeTitle;
@@ -129,6 +157,79 @@ class MainpageController extends GetxController {
     }
   }
 
+  // ✅ 5. [NEW] 전체 베스트셀러 API 구현
+  Future<void> fetchBestsellers() async {
+    const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/bestseller?limit=10';
+    try {
+      final response = await http.get(Uri.parse(apiUrl), headers: _headers);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> items = data['items'];
+        bestsellerList.value = items.map((item) => _parseBookItem(item)).toList().cast<Map<String, dynamic>>();
+      } else {
+        print('Bestseller API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Bestseller Network Error: $e');
+    }
+  }
+
+  // ✅ 6. [NEW] 신간 도서 API 구현
+  Future<void> fetchNewBooks() async {
+    const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/new?limit=10';
+    try {
+      final response = await http.get(Uri.parse(apiUrl), headers: _headers);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> items = data['items'];
+        newBookList.value = items.map((item) => _parseBookItem(item)).toList().cast<Map<String, dynamic>>();
+      } else {
+        print('New Books API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('New Books Network Error: $e');
+    }
+  }
+
+  // ✅ 7. [NEW] 장르별 베스트셀러 API 구현 (User ID 필요)
+  Future<void> fetchGenreBestsellers() async {
+    try {
+      // (1) 내 정보 API를 호출해서 User ID 가져오기
+      final meResponse = await http.get(
+          Uri.parse('https://api.43-202-101-63.sslip.io/auth/me'),
+          headers: _headers
+      );
+
+      if (meResponse.statusCode != 200) {
+        print("Auth Me Error: ${meResponse.statusCode}");
+        return;
+      }
+
+      int userId = jsonDecode(utf8.decode(meResponse.bodyBytes))['id'];
+
+      // (2) 가져온 User ID로 장르별 베스트셀러 호출
+      final String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/genre-bestseller?user_id=$userId&limit=10';
+      final response = await http.get(Uri.parse(apiUrl), headers: _headers);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> curations = data['curations'];
+
+        genreBestsellerList.value = curations.map((section) {
+          return {
+            'title': section['title'] ?? '추천 장르',
+            'books': (section['items'] as List).map((item) => _parseBookItem(item)).toList().cast<Map<String, dynamic>>(),
+          };
+        }).toList();
+      } else {
+        print('Genre Bestseller API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Genre Bestseller Network Error: $e');
+    }
+  }
+
+  // 공통 책 데이터 파싱 헬퍼 (평점 소수점 처리 포함)
   Map<String, dynamic> _parseBookItem(dynamic item) {
     List<dynamic>? authorsList = item['authors'];
     String authorName = (authorsList != null && authorsList.isNotEmpty)
