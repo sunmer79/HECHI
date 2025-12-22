@@ -26,6 +26,12 @@ class ReviewListController extends GetxController {
     fetchReviews();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    fetchReviews();
+  }
+
   // ==========================
   // 코멘트 목록 조회
   // ==========================
@@ -44,16 +50,13 @@ class ReviewListController extends GetxController {
       if (res.statusCode == 200) {
         final List<dynamic> list = jsonDecode(res.body);
 
-        // ✅ 디버깅 로그
-        print("📥 [fetchReviews] 리뷰 ${list.length}개 수신");
-        for (final r in list) {
-          print("🧾 reviewId=${r['id']} comment_count=${r['comment_count']}");
-        }
+        reviews.value = list.map((e) {
+          final map = Map<String, dynamic>.from(e);
+          map['comment_count'] = map['comment_count'] ?? 0;
+          map['like_count'] = map['like_count'] ?? 0;
+          return map;
+        }).toList();
 
-        reviews.value = list
-            .map((e) => Map<String, dynamic>.from(e))
-            // .where((e) => (e["content"] ?? "").toString().isNotEmpty)
-            .toList();
         _applySort();
       } else {
         print("❌ 리뷰 로드 실패: ${res.statusCode}");
@@ -108,6 +111,15 @@ class ReviewListController extends GetxController {
     reviews[index] = review;
     reviews.refresh();
 
+    if (Get.isRegistered<BookDetailController>()) {
+      Get.find<BookDetailController>().syncReviewChange({
+        "review_id": reviewId,
+        "status": "updated",
+        "is_liked": review["is_liked"],
+        "like_count": review["like_count"],
+      });
+    }
+
     try {
       final token = box.read("access_token");
       final res = await http.post(
@@ -116,16 +128,12 @@ class ReviewListController extends GetxController {
       );
 
       if (res.statusCode != 200) {
-        review["is_liked"] = prev;
-        review["like_count"] = (review["like_count"] ?? 0) + (prev ? 1 : -1);
-        reviews[index] = review;
-        reviews.refresh();
+        throw Exception("like failed");
       }
     } catch (e) {
-      review["is_liked"] = prev;
-      review["like_count"] = (review["like_count"] ?? 0) + (prev ? 1 : -1);
-      reviews[index] = review;
-      reviews.refresh();
+      print("❌ 좋아요 토글 실패: $e");
+
+      await fetchReviews();
     }
   }
 
@@ -177,19 +185,21 @@ class ReviewListController extends GetxController {
 
       }
       if (res.statusCode == 200 || res.statusCode == 204) {
+        reviews.removeWhere((r) => r['id'] == reviewId);
+        reviews.refresh();
+
         Get.snackbar("완료", "삭제되었습니다.");
-        await fetchReviews();
 
         if (Get.isRegistered<BookDetailController>()) {
-          final bookDetail = Get.find<BookDetailController>();
+          final bool isRatingAlive = rating > 0.0;
 
-          bookDetail.myContent.value = "";
-          bookDetail.isCommented.value = false;
-          if (rating == 0) bookDetail.myReviewId = -1;
-
-          await bookDetail.fetchReviews();
-          await bookDetail.fetchBookDetail();
+          Get.find<BookDetailController>().syncReviewChange({
+            "review_id": reviewId,
+            "status": "deleted",
+            "keep_rating": isRatingAlive,
+          });
         }
+        await fetchReviews();
       } else {
         Get.snackbar("오류", "삭제 실패: ${res.statusCode}");
       }
@@ -235,13 +245,17 @@ class ReviewListController extends GetxController {
         reviews[index]['is_spoiler'] = isSpoiler;
         reviews.refresh();
       }
+      Get.snackbar("성공", "코멘트가 수정되었습니다.");
 
       if (Get.isRegistered<BookDetailController>()) {
-        final bookDetail = Get.find<BookDetailController>();
-        await bookDetail.fetchReviews();
-        await bookDetail.fetchBookDetail();
+        Get.find<BookDetailController>().syncReviewChange({
+          "review_id": reviewId,
+          "status": "updated",
+          "content": newContent,
+          "is_spoiler": isSpoiler,
+          // 필요하다면 rating, like_count 등도 전달
+        });
       }
-      Get.snackbar("성공", "코멘트가 수정되었습니다.");
     } else {
       Get.snackbar("오류", "수정 실패: ${res.statusCode}");
     }
@@ -279,5 +293,30 @@ class ReviewListController extends GetxController {
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
     );
+  }
+
+  // ==========================
+  // 리뷰 동기화
+  // ==========================
+  void syncReviewChange(Map<String, dynamic> result) {
+    final int reviewId = result['review_id'];
+    final String status = result['status'] ?? 'updated';
+
+    if (status == 'deleted') {
+      reviews.removeWhere((r) => r['id'] == reviewId);
+      reviews.refresh();
+      return;
+    }
+
+    final index = reviews.indexWhere((r) => r['id'] == reviewId);
+    if (index != -1) {
+      if (result.containsKey('is_liked')) reviews[index]['is_liked'] = result['is_liked'];
+      if (result.containsKey('like_count')) reviews[index]['like_count'] = result['like_count'];
+      if (result.containsKey('content')) reviews[index]['content'] = result['content'];
+      if (result.containsKey('is_spoiler')) reviews[index]['is_spoiler'] = result['is_spoiler'];
+      if (result.containsKey('comment_count')) reviews[index]['comment_count'] = result['comment_count'];
+
+      reviews.refresh();
+    }
   }
 }

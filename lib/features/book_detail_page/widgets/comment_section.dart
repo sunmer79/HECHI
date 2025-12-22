@@ -9,8 +9,13 @@ class CommentSection extends GetView<BookDetailController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final reviewCount = controller.reviews.length;
-      final hasMoreToReviews = reviewCount > 3;
+      final allReviews = controller.reviews;
+      final int commentCount = allReviews.where((r) {
+        final content = (r['content'] ?? '').toString();
+        return content.trim().isNotEmpty;
+      }).length;
+
+      final hasMoreToReviews = commentCount > 3;
 
       final bestReviews = controller.bestReviews;
 
@@ -26,14 +31,14 @@ class CommentSection extends GetView<BookDetailController> {
               height: 55,
               padding: const EdgeInsets.symmetric(horizontal: 17),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(width: 1, color: Color(0xFFABABAB))),
+                border: Border(bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4))),
               ),
               alignment: Alignment.centerLeft,
               child: Row(
                   children: [
                     const Text('코멘트', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
-                    Text("$reviewCount", style: const TextStyle(fontSize: 18, color: Color(0xFF717171), fontWeight: FontWeight.w500)),
+                    Text("$commentCount", style: const TextStyle(fontSize: 18, color: Color(0xFF717171), fontWeight: FontWeight.w500)),
                   ]
               )
           ),
@@ -61,7 +66,7 @@ class CommentSection extends GetView<BookDetailController> {
           ),
 
           // 3. 리뷰 리스트
-          if (reviewCount == 0)
+          if (commentCount == 0)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 35),
@@ -74,10 +79,12 @@ class CommentSection extends GetView<BookDetailController> {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
               itemCount: bestReviews.length, // 최대 3개
               itemBuilder: (_, index) => ReviewCard(
                 review: bestReviews[index],
                 type: ReviewCardType.simple,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
                 onLikeToggle: (int id) {
                   controller.toggleLike(id);
                 },
@@ -95,8 +102,8 @@ class CommentSection extends GetView<BookDetailController> {
                 decoration: const BoxDecoration(
                   color: Color(0x66D1ECD9),
                   border: Border(
-                    top: BorderSide(width: 1, color: Color(0xFFABABAB)),
-                    bottom: BorderSide(width: 1, color: Color(0xFFABABAB)),
+                    top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                    bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
                   ),
                 ),
                 child: const Text('모두보기', style: TextStyle(color: Colors.black, fontSize: 15)),
@@ -158,7 +165,6 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
 
 // 막대 그래프
 Widget _bar(double score, int count, int maxCount) {
-  const double graphMaxHeight = 120.0; // 막대 최대 높이
   final double ratio = maxCount > 0 ? count / maxCount: 0.0;
 
   return Expanded(

@@ -43,12 +43,17 @@ class BookDetailController extends GetxController {
   List<Map<String, dynamic>> get bestReviews {
     if (reviews.isEmpty) return [];
 
-    final sortedList = List<Map<String, dynamic>>.from(reviews);
-    sortedList.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
+    final textReviews = reviews.where((element) {
+      final content = (element["content"] ?? "").toString();
+      return content.trim().isNotEmpty;
+    }).toList();
 
-    return sortedList.take(3).toList();
+    textReviews.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
+
+    return textReviews.take(3).toList();
   }
 
+  /*
   @override
   void onInit() {
     super.onInit();
@@ -59,6 +64,22 @@ class BookDetailController extends GetxController {
       fetchRatingSummary(),
       fetchWishlistStatus(),
     ]);
+  }
+   */
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchReadingStatus();
+    fetchWishlistStatus();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    fetchBookDetail();
+    fetchReviews();
+    fetchRatingSummary();
   }
 
   // ==========================
@@ -113,17 +134,15 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200) {
         final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
 
-        // ✅ 디버깅 로그
-        print("📥 [fetchReviews] 리뷰 ${list.length}개 수신");
-        for (final r in list) {
-          print("🧾 reviewId=${r['id']} comment_count=${r['comment_count']}");
-        }
+        reviews.value = list.map((e) {
+          final map = Map<String, dynamic>.from(e);
+          map['comment_count'] = map['comment_count'] ?? 0;
+          map['like_count'] = map['like_count'] ?? 0;
+          return map;
+        }).toList();
 
-        reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
-
-        final myUserId = box.read("user_id");
-        final mine = list.firstWhereOrNull(
-                (e) => e["is_my_review"] == true || e["user_id"] == myUserId);
+        final mine =
+          reviews.firstWhereOrNull((r) => r['is_my_review'] == true);
 
         if (mine != null) {
           myReviewId = mine["id"];
@@ -185,7 +204,6 @@ class BookDetailController extends GetxController {
       print("❌ Reading-Status GET Error: $e");
     }
   }
-
 
   // ==========================
   // 위시리스트 반영
@@ -259,7 +277,6 @@ class BookDetailController extends GetxController {
     }
   }
 
-
   // ==========================
   // 읽고싶어요
   // ==========================
@@ -318,8 +335,6 @@ class BookDetailController extends GetxController {
     final token = box.read("access_token");
     if (token == null) return;
 
-    myContent.value = content;
-
     final headers = {
       "Content-Type": "application/json",
       "Authorization": "Bearer $token",
@@ -343,8 +358,10 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       myReviewId = data["id"];
-      await fetchReviews();
       isCommented.value = true;
+      myContent.value = content;
+      this.isSpoiler.value = isSpoiler;
+      await fetchReviews();
 
       // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (코멘트 등록 시)
       await Future.delayed(const Duration(milliseconds: 500));
@@ -369,6 +386,7 @@ class BookDetailController extends GetxController {
       isCommented.value = false;
       myReviewId = -1;
       myContent.value = "";
+      isSpoiler.value = false;
       await fetchBookDetail();
       await fetchReviews();
       print("🗑️ 리뷰 삭제 완료");
@@ -387,7 +405,11 @@ class BookDetailController extends GetxController {
   // ==========================
   Future<void> onWriteReview() async {
     if (isCommented.value && myReviewId != -1) {
-      Get.toNamed("/review_detail", arguments: myReviewId);
+      final result = await Get.toNamed("/review_detail", arguments: myReviewId);
+
+      if (result != null) {
+        syncReviewChange(result);
+      }
     }
     else {
       Get.bottomSheet(
@@ -408,7 +430,7 @@ class BookDetailController extends GetxController {
     final token = box.read("access_token");
     if (token == null) return;
 
-    final bool hasContent = myContent.value.isNotEmpty;
+    final bool hasContent = isCommented.value;
 
     if (rating == 0.0 && !hasContent && myReviewId != -1) {
       await delete();
@@ -498,12 +520,10 @@ class BookDetailController extends GetxController {
   // 관심없어요 (모든 상태 해제)
   // ==========================
   Future<void> onNotInterested() async {
-    // 1. '읽고싶어요'가 체크되어 있다면 DELETE 요청
     if (isWishlisted.value) {
       await onWantToRead();
     }
 
-    // 2. 독서 상태를 '관심없음(ARCHIVED)'으로 변경
     await updateReadingStatus("ARCHIVED");
   }
 
@@ -517,7 +537,6 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        // API 명세: {"average_rating": 0, "review_count": 0}
         averageRating.value = (data["average_rating"] as num).toDouble();
         totalReviewCount.value = (data["review_count"] as num).toInt();
       }
@@ -560,6 +579,58 @@ class BookDetailController extends GetxController {
       }
     } catch (e) {
       print("❌ 좋아요 에러: $e");
+    }
+  }
+
+  // ==========================
+  // 리뷰 동기화
+  // ==========================
+  void syncReviewChange(Map<String, dynamic> result) {
+    final int reviewId = result['review_id'];
+    final String status = result['status'] ?? 'updated';
+
+    if (status == 'deleted') {
+      reviews.removeWhere((r) => r['id'] == reviewId);
+
+      if (myReviewId == reviewId) {
+        final bool keepRating = result['keep_rating'] ?? false;
+
+        myContent.value = "";
+        isCommented.value = false;
+        isSpoiler.value = false;
+
+        if (!keepRating){
+          myReviewId = -1;
+          myRating.value = 0.0;
+        }
+      }
+      reviews.refresh();
+      return;
+    }
+
+    final index = reviews.indexWhere((r) => r['id'] == reviewId);
+    if (index != -1) {
+      if (result.containsKey('is_liked')) reviews[index]['is_liked'] = result['is_liked'];
+      if (result.containsKey('like_count')) reviews[index]['like_count'] = result['like_count'];
+
+      if (result.containsKey('content')) {
+        reviews[index]['content'] = result['content'];
+        if (myReviewId == reviewId) {
+          myContent.value = result['content'];
+          isCommented.value = result['content'].toString().trim().isNotEmpty;
+        }
+      }
+      if (result.containsKey('is_spoiler')) {
+        reviews[index]['is_spoiler'] = result['is_spoiler'];
+        if (myReviewId == reviewId) {
+          isSpoiler.value = result['is_spoiler'];
+        }
+      }
+      if (result.containsKey('comment_count')) {
+        reviews[index]['comment_count'] = result['comment_count'];
+      }
+
+      reviews.refresh();
     }
   }
 }

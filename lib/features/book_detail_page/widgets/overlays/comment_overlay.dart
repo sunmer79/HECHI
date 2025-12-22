@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/book_detail_controller.dart';
 
 class CommentOverlay extends StatelessWidget {
   final Function(String, bool) onSubmit;
@@ -20,9 +19,7 @@ class CommentOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final RxString text = initialText.obs;
     final RxBool isSpoiler = initialSpoiler.obs;
-    final TextEditingController textController =
-      TextEditingController(text: initialText);
-    final controller = Get.find<BookDetailController>();
+    final TextEditingController textController = TextEditingController(text: initialText);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -58,10 +55,8 @@ class CommentOverlay extends StatelessWidget {
                       return;
                     }
 
+                    FocusManager.instance.primaryFocus?.unfocus();
                     await onSubmit(text.value.trim(), isSpoiler.value);
-
-                    controller.isCommented.value = true;
-                    controller.fetchReviews();
 
                     Get.back();
                     if (isEditMode){
