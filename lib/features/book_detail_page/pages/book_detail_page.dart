@@ -25,7 +25,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     super.initState();
     scrollController.addListener(() {
       double offset = scrollController.offset;
-      double newOpacity = ((offset - 260) / 100).clamp(0.0, 1.0);
+      double newOpacity = ((offset - 200) / 100).clamp(0.0, 1.0);
       setState(() => opacity = newOpacity);
     });
   }

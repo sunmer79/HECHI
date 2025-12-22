@@ -30,10 +30,6 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   RxString sortTypeHighlight = "date".obs; // date | page
   RxString sortTextHighlight = "날짜 순".obs;
 
-  // Memo (page 없음)
-  RxString sortTypeMemo = "date".obs;
-  RxString sortTextMemo = "날짜 순".obs;
-
   @override
   void onInit() {
     super.onInit();

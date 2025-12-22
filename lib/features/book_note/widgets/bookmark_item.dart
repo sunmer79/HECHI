@@ -48,7 +48,7 @@ class BookmarkItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "페이지 ${data["page"]}",
+                        "p. ${data["page"]}",
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
