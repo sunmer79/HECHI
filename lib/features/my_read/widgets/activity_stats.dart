@@ -13,12 +13,8 @@ class ActivityStats extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-
           Expanded(child: _buildStatItem(controller.totalReviews.value, "평가")),
-
           Container(width: 1, height: 24, color: const Color(0xFFEEEEEE)),
-
-
           Expanded(child: _buildStatItem(controller.totalComments.value, "코멘트")),
         ],
       ),
@@ -40,7 +36,7 @@ class ActivityStats extends StatelessWidget {
         Text(
             label,
             style: const TextStyle(
-                fontSize: 12,
+                fontSize: 13, // ✅ 다른 통계 라벨과 크기 통일
                 color: Colors.grey
             )
         ),

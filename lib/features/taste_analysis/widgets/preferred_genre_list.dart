@@ -26,28 +26,32 @@ class PreferredGenreList extends GetView<TasteAnalysisController> {
               children: [
                 const Center(child: Text("인생은 역시 한 편의 책!", style: TextStyle(color: Color(0xFF4DB56C), fontSize: 14))),
                 const SizedBox(height: 30),
+
+                // Top 3 장르
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: top3.map((e) => Column(
                     children: [
-                      Text(e.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
+                      Text(e.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F3F3F))),
                       const SizedBox(height: 6),
-                      Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                      Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   )).toList(),
                 ),
                 const SizedBox(height: 30),
+
+                // 나머지 장르
                 ...others.map((e) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(e.name, style: const TextStyle(fontSize: 16, color: Color(0xFF3F3F3F))),
-                      Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 14, color: Color(0xFF3F3F3F))),
+                      Text(e.name, style: const TextStyle(fontSize: 15, color: Color(0xFF3F3F3F))),
+                      Text("${to100Score(e.average5)}점 - ${e.reviewCount}편", style: const TextStyle(fontSize: 14, color: Color(0xFF757575))),
                     ],
                   ),
-                )).toList(),
+                )),
               ],
             );
           }),

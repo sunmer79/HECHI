@@ -14,14 +14,14 @@ class StarRatingSection extends GetView<TasteAnalysisController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-              "별점분포",
+              "별점 분포",
               style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   color: Color(0xFF3F3F3F)
               )
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 10),
 
           Obx(() => StarRatingChart(
               ratingData: controller.starRatingDistribution,
@@ -30,29 +30,13 @@ class StarRatingSection extends GetView<TasteAnalysisController> {
 
           const SizedBox(height: 30),
 
-          // ✅ [수정됨] 통계 사이에 회색 구분선 추가
           Obx(() => Row(
             children: [
-              // 1. 별점 평균
-              Expanded(
-                child: _buildBottomStatItem(controller.averageRating.value, "별점 평균"),
-              ),
-
-              // 1번과 2번 사이 구분선
+              Expanded(child: _buildBottomStatItem(controller.averageRating.value, "별점 평균")),
               Container(width: 1, height: 30, color: const Color(0xFFEEEEEE)),
-
-              // 2. 별점 개수
-              Expanded(
-                child: _buildBottomStatItem(controller.totalReviews.value, "별점 개수"),
-              ),
-
-              // 2번과 3번 사이 구분선
+              Expanded(child: _buildBottomStatItem(controller.totalReviews.value, "별점 개수")),
               Container(width: 1, height: 30, color: const Color(0xFFEEEEEE)),
-
-              // 3. 많이 준 별점
-              Expanded(
-                child: _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점"),
-              ),
+              Expanded(child: _buildBottomStatItem(controller.mostGivenRating.value, "많이 준 별점")),
             ],
           )),
         ],

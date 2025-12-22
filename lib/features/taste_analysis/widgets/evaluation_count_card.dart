@@ -1,4 +1,3 @@
-//평가수 카드
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/taste_analysis_controller.dart';
@@ -19,7 +18,7 @@ class EvaluationCountCard extends GetView<TasteAnalysisController> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 30),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               gradient: const LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -44,7 +43,7 @@ class EvaluationCountCard extends GetView<TasteAnalysisController> {
                 const SizedBox(height: 10),
                 Obx(() => Text(
                   '지금까지 ${controller.userProfile['nickname'] ?? 'HECHI'}님이 읽고 평가한 책',
-                  style: TextStyle(fontSize: 14, color: const Color(0xFF4DB56C).withOpacity(0.8), fontWeight: FontWeight.w400),
+                  style: TextStyle(fontSize: 14, color: const Color(0xFF4DB56C).withValues(alpha: 0.8), fontWeight: FontWeight.w400),
                 )),
               ],
             ),

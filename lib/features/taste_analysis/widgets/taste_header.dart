@@ -18,7 +18,7 @@ class TasteHeader extends GetView<TasteAnalysisController> {
           children: [
             Text("$nickname's Book", style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text("취향분석", style: TextStyle(color: Colors.white70, fontSize: 14)),
+            const Text("취향분석", style: const TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 24),
             Row(
               children: [
