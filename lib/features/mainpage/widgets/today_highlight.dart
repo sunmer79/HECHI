@@ -10,7 +10,9 @@ class TodayHighlight extends GetView<MainpageController> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: GestureDetector(
-        onTap: () { },
+        onTap: () {
+          Get.toNamed('/book_detail_page', arguments: controller.highlightBookId.value);
+        },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
