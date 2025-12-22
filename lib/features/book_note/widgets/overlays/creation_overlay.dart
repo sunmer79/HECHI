@@ -363,11 +363,6 @@ class _CreationOverlayState extends State<CreationOverlay> {
         // // --------------------- 공개 여부 ---------------------
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-          decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Color(0xFFF3F3F3), width: 1),
-            ),
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -458,6 +453,12 @@ class _CreationOverlayState extends State<CreationOverlay> {
           return;
         }
 
+        final int totalPage = controller.bookInfo['total_page'] ?? 0;
+        if (page <= 0 || page > totalPage){
+          Get.snackbar("오류", "정확한 페이지 번호를 입력해주세요.");
+          return;
+        }
+
         final isDuplicate = controller.bookmarks.any((bookmark) {
           if (widget.isEdit && bookmark['id'] == widget.itemId) {
             return false;
@@ -490,6 +491,13 @@ class _CreationOverlayState extends State<CreationOverlay> {
           Get.snackbar("오류", "문장을 입력해주세요.");
           return;
         }
+
+        final int totalPage = controller.bookInfo['total_page'] ?? 0;
+        if (page <= 0 || page > totalPage){
+          Get.snackbar("오류", "정확한 페이지 번호를 입력해주세요.");
+          return;
+        }
+
         final memo = memoController.text.trim();
 
         if (widget.isEdit) {

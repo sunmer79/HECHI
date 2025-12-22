@@ -22,19 +22,27 @@ class OptionBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<BookNoteController>();
 
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
+    return Container(
+      padding: const EdgeInsets.only(top: 8),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildOption(
+              label: hasMemo || type == "memo" ? "수정" : "메모 작성",
+              onTap: () {
+                Get.back();
+                _openEditor();
+              },
+            ),
+
+            _buildOption(
               label: "삭제",
-              color: Colors.red,
+              color: Colors.red.withValues(alpha: 0.7),
               onTap: () {
                 Get.back();
                 if (type == "bookmark") {
@@ -44,16 +52,6 @@ class OptionBottomSheet extends StatelessWidget {
                 } else {
                   controller.deleteMemo(data["id"]);
                 }
-              },
-            ),
-
-            const Divider(height: 1, thickness: .3),
-
-            _buildOption(
-              label: hasMemo || type == "memo" ? "메모 수정" : "메모 작성",
-              onTap: () {
-                Get.back();
-                _openEditor();
               },
             ),
 
@@ -73,18 +71,54 @@ class OptionBottomSheet extends StatelessWidget {
     Color color = Colors.black87,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      title: Text(label, style: TextStyle(fontSize: 16, color: color)),
+    return InkWell(
       onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 15,
+        ),
+        alignment: Alignment.centerLeft,
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              width: 0.5,
+              color: Color(0xFFABABAB),
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: color,
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildCancel() {
-    return ListTile(
-      title: const Center(
-        child: Text("취소", style: TextStyle(fontSize: 16, color: Colors.grey)),
-      ),
+    return InkWell(
       onTap: () => Get.back(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 15,
+        ),
+        alignment: Alignment.center,
+        child: const Text(
+          "취소",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.grey,
+          ),
+        ),
+      ),
     );
   }
 
@@ -134,112 +168,3 @@ class OptionBottomSheet extends StatelessWidget {
     );
   }
 }
-
-
-/*
-class OptionBottomSheet extends StatelessWidget {
-  final String type; // bookmark | highlight | memo
-  final Map<String, dynamic> data;
-
-  const OptionBottomSheet({
-    super.key,
-    required this.type,
-    required this.data,
-  });
-
-  bool get hasMemoOrContent {
-    if (type == "bookmark") return (data["memo"] ?? "").toString().isNotEmpty;
-    if (type == "highlight") return (data["memo"] ?? "").toString().isNotEmpty;
-    return (data["content"] ?? "").toString().isNotEmpty;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<BookNoteController>();
-
-    return SafeArea(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            /// ---------------------------
-            /// 삭제
-            /// ---------------------------
-            _buildOption(
-              label: "삭제",
-              color: Colors.red,
-              onTap: () {
-                Get.back();
-
-                if (type == "bookmark") controller.deleteBookmark(data["id"]);
-                else if (type == "highlight") controller.deleteHighlight(data["id"]);
-                else controller.deleteMemo(data["id"]);
-              },
-            ),
-
-            const Divider(height: 1),
-
-            /// ---------------------------
-            /// 수정 또는 작성
-            /// ---------------------------
-            _buildOption(
-              label: hasMemoOrContent ? "수정" : "작성",
-              onTap: () {
-                Get.back();
-
-                Get.bottomSheet(
-                  CreationOverlay(
-                    type: type,
-                    isEdit: hasMemoOrContent,
-                    itemId: data["id"],
-
-                    /// 북마크
-                    page: data["page"],
-                    memo: data["memo"],
-
-                    /// 하이라이트
-                    sentence: data["sentence"],
-                    isPublic: data["is_public"],
-
-                    /// 메모
-                    content: data["content"],
-                  ),
-                  isScrollControlled: true,
-                );
-              },
-            ),
-
-            const SizedBox(height: 8),
-            _cancelButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOption({
-    required String label,
-    Color color = Colors.black87,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      title: Text(label, style: TextStyle(fontSize: 16, color: color)),
-      onTap: onTap,
-    );
-  }
-
-  Widget _cancelButton() {
-    return ListTile(
-      title: const Center(
-        child: Text("취소", style: TextStyle(color: Colors.grey, fontSize: 16)),
-      ),
-      onTap: () => Get.back(),
-    );
-  }
-}
-*/
