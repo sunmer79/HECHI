@@ -42,14 +42,18 @@ class BookDetailController extends GetxController {
 
   List<Map<String, dynamic>> get bestReviews {
     if (reviews.isEmpty) return [];
-    // 좋아요 순
-    final sortedList = List<Map<String, dynamic>>.from(reviews);
-    sortedList.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
 
-    // 상위 3개만 반환
-    return sortedList.take(3).toList();
+    final textReviews = reviews.where((element) {
+      final content = (element["content"] ?? "").toString();
+      return content.trim().isNotEmpty;
+    }).toList();
+
+    textReviews.sort((a, b) => (b["like_count"] ?? 0).compareTo(a["like_count"] ?? 0));
+
+    return textReviews.take(3).toList();
   }
 
+  /*
   @override
   void onInit() {
     super.onInit();
@@ -61,9 +65,25 @@ class BookDetailController extends GetxController {
       fetchWishlistStatus(),
     ]);
   }
+   */
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchReadingStatus();
+    fetchWishlistStatus();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    fetchBookDetail();
+    fetchReviews();
+    fetchRatingSummary();
+  }
 
   // ==========================
-  // 📌 책 상세 조회 (Histogram 파싱 추가)
+  // 책 상세 조회 (Histogram 파싱 추가)
   // ==========================
   Future<void> fetchBookDetail() async {
     try {
@@ -98,7 +118,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 목록 조회
+  // 리뷰 목록 조회
   // ==========================
   Future<void> fetchReviews() async {
     try {
@@ -113,11 +133,16 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
-        reviews.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
 
-        final myUserId = box.read("user_id");
-        final mine = list.firstWhereOrNull(
-                (e) => e["is_my_review"] == true || e["user_id"] == myUserId);
+        reviews.value = list.map((e) {
+          final map = Map<String, dynamic>.from(e);
+          map['comment_count'] = map['comment_count'] ?? 0;
+          map['like_count'] = map['like_count'] ?? 0;
+          return map;
+        }).toList();
+
+        final mine =
+          reviews.firstWhereOrNull((r) => r['is_my_review'] == true);
 
         if (mine != null) {
           myReviewId = mine["id"];
@@ -145,7 +170,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 조회
+  // 독서 상태 조회
   // ==========================
   Future<void> fetchReadingStatus() async {
     try {
@@ -180,9 +205,8 @@ class BookDetailController extends GetxController {
     }
   }
 
-
   // ==========================
-  // 📌 위시리스트 반영
+  // 위시리스트 반영
   // ==========================
   Future<void> fetchWishlistStatus() async {
     final token = box.read("access_token");
@@ -207,7 +231,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 업데이트
+  // 독서 상태 업데이트
   // ==========================
   Future<void> updateReadingStatus(String status) async {
     final token = box.read("access_token");
@@ -241,7 +265,6 @@ class BookDetailController extends GetxController {
       if (res.statusCode == 200 || res.statusCode == 201) {
         Get.snackbar("완료", "상태가 변경되었습니다.");
 
-        // 🔥 서버 기준 데이터로 UI 다시 동기화 (가장 중요)
         await fetchReadingStatus();
 
       } else {
@@ -254,9 +277,8 @@ class BookDetailController extends GetxController {
     }
   }
 
-
   // ==========================
-  // 📌 읽고싶어요
+  // 읽고싶어요
   // ==========================
   Future<void> onWantToRead() async {
     final token = box.read("access_token");
@@ -267,26 +289,20 @@ class BookDetailController extends GetxController {
 
     final bool before = isWishlisted.value;
 
-    // 🌟 UI를 먼저 토글
     isWishlisted.value = !before;
 
     try {
       http.Response res;
 
       if (before) {
-        // [삭제] 기존에 찜했으면 -> 해제 (DELETE)
         res = await http.delete(
           Uri.parse("$baseUrl/wishlist/$bookId"),
           headers: {"Authorization": "Bearer $token"},
         );
         print("🟥 DELETE status: ${res.statusCode}");
       } else {
-        // [추가] 찜 안했으면 -> 추가 (POST)
-
-        // 🔥 [핵심 추가] 만약 현재 '관심없음(ARCHIVED)' 상태라면 -> '읽기 전(PENDING)'으로 초기화
         if (readingStatus.value == "ARCHIVED") {
           print("🚀 '읽고싶어요' 클릭 -> '관심없음' 상태 자동 해제");
-          // API 호출하여 상태 변경 (UI 반영은 이 함수 내부에서 처리됨)
           await updateReadingStatus("PENDING");
         }
 
@@ -297,7 +313,6 @@ class BookDetailController extends GetxController {
         print("🟩 POST status: ${res.statusCode}");
       }
 
-      // 실패 → UI rollback
       if (res.statusCode != 200 &&
           res.statusCode != 201 &&
           res.statusCode != 204) {
@@ -314,13 +329,11 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 등록 함수
+  // 코멘트 등록 함수
   // ==========================
   Future<void> submitReview(String content, bool isSpoiler) async {
     final token = box.read("access_token");
     if (token == null) return;
-
-    myContent.value = content;
 
     final headers = {
       "Content-Type": "application/json",
@@ -345,8 +358,10 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       myReviewId = data["id"];
-      await fetchReviews();
       isCommented.value = true;
+      myContent.value = content;
+      this.isSpoiler.value = isSpoiler;
+      await fetchReviews();
 
       // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (코멘트 등록 시)
       await Future.delayed(const Duration(milliseconds: 500));
@@ -358,7 +373,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 리뷰 삭제
+  // 리뷰 삭제
   // ==========================
   Future<void> delete() async {
     final token = box.read("access_token");
@@ -371,6 +386,7 @@ class BookDetailController extends GetxController {
       isCommented.value = false;
       myReviewId = -1;
       myContent.value = "";
+      isSpoiler.value = false;
       await fetchBookDetail();
       await fetchReviews();
       print("🗑️ 리뷰 삭제 완료");
@@ -385,14 +401,16 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 코멘트 버튼 클릭 (Overlay 오픈)
+  // 코멘트 버튼 클릭 (Overlay 오픈)
   // ==========================
   Future<void> onWriteReview() async {
-    // 1. 이미 내가 쓴 리뷰가 있다면 -> 리뷰 상세 페이지로 이동
     if (isCommented.value && myReviewId != -1) {
-      Get.toNamed("/review_detail", arguments: myReviewId);
+      final result = await Get.toNamed("/review_detail", arguments: myReviewId);
+
+      if (result != null) {
+        syncReviewChange(result);
+      }
     }
-    // 2. 리뷰가 없다면 -> 작성 시트(Overlay) 띄우기
     else {
       Get.bottomSheet(
         CommentOverlay(onSubmit: submitReview),
@@ -404,22 +422,15 @@ class BookDetailController extends GetxController {
       );
     }
   }
-/*
+
   // ==========================
-  // 📌 내 별점 변경
-  // ==========================
-  void updateMyRating(double rating) {
-    myRating.value = rating;
-  }
-*/
-  // ==========================
-  // 📌 별점 저장 (코멘트 없이 가능)
+  // 별점 저장 (코멘트 없이 가능)
   // ==========================
   Future<void> submitRating(double rating) async {
     final token = box.read("access_token");
     if (token == null) return;
 
-    final bool hasContent = myContent.value.isNotEmpty;
+    final bool hasContent = isCommented.value;
 
     if (rating == 0.0 && !hasContent && myReviewId != -1) {
       await delete();
@@ -431,12 +442,9 @@ class BookDetailController extends GetxController {
       "Authorization": "Bearer $token",
     };
 
-    final sendRating = (rating == 0.0) ? null : rating;
-
     final body = jsonEncode({
       "book_id": bookId,
       "rating": (rating == 0.0) ? null : rating,
-      //"rating": rating,
       "content": hasContent ? myContent.value : null,
       "is_spoiler": isSpoiler.value,
     });
@@ -452,11 +460,18 @@ class BookDetailController extends GetxController {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      print("🔍 [서버 응답 확인] 보낸 값: rating=${sendRating} / 받은 값: ${data['rating']}");
+      myRating.value = (data["rating"] as num?)?.toDouble() ?? 0.0;
+
+      final index = reviews.indexWhere((r) => r["id"] == myReviewId);
+      if (index != -1) {
+        reviews[index]["rating"] = myRating.value;
+      } else {
+        reviews.insert(0, Map<String, dynamic>.from(data));
+      }
 
       reviews.refresh();
 
-      await fetchBookDetail(); // 통계 갱신
+      await fetchBookDetail();
 
       // ✅ [추가] 0.5초 후 나의 독서 통계 새로고침 (별점 저장 시)
       await Future.delayed(const Duration(milliseconds: 500));
@@ -468,7 +483,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 독서 상태 Overlay 띄우기
+  // 독서 상태 Overlay 띄우기
   // ==========================
   void onReadingStatus() {
     Get.bottomSheet(
@@ -481,7 +496,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 더보기 메뉴
+  // 더보기 메뉴
   // ==========================
   void openMoreMenu() {
     Get.bottomSheet(
@@ -494,7 +509,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 더보기 메뉴 오버레이 선택 (Overlay에서 호출)
+  // 더보기 메뉴 오버레이 선택 (Overlay에서 호출)
   // ==========================
   void selectedMenu() async {
     Get.back(); // 오버레이 닫기
@@ -502,20 +517,18 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 관심없어요 (모든 상태 해제)
+  // 관심없어요 (모든 상태 해제)
   // ==========================
   Future<void> onNotInterested() async {
-    // 1. '읽고싶어요'가 체크되어 있다면 DELETE 요청
     if (isWishlisted.value) {
       await onWantToRead();
     }
 
-    // 2. 독서 상태를 '관심없음(ARCHIVED)'으로 변경
     await updateReadingStatus("ARCHIVED");
   }
 
   // ==========================
-  // 📌 [추가] 평점 요약 정보 조회 (GET /reviews/books/{id}/summary)
+  // 평점 요약 정보 조회 (GET /reviews/books/{id}/summary)
   // ==========================
   Future<void> fetchRatingSummary() async {
     try {
@@ -524,7 +537,6 @@ class BookDetailController extends GetxController {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        // API 명세: {"average_rating": 0, "review_count": 0}
         averageRating.value = (data["average_rating"] as num).toDouble();
         totalReviewCount.value = (data["review_count"] as num).toInt();
       }
@@ -534,7 +546,7 @@ class BookDetailController extends GetxController {
   }
 
   // ==========================
-  // 📌 좋아요 토글 (베스트 리뷰용)
+  // 좋아요 토글 (베스트 리뷰용)
   // ==========================
   Future<void> toggleLike(int reviewId) async {
     final token = box.read("access_token");
@@ -567,6 +579,58 @@ class BookDetailController extends GetxController {
       }
     } catch (e) {
       print("❌ 좋아요 에러: $e");
+    }
+  }
+
+  // ==========================
+  // 리뷰 동기화
+  // ==========================
+  void syncReviewChange(Map<String, dynamic> result) {
+    final int reviewId = result['review_id'];
+    final String status = result['status'] ?? 'updated';
+
+    if (status == 'deleted') {
+      reviews.removeWhere((r) => r['id'] == reviewId);
+
+      if (myReviewId == reviewId) {
+        final bool keepRating = result['keep_rating'] ?? false;
+
+        myContent.value = "";
+        isCommented.value = false;
+        isSpoiler.value = false;
+
+        if (!keepRating){
+          myReviewId = -1;
+          myRating.value = 0.0;
+        }
+      }
+      reviews.refresh();
+      return;
+    }
+
+    final index = reviews.indexWhere((r) => r['id'] == reviewId);
+    if (index != -1) {
+      if (result.containsKey('is_liked')) reviews[index]['is_liked'] = result['is_liked'];
+      if (result.containsKey('like_count')) reviews[index]['like_count'] = result['like_count'];
+
+      if (result.containsKey('content')) {
+        reviews[index]['content'] = result['content'];
+        if (myReviewId == reviewId) {
+          myContent.value = result['content'];
+          isCommented.value = result['content'].toString().trim().isNotEmpty;
+        }
+      }
+      if (result.containsKey('is_spoiler')) {
+        reviews[index]['is_spoiler'] = result['is_spoiler'];
+        if (myReviewId == reviewId) {
+          isSpoiler.value = result['is_spoiler'];
+        }
+      }
+      if (result.containsKey('comment_count')) {
+        reviews[index]['comment_count'] = result['comment_count'];
+      }
+
+      reviews.refresh();
     }
   }
 }

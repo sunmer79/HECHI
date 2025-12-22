@@ -9,7 +9,7 @@ class BookInfoSection extends GetView<BookDetailController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final book = controller.book;
-      if (book.isEmpty) return const SizedBox(); // 로딩 전 or 데이터 없음
+      if (book.isEmpty) return const SizedBox();
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +98,7 @@ class BookInfoSection extends GetView<BookDetailController> {
 
   Widget _buildInfoItem(String label, String value) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 80), // 최소 너비 보장
+      constraints: const BoxConstraints(minWidth: 80),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       alignment: Alignment.centerLeft,
       child: Column(

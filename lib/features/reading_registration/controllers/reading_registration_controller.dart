@@ -6,6 +6,7 @@ import '../data/models/reading_library_model.dart';
 import '../data/models/reading_registration_session_model.dart';
 import '../data/repository/reading_registration_repository.dart';
 
+
 class ReadingRegistrationController extends GetxController {
   final ReadingRegistrationRepository repository;
   ReadingRegistrationController({required this.repository});
@@ -59,7 +60,10 @@ class ReadingRegistrationController extends GetxController {
         final updatedBook = items.firstWhereOrNull(
                 (item) => item.book.id == currentActiveBook.value!.book.id
         );
-        currentActiveBook.value = updatedBook ?? (items.isNotEmpty ? items.first : null);
+        // 독서 중이 아닐 때만 업데이트 (독서 중엔 하드웨어 실시간 데이터가 우선)
+        if (currentSession.value == null) {
+          currentActiveBook.value = updatedBook ?? (items.isNotEmpty ? items.first : null);
+        }
       } else {
         currentActiveBook.value = items.isNotEmpty ? items.first : null;
       }
@@ -145,7 +149,10 @@ class ReadingRegistrationController extends GetxController {
   }
 
   void showStopDialog() {
-    final pageCtrl = TextEditingController();
+    // 현재까지 읽은 페이지(시뮬레이션된 값)를 기본값으로 보여줌
+    final currentSimulatedPage = currentActiveBook.value?.currentPage ?? 0;
+    final pageCtrl = TextEditingController(text: currentSimulatedPage.toString());
+
     Get.defaultDialog(
         title: "독서 종료",
         content: Padding(
@@ -183,25 +190,13 @@ class ReadingRegistrationController extends GetxController {
       _timer?.cancel();
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
 
-      // 낙관적 업데이트 (UI 즉시 반영)
       if (currentActiveBook.value != null) {
-        final currentItem = currentActiveBook.value!;
-        final totalPages = currentItem.book.totalPages;
-        final newProgress = (totalPages > 0) ? ((endPage / totalPages) * 100).toInt() : 0;
-
-        final updatedItem = ReadingLibraryItem(
-          book: currentItem.book,
-          status: currentItem.status,
-          currentPage: endPage,
-          progressPercent: newProgress,
-          myRating: currentItem.myRating,
-        );
-        currentActiveBook.value = updatedItem;
+        updateRealTimePage(endPage);
       }
 
       await repository.endSession(currentSession.value!.id, endPage, elapsedSeconds.value);
 
-      Get.back(); // 로딩 닫기
+      Get.back();
 
       currentSession.value = null;
       elapsedSeconds.value = 0;
@@ -217,8 +212,24 @@ class ReadingRegistrationController extends GetxController {
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       elapsedSeconds.value++;
     });
+  }
+
+  void updateRealTimePage(int newPage) {
+    if (currentActiveBook.value != null) {
+      final currentItem = currentActiveBook.value!;
+      final totalPages = currentItem.book.totalPages;
+      final newProgress = (totalPages > 0) ? ((newPage / totalPages) * 100).toInt() : 0;
+
+      currentActiveBook.value = ReadingLibraryItem(
+        book: currentItem.book,
+        status: currentItem.status,
+        currentPage: newPage,
+        progressPercent: newProgress,
+        myRating: currentItem.myRating,
+      );
+    }
   }
 }

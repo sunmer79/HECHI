@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../controllers/review_list_controller.dart';
+import '../../book_detail_page/controllers/book_detail_controller.dart';
 import 'option_bottom_sheet.dart';
 
 enum ReviewCardType { simple, detail, }
@@ -13,18 +14,14 @@ class ReviewCard extends StatelessWidget {
   final Function(int)? onEdit;
   final Function(int)? onDelete;
 
-  // 로컬 상태
   final RxBool isExpanded = false.obs;
   final RxBool isSpoilerVisible = false.obs;
 
   static const int maxInitialLines = 5;
   static const int maxExpandedLines = 20;
 
-  late final RxBool isLiked;
-  late final RxInt likeCount;
-  late final RxInt commentCount;
-
   final ReviewCardType type;
+  final EdgeInsetsGeometry? contentPadding;
 
   ReviewCard({
     super.key,
@@ -34,153 +31,230 @@ class ReviewCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.type = ReviewCardType.detail,
-  }) {
-    isLiked = RxBool(review["is_liked"] ?? false);
-    likeCount = RxInt(review["like_count"] ?? 0);
-    commentCount = RxInt(review['comment_count'] ?? 0);
-    // if (isMyReview) isSpoilerVisible.value = true;
+    this.contentPadding,
+  });
+
+  // ==========================
+  // 좋아요 토글
+  // ==========================
+  void _toggleLike() {
+    if (onLikeToggle != null) {
+      onLikeToggle!(review['id']);
+    }
   }
 
-  // 텍스트 길이 측정 헬퍼
-  bool _isTextClipped(String text, BoxConstraints constraints, TextStyle style, int lineLimit) {
+  // ==========================
+  // 텍스트 줄수 계산
+  // ==========================
+  bool _isTextClipped(
+      String text,
+      BoxConstraints constraints,
+      TextStyle style,
+      int maxLines,
+      ) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
-      maxLines: lineLimit,
+      maxLines: maxLines,
       locale: const Locale('ko'),
     )..layout(maxWidth: constraints.maxWidth);
+
     return painter.didExceedMaxLines;
-  }
-
-  void _toggleLike() {
-    isLiked.value = !isLiked.value;
-    isLiked.value ? likeCount.value++ : likeCount.value--;
-
-    if (onLikeToggle != null) onLikeToggle!(review['id']);
   }
 
   @override
   Widget build(BuildContext context) {
-    const contentStyle = TextStyle(color: Colors.black, fontSize: 14, height: 1.5, letterSpacing: 0.25);
+    final String content = (review['content'] ?? '').toString();
+    if (content.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // ===== 서버 상태 =====
     final double rating = (review["rating"] as num?)?.toDouble() ?? 0.0;
+    final bool isLiked = review["is_liked"] ?? false;
+    final int likeCount = review["like_count"] ?? 0;
+    final int commentCount = review["comment_count"] ?? 0;
 
-    return Obx(() {
-      final spoilerVisible = isSpoilerVisible.value;
-      final expanded = isExpanded.value;
+    final Color activeColor = const Color(0xFF4DB56C);
+    final Color inactiveColor = const Color(0xFF9E9E9E);
 
-      final Color activeColor = const Color(0xFF4DB56C);
-      final Color inactiveColor = const Color(0xFF9E9E9E);
+    final Color likeColor = isLiked ? activeColor : inactiveColor;
+    final IconData likeIcon =
+    isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined;
 
-      final Color currentColor = isLiked.value ? activeColor : inactiveColor;
-      final IconData currentIcon = isLiked.value ? Icons.thumb_up : Icons.thumb_up_alt_outlined;
-
-      return Material(
-        color: Colors.white,
-        child: InkWell(
-          onTap: () { Get.toNamed('/review_detail', arguments: review['id']); },
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () async {
+          final result = await Get.toNamed(
+            '/review_detail',
+            arguments: review['id'],
+          );
+          if (result != null) {
+            if (Get.isRegistered<BookDetailController>()) {
+              Get.find<BookDetailController>().syncReviewChange(result);
+            }
+            if (Get.isRegistered<ReviewListController>()) {
+              Get.find<ReviewListController>().syncReviewChange(result);
+            }
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding: contentPadding ??
+              EdgeInsets.symmetric(
                 horizontal: 17,
-                vertical: (type == ReviewCardType.simple) ? 15 : 20
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: (type == ReviewCardType.simple)
-                  ? null
-                  : const Border(bottom: BorderSide(width: 1, color: Color(0xFFF3F3F3))),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==============================
-                // 1. 헤더 (프로필, 닉네임, 날짜, 별점)
-                // ==============================
-                if (type == ReviewCardType.simple) ...[
-                  _buildSimpleHeader(rating),
-                ] else ...[
-                    _buildDetailHeader(rating),
-                    const SizedBox(height: 12),
-                ],
-
-                // ==============================
-                // 2. 내용 (스포일러 & 더보기 로직)
-                // ==============================
-                if ((review["is_spoiler"] ?? false) && !spoilerVisible)
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 4),
-                        const Text("스포일러가 포함되어 있습니다.", style: TextStyle(color: Color(0xFF717171), fontSize: 13)),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => isSpoilerVisible.value = true,
-                          child: const Text("보기", style: TextStyle(color: Color(0xFF4DB56C), fontSize: 13, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final content = review['content'] ?? "";
-                      final clippedAtFive = _isTextClipped(content, constraints, contentStyle, maxInitialLines);
-                      final clippedAtTwenty = _isTextClipped(content, constraints, contentStyle, maxExpandedLines);
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            content,
-                            maxLines: (spoilerVisible || expanded) ? maxExpandedLines : maxInitialLines,
-                            overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          ),
-                          // 더보기 버튼
-                          if (clippedAtFive && !expanded)
-                            GestureDetector(
-                              onTap: () => isExpanded.value = true,
-                              child: const Padding(
-                                padding: EdgeInsets.only(top: 6.0),
-                                child: Text("더보기", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, decoration: TextDecoration.underline)),
-                              ),
-                            )
-                          // 전체보기 (상세 이동)
-                          else if (expanded && clippedAtTwenty)
-                            GestureDetector(
-                              onTap: () => Get.toNamed("/review_detail", arguments: review['id']),
-                              child: const Padding(
-                                padding: EdgeInsets.only(top: 6.0),
-                                child: Text("전체보기", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, decoration: TextDecoration.underline)),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-
-                const SizedBox(height: 16),
-
-                // ==============================
-                // 3. 하단 액션바 (좋아요, 댓글)
-                // ==============================
-                Row(
-                  children: [
-                    // 좋아요
-                    type == ReviewCardType.simple
-                        ? _buildSimpleBottom(currentIcon, currentColor)
-                        : _buildDetailBottom(currentColor),
-                  ],
-                ),
-              ],
+                vertical: type == ReviewCardType.simple ? 15 : 20,
+              ),
+          decoration: BoxDecoration(
+            border: type == ReviewCardType.simple
+                ? null
+                : const Border(
+              bottom: BorderSide(color: Color(0xFFF3F3F3)),
             ),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ==========================
+              // 1. 헤더
+              // ==========================
+              if (type == ReviewCardType.simple)
+                _buildSimpleHeader(rating)
+              else ...[
+                _buildDetailHeader(rating),
+                const SizedBox(height: 12),
+              ],
+
+              // ==========================
+              // 2. 내용
+              // ==========================
+              Obx(() {
+                final expanded = isExpanded.value;
+                final spoilerVisible = isSpoilerVisible.value;
+
+                if ((review["is_spoiler"] ?? false) && !spoilerVisible) {
+                  return Row(
+                    children: [
+                      const Text(
+                        "스포일러가 포함되어 있습니다.",
+                        style: TextStyle(
+                          color: Color(0xFF717171),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => isSpoilerVisible.value = true,
+                        child: const Text(
+                          "보기",
+                          style: TextStyle(
+                            color: Color(0xFF4DB56C),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final clipped5 = _isTextClipped(
+                      content,
+                      constraints,
+                      const TextStyle(fontSize: 14, height: 1.5),
+                      maxInitialLines,
+                    );
+                    final clipped20 = _isTextClipped(
+                      content,
+                      constraints,
+                      const TextStyle(fontSize: 14, height: 1.5),
+                      maxExpandedLines,
+                    );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          content,
+                          maxLines:
+                          expanded ? maxExpandedLines : maxInitialLines,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                        if (clipped5 && !expanded)
+                          GestureDetector(
+                            onTap: () => isExpanded.value = true,
+                            child: const Padding(
+                              padding: EdgeInsets.only(top: 6),
+                              child: Text(
+                                "더보기",
+                                style: TextStyle(
+                                  color: Color(0xFF9E9E9E),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (expanded && clipped20)
+                          GestureDetector(
+                            onTap: () async {
+                              final result = await Get.toNamed(
+                                '/review_detail',
+                                arguments: review['id'],
+                              );
+                              if (result != null) {
+                                if (Get.isRegistered<BookDetailController>()) {
+                                  Get.find<BookDetailController>().syncReviewChange(result);
+                                }
+                                if (Get.isRegistered<ReviewListController>()) {
+                                  Get.find<ReviewListController>().syncReviewChange(result);
+                                }
+                              }
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.only(top: 6),
+                              child: Text(
+                                "전체보기",
+                                style: TextStyle(
+                                  color: Color(0xFF9E9E9E),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                );
+              }),
+              const SizedBox(height: 16),
+
+              // ==========================
+              // 3. 하단 액션바
+              // ==========================
+              Row(
+                children: [
+                  // 좋아요
+                  type == ReviewCardType.simple
+                      ? _buildSimpleBottom(likeIcon, likeColor, likeCount, commentCount)
+                      : _buildDetailBottom(likeIcon, likeColor, likeCount, commentCount),
+                ],
+              ),
+            ],
+          ),
         ),
-      );
-    });
+      ),
+    );
   }
 
+  // ==========================
+  // 헤더들
+  // ==========================
   Widget _buildSimpleHeader(double rating){
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,11 +266,13 @@ class ReviewCard extends StatelessWidget {
             itemCount: 5,
             itemSize: 14.0,
             direction: Axis.horizontal,
-          ),
+          )
+        else
+          const SizedBox(),
         Row(
           children: [
             Text(
-                review['user_nickname'] ?? "User ${review['user_id']}",
+                review['nickname'] ?? "User ${review['user_id']}",
                 style: const TextStyle(
                     color: Color(0xFF717171),
                     fontSize: 13,
@@ -238,7 +314,7 @@ class ReviewCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    review['user_nickname'] ?? "User ${review['user_id']}",
+                    review['nickname'] ?? "User ${review['user_id']}",
                     style: const TextStyle(
                         color: Colors.black,
                         fontSize: 14,
@@ -288,59 +364,80 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSimpleBottom(IconData currentIcon, Color currentColor){
-    return Row (
+  Widget _buildSimpleBottom(
+      IconData likeIcon,
+      Color likeColor,
+      int likeCount,
+      int commentCount,
+      ) {
+    return Row(
       children: [
         GestureDetector(
           onTap: _toggleLike,
           child: Row(
             children: [
-              Icon(currentIcon, size: 16, color: currentColor),
+              Icon(likeIcon, size: 16, color: likeColor),
               const SizedBox(width: 4),
-              Obx(() => Text("${likeCount.value}",
-                  style: TextStyle(color: currentColor, fontSize: 13))),
+              Text(
+                "$likeCount",
+                style: TextStyle(color: likeColor, fontSize: 13),
+              ),
             ],
           ),
         ),
         const SizedBox(width: 16),
-
-        Obx(() => Row(
+        Row(
           children: [
-            const Icon(Icons.chat_bubble_outline, size: 16, color: Color(0xFF9E9E9E)),
+            const Icon(Icons.chat_bubble_outline,
+                size: 16, color: Color(0xFF9E9E9E)),
             const SizedBox(width: 4),
-            Text("${commentCount.value}", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13, fontWeight: FontWeight.w500)),
+            Text(
+              "$commentCount",
+              style: const TextStyle(
+                color: Color(0xFF9E9E9E),
+                fontSize: 13,
+              ),
+            ),
           ],
-        )),
+        ),
       ],
     );
   }
 
-  Widget _buildDetailBottom(Color currentColor) {
-    return Obx(() {
-      return Row(
-        children: [
-          GestureDetector(
-            onTap: _toggleLike,
-            child: Row(
-              children: [
-                const SizedBox(width: 4),
-                Text("좋아요 ${likeCount.value}", style: TextStyle(
-                    color: currentColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          Row(
+  Widget _buildDetailBottom(
+      IconData likeIcon,
+      Color likeColor,
+      int likeCount,
+      int commentCount,
+      ) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _toggleLike,
+          child: Row(
             children: [
-            Text("댓글 ${commentCount.value}",
-            style: const TextStyle(color: Color(0xFF717171), fontSize: 13)),
+              Icon(likeIcon, size: 16, color: likeColor),
+              const SizedBox(width: 4),
+              Text(
+                "좋아요 $likeCount",
+                style: TextStyle(
+                  color: likeColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
-        ],
-      );
-    });
+        ),
+        const SizedBox(width: 16),
+        Text(
+          "댓글 $commentCount",
+          style: const TextStyle(
+            color: Color(0xFF717171),
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
   }
 }
