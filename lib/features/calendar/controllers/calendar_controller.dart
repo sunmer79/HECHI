@@ -17,10 +17,10 @@ class CalendarController extends GetxController {
   RxInt totalReadCount = 0.obs;
   RxString topGenre = "".obs;
 
-  // 1. 달력 그리드에 보여줄 표지 (Key: 날짜, Value: 썸네일 URL)
+  // 1. 달력 그리드에 보여줄 표지
   RxMap<int, String> calendarBooks = <int, String>{}.obs;
 
-  // 2. 바텀 시트에 보여줄 상세 리스트 (Key: 날짜, Value: 책 정보 리스트)
+  // 2. 바텀 시트에 보여줄 상세 리스트
   RxMap<int, List<dynamic>> dailyBooks = <int, List<dynamic>>{}.obs;
 
   RxBool isLoading = false.obs;
@@ -39,11 +39,77 @@ class CalendarController extends GetxController {
     fetchCalendarData();
   }
 
+  // ✅ [수정됨] 정확한 영어 문구를 한글로 매핑 (Business & Economics 추가)
+  String _convertGenreToKorean(String? genre) {
+    if (genre == null || genre.isEmpty) return "-";
+
+    // 소문자로 변환하여 비교 (API 대소문자 불일치 방지)
+    final key = genre.toLowerCase().trim();
+
+    const Map<String, String> genreMap = {
+      // 🚨 문제가 되었던 부분 수정 (정확한 풀네임 추가)
+      'business & economics': '경제/경영',
+      'computers': 'IT/컴퓨터',
+      'health & fitness': '건강/운동',
+      'comics & graphic novels': '만화',
+      'literary collections': '문학전집',
+      'foreign language study': '외국어',
+      'social science': '사회과학',
+      'political science': '정치/사회',
+      'performing arts': '대중예술',
+
+      // 기존 단어 매핑
+      'fiction': '소설',
+      'novel': '소설',
+      'poetry': '시',
+      'essay': '에세이',
+      'romance': '로맨스',
+      'fantasy': '판타지',
+      'mystery': '추리',
+      'sf': 'SF',
+      'thriller': '스릴러',
+      'humanities': '인문학',
+      'history': '역사',
+      'science': '과학',
+      'art': '예술',
+      'social': '사회',
+      'religion': '종교',
+      'philosophy': '철학',
+      'self-help': '자기계발',
+      'self_development': '자기계발',
+      'economy': '경제/경영',
+      'management': '경제/경영',
+      'marketing': '마케팅',
+      'it': 'IT/컴퓨터',
+      'computer': 'IT/컴퓨터',
+      'cartoon': '만화',
+      'comics': '만화',
+      'magazine': '잡지',
+      'reference': '참고서',
+    };
+
+    // 1. 정확히 일치하는 키가 있는지 확인
+    if (genreMap.containsKey(key)) {
+      return genreMap[key]!;
+    }
+
+    // 2. 정확히 일치하지 않으면 부분 검색 (예: "juvenile fiction" -> "소설")
+    if (key.contains('fiction') || key.contains('novel')) return '소설';
+    if (key.contains('history')) return '역사';
+    if (key.contains('science')) return '과학';
+    if (key.contains('art')) return '예술';
+    if (key.contains('computer')) return 'IT/컴퓨터';
+    if (key.contains('business') || key.contains('economic')) return '경제/경영';
+    if (key.contains('comic')) return '만화';
+
+    // 매핑 실패 시 원래 영어 텍스트 반환
+    return genre;
+  }
+
   // API 호출
   Future<void> fetchCalendarData() async {
     String? token = box.read('access_token');
 
-    // 토큰이 없으면 요청하지 않음
     if (token == null) {
       print("🚨 [Calendar] 토큰 없음. 로그인이 필요합니다.");
       return;
@@ -51,7 +117,6 @@ class CalendarController extends GetxController {
 
     isLoading.value = true;
 
-    // 1. URL 생성 (API 문서: GET /analytics/calendar-month?year=...&month=...)
     final queryParams = {
       'year': currentYear.value.toString(),
       'month': currentMonth.value.toString(),
@@ -59,10 +124,7 @@ class CalendarController extends GetxController {
 
     final url = Uri.parse('$baseUrl/analytics/calendar-month').replace(queryParameters: queryParams);
 
-    print('🔵 [API 요청] URL: $url');
-
     try {
-      // 2. HTTP GET 요청
       final response = await http.get(
         url,
         headers: {
@@ -71,39 +133,31 @@ class CalendarController extends GetxController {
         },
       );
 
-      print('🟢 [API 응답] 상태 코드: ${response.statusCode}');
-
-      // 3. 응답 처리
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        print('✅ 데이터 수신 성공: $data');
 
-        // 3-1. 요약 정보 파싱
         totalReadCount.value = data['total_read_count'] ?? 0;
-        topGenre.value = data['top_genre'] ?? "-";
 
-        // 3-2. 날짜별 책 정보 파싱
-        Map<int, String> newCovers = {};      // 표지용 임시 맵
-        Map<int, List<dynamic>> newDaily = {}; // 상세 리스트용 임시 맵
+        // ✅ 한글 변환 적용
+        String rawGenre = data['top_genre'] ?? "";
+        topGenre.value = _convertGenreToKorean(rawGenre);
+
+        Map<int, String> newCovers = {};
+        Map<int, List<dynamic>> newDaily = {};
 
         List days = data['days'] ?? [];
 
         for (var dayData in days) {
           try {
-            // 날짜 파싱
             String dateStr = dayData['date'];
             DateTime date = DateTime.parse(dateStr);
-            List items = dayData['items'] ?? []; // 해당 날짜의 책 목록
+            List items = dayData['items'] ?? [];
 
             if (items.isNotEmpty) {
-              // (1) 표지 저장: 첫 번째 책의 썸네일 사용
               String? thumbnail = items[0]['thumbnail'];
               if (thumbnail != null && thumbnail.isNotEmpty) {
                 newCovers[date.day] = thumbnail;
               }
-
-              // (2) 상세 리스트 저장: 바텀 시트용으로 전체 리스트 저장
-              // (title, authors, rating 등이 포함되어 있어야 함)
               newDaily[date.day] = items;
             }
           } catch (e) {
@@ -111,15 +165,11 @@ class CalendarController extends GetxController {
           }
         }
 
-        // UI 업데이트
         calendarBooks.value = newCovers;
-        dailyBooks.value = newDaily; // ✅ 상세 데이터 업데이트됨
-
-        print('✅ 캘린더 데이터 갱신 완료 (총 ${newCovers.length}일치 표지, ${newDaily.length}일치 상세 데이터)');
+        dailyBooks.value = newDaily;
 
       } else {
         print("❌ 요청 실패: ${response.statusCode}");
-        print("에러 메시지: ${utf8.decode(response.bodyBytes)}");
       }
     } catch (e) {
       print("🚨 네트워크 오류 발생: $e");

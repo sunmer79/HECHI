@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/my_read_controller.dart';
-import '../../../../core/widgets/star_rating_chart.dart';
+import '../../taste_analysis/widgets/star_rating_chart.dart';
 
 class TasteAnalysisPreview extends StatelessWidget {
   final MyReadController controller;
