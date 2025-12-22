@@ -99,7 +99,7 @@ class BookStorageView extends GetView<BookStorageController> {
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 0.52,
+            childAspectRatio: 0.5,
             crossAxisSpacing: 10,
             mainAxisSpacing: 20,
           ),
@@ -113,14 +113,22 @@ class BookStorageView extends GetView<BookStorageController> {
 
 class _BookGridItem extends StatelessWidget {
   final LibraryBookModel book;
+
   const _BookGridItem({Key? key, required this.book}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    const titleStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    );
+
     return GestureDetector(
       onTap: () => Get.find<BookStorageController>().goToBookDetails(book.id),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           AspectRatio(
             aspectRatio: 0.7,
@@ -128,19 +136,52 @@ class _BookGridItem extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: const Color(0xFFE0E0E0), width: 0.5),
-                image: book.thumbnail.isNotEmpty ? DecorationImage(image: NetworkImage(book.thumbnail), fit: BoxFit.cover) : null,
+                image: book.thumbnail.isNotEmpty
+                    ? DecorationImage(
+                    image: NetworkImage(book.thumbnail), fit: BoxFit.cover)
+                    : null,
               ),
-              child: book.thumbnail.isEmpty ? const Icon(Icons.book, color: Colors.grey) : null,
+              child: book.thumbnail.isEmpty ? const Icon(
+                  Icons.book, color: Colors.grey) : null,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            book.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final textPainter = TextPainter(
+                text: TextSpan(text: book.title, style: titleStyle),
+                maxLines: 1,
+                textDirection: TextDirection.ltr,
+              )
+                ..layout(maxWidth: constraints.maxWidth);
+
+              String displayTitle = book.title;
+              if (textPainter.didExceedMaxLines) {
+                int charCount = 0;
+                final fullPainter = TextPainter(
+                  textDirection: TextDirection.ltr,
+                  maxLines: 1,
+                );
+
+                for (int i = 0; i < book.title.length; i++) {
+                  fullPainter.text = TextSpan(
+                      text: book.title.substring(0, i + 1) + "..",
+                      style: titleStyle);
+                  fullPainter.layout(maxWidth: constraints.maxWidth);
+                  if (fullPainter.didExceedMaxLines) break;
+                  charCount = i + 1;
+                }
+                displayTitle = book.title.substring(0, charCount) + "..";
+              }
+
+              return Text(
+                displayTitle,
+                maxLines: 1,
+                style: titleStyle,
+              );
+            },
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           _buildRatingInfo(),
         ],
       ),
@@ -149,20 +190,28 @@ class _BookGridItem extends StatelessWidget {
 
   Widget _buildRatingInfo() {
     final bool hasMyRating = book.myRating != null && book.myRating! > 0;
-    final double rating = hasMyRating ? book.myRating! : (book.avgRating ?? 0.0);
-    final Color ratingColor = hasMyRating ? const Color(0xFFFF7F00) : const Color(0xFFAAAAAA);
+    final double rating = hasMyRating ? book.myRating! : (book.avgRating ??
+        0.0);
+    final Color ratingColor = hasMyRating
+        ? const Color(0xFFFF7F00)
+        : const Color(0xFFAAAAAA);
 
     if (rating == 0 && !hasMyRating) {
-      return const Text('평가 없음', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11));
+      return const Text(
+          '평가 없음', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11));
     }
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(Icons.star, size: 12, color: ratingColor),
         const SizedBox(width: 2),
-        Text(
-          rating.toStringAsFixed(1),
-          style: TextStyle(color: ratingColor, fontSize: 12, fontWeight: FontWeight.bold),
+        Flexible(
+          child: Text(
+            rating.toStringAsFixed(1),
+            style: TextStyle(
+                color: ratingColor, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
