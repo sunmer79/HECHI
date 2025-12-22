@@ -4,7 +4,10 @@ import '../../taste_analysis/pages/taste_analysis_view.dart';
 import '../../taste_analysis/bindings/taste_analysis_binding.dart';
 import '../../book_storage/pages/book_storage_view.dart';
 import '../../book_storage/bindings/book_storage_binding.dart';
-
+import '../../calendar/pages/calendar_view.dart';
+import '../../calendar/bindings/calendar_binding.dart';
+import '../../recommendation/pages/recommendation_view.dart';
+import '../../recommendation/bindings/recommendation_binding.dart';
 
 class CategoryGrid extends StatelessWidget {
   const CategoryGrid({super.key});
@@ -16,7 +19,10 @@ class CategoryGrid extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildCategoryItem('캘린더', Icons.calendar_today, const Color(0xFF4DB56C)),
+          _buildCategoryItem(
+              '캘린더', Icons.calendar_today, const Color(0xFF4DB56C),
+              onTap: () => Get.to(() => const CalendarView(), binding: CalendarBinding())
+          ),
           _buildCategoryItem(
             '취향분석', Icons.bar_chart, const Color(0xFF4DB56C),
             onTap: () => Get.to(() => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
@@ -25,7 +31,10 @@ class CategoryGrid extends StatelessWidget {
             '보관함', Icons.inventory_2_outlined, const Color(0xFF4DB56C),
             onTap: () => Get.to(() => const BookStorageView(), binding: BookStorageBinding()),
           ),
-          _buildCategoryItem('추천', Icons.auto_awesome, const Color(0xFF4DB56C)),
+          _buildCategoryItem(
+              '추천', Icons.auto_awesome, const Color(0xFF4DB56C),
+            onTap: () => Get.to(() => const RecommendationView(), binding: RecommendationBinding()),
+          ),
           _buildCategoryItem('그룹', Icons.people_outline, const Color(0xFF4DB56C)),
         ],
       ),

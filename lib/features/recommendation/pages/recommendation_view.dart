@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/mainpage_controller.dart';
-import '../../book_detail_page/pages/book_detail_page.dart';
+import '../controllers/recommendation_controller.dart';
 
-class PopularListPage extends StatelessWidget {
-  const PopularListPage({super.key});
+class RecommendationView extends GetView<RecommendationController> {
+  const RecommendationView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<MainpageController>();
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('인기 순위', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '회원님을 위한 추천', // 타이틀 변경
+          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -26,24 +27,27 @@ class PopularListPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (controller.popularBookList.isEmpty) {
-          return const Center(child: Text("데이터가 없습니다."));
+        if (controller.recommendedBooks.isEmpty) {
+          return const Center(child: Text("추천할 도서가 없습니다."));
         }
 
+        // 리스트 UI (기존 페이지들과 동일 스타일)
         return ListView.separated(
           padding: const EdgeInsets.all(20),
-          itemCount: controller.popularBookList.length,
+          itemCount: controller.recommendedBooks.length,
           separatorBuilder: (context, index) => const SizedBox(height: 20),
           itemBuilder: (context, index) {
-            final book = controller.popularBookList[index];
+            final book = controller.recommendedBooks[index];
 
             return GestureDetector(
               onTap: () {
+                // 상세 페이지 이동
                 Get.toNamed('/book_detail_page', arguments: book['id']);
               },
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 책 표지
                   Container(
                     width: 60,
                     height: 90,
@@ -53,21 +57,16 @@ class PopularListPage extends StatelessWidget {
                       image: DecorationImage(
                         image: NetworkImage(book['imageUrl']),
                         fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {},
+                        onError: (e, s) {},
                       ),
                     ),
                   ),
                   const SizedBox(width: 15),
-                  // 순위 및 정보
+                  // 책 정보
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                            '${book['rank']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)
-                        ),
-                        const SizedBox(height: 4),
                         Text(
                           book['title'],
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
