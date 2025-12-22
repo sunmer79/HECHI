@@ -211,7 +211,6 @@ class ReadingRegistrationController extends GetxController {
     }
   }
 
-  // [수정 2] 독서 시작 다이얼로그 디자인 적용
   void showStartDialog(ReadingLibraryItem item) {
     final startPage = item.currentPage == 0 ? 1 : item.currentPage;
 

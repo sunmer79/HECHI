@@ -11,11 +11,10 @@ class CurrentReadingBookWidget extends StatelessWidget {
     required this.item,
   }) : super(key: key);
 
-  // ✅ 메인 컬러 정의 (Hex: 4DB56CFF)
   static const Color mainColor = Color(0xFF4DB56C);
 
   String _formatTime(int seconds) {
-    if (seconds == 0) return "0분";
+    if (seconds == 0) return "00:00";
     final h = (seconds ~/ 3600).toString().padLeft(2, '0');
     final m = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
     final s = (seconds % 60).toString().padLeft(2, '0');
@@ -30,7 +29,6 @@ class CurrentReadingBookWidget extends StatelessWidget {
     return Obx(() {
       final activeItem = controller.currentActiveBook.value;
 
-      // 책이 없을 때 (Placeholder)
       if (activeItem == null) {
         return Container(
           height: 160,
@@ -86,11 +84,9 @@ class CurrentReadingBookWidget extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // [상단] 책 정보 영역
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 책 표지
                 Container(
                   decoration: BoxDecoration(
                     boxShadow: [
@@ -119,13 +115,11 @@ class CurrentReadingBookWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 20),
 
-                // 우측 정보
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 제목
                       Text(
                         book.title,
                         style: const TextStyle(
@@ -138,20 +132,17 @@ class CurrentReadingBookWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
 
-                      // 퍼센트 바
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
                           value: realProgressValue,
                           backgroundColor: Colors.grey[200],
-                          // ✅ [색상 변경] 독서 중이면 메인 컬러(녹색), 아니면 검정
                           color: mainColor,
                           minHeight: 6,
                         ),
                       ),
                       const SizedBox(height: 15),
 
-                      // 완독률 | 페이지
                       Text(
                         "$displayPercent% | ${activeItem.currentPage}p",
                         style: const TextStyle(
@@ -162,23 +153,19 @@ class CurrentReadingBookWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
 
-                      // [UI 수정] 독서 시간 표시
                       Row(
                         children: [
-                          // ✅ [색상 변경] 시간 아이콘 -> Colors.black87 (요청사항 반영)
                           const Icon(Icons.access_time_filled, size: 14, color: Colors.black87),
                           const SizedBox(width: 4),
 
                           Expanded(
                             child: Text(
                               isReadingNow
-                                  ? "+${_formatTime(currentSessionSeconds)} | 총 ${_formatTime(totalAccumulatedSeconds)}"
+                                  ? "현재 ${_formatTime(currentSessionSeconds)} | 총 ${_formatTime(totalAccumulatedSeconds)}"
                                   : "총 ${_formatTime(totalAccumulatedSeconds)}",
                               style: TextStyle(
                                 fontSize: 13,
-                                // ✅ [색상 변경] 텍스트 -> Colors.black87 (요청사항 반영)
-                                // 굵기는 독서 중일 때 강조
-                                fontWeight: isReadingNow ? FontWeight.bold : FontWeight.normal,
+                                fontWeight: FontWeight.normal,
                                 color: Colors.black87,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -197,41 +184,38 @@ class CurrentReadingBookWidget extends StatelessWidget {
             const SizedBox(height: 10),
 
             if (isReadingNow) ...[
-              // Case 1: 독서 중일 때 (그만 읽기는 빨간색 유지 - UX상 권장)
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
                   onPressed: () => controller.showStopDialog(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    backgroundColor: Colors.redAccent.withOpacity(0.1),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   icon: const Icon(Icons.stop_rounded, size: 26),
                   label: const Text(
                     "그만 읽기",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                   ),
                 ),
               )
             ] else ...[
-              // Case 2: 독서 중이 아닐 때
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
                   onPressed: () => controller.onBookTap(book.id),
                   style: TextButton.styleFrom(
-                    // ✅ [색상 변경] 파란색 -> 메인 컬러(녹색)
-                    foregroundColor: mainColor,
-                    backgroundColor: mainColor.withOpacity(0.1),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    foregroundColor: Colors.white,
+                    backgroundColor: mainColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   icon: const Icon(Icons.play_arrow_rounded, size: 26),
                   label: const Text(
                     "독서 시작",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                   ),
                 ),
               )
