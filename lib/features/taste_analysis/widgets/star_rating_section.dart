@@ -14,18 +14,18 @@ class StarRatingSection extends GetView<TasteAnalysisController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-              "별점 분포",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3F3F3F)
-              )
+            "별점 분포",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3F3F3F),
+            ),
           ),
           const SizedBox(height: 10),
 
           Obx(() => StarRatingChart(
-              ratingData: controller.starRatingDistribution,
-              mostGivenRating: controller.mostGivenRating.value
+            ratingData: controller.starRatingDistribution,
+            mostGivenRating: controller.mostGivenRating.value,
           )),
 
           const SizedBox(height: 30),
@@ -48,20 +48,20 @@ class StarRatingSection extends GetView<TasteAnalysisController> {
     return Column(
       children: [
         Text(
-            value,
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF3F3F3F)
-            )
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600, // w500 -> w600
+            color: Color(0xFF3F3F3F),
+          ),
         ),
         const SizedBox(height: 4),
         Text(
-            label,
-            style: const TextStyle(
-                fontSize: 13,
-                color: Colors.grey
-            )
+          label,
+          style: const TextStyle(
+            fontSize: 12, // 13 -> 12 (조금 더 작고 깔끔하게)
+            color: Colors.grey, // My Read와 동일한 색상
+          ),
         ),
       ],
     );
