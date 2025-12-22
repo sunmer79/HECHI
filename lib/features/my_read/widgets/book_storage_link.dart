@@ -22,8 +22,9 @@ class BookStorageLink extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 20), // 제목과 버튼 사이 간격 (사진처럼 넓게)
-
+          const SizedBox(height: 10), // 제목과 버튼 사이 간격 (사진처럼 넓게)
+          const Divider(color: Color(0xFFF5F5F5),  height: 1),
+          const SizedBox(height: 25),
           // 2. 버튼: 보관함으로 이동하기 > (중앙 정렬)
           Center(
             child: InkWell(
@@ -39,8 +40,9 @@ class BookStorageLink extends StatelessWidget {
                     Text(
                       "보관함으로 이동하기",
                       style: TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF9E9E9E), // 연한 회색
+                        fontSize: 14,
+                        color: Colors.grey,
+                          fontWeight: FontWeight.w500 // 연한 회색
                       ),
                     ),
                     SizedBox(width: 4),

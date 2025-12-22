@@ -17,7 +17,7 @@ class SeeAllTasteButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Text("모든 취향 분석 보기", style: TextStyle(color: Colors.grey, fontSize: 14)),
+                Text("모든 취향 분석 보기", style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500)),
                 SizedBox(width: 4),
                 Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
               ],

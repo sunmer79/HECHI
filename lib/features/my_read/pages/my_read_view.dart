@@ -48,23 +48,22 @@ class MyReadView extends GetView<MyReadController> {
               const Divider(color: Color(0xFFF5F5F5), thickness: 1, height: 1),
 
 
-              Container(height: 1, color: const Color(0xFFF5F5F5)),
+              Container(height: 6, color: const Color(0xFFF5F5F5)),
 
               // 3. 보관함 링크
               const BookStorageLink(),
 
 
-              Container(height: 8, color: const Color(0xFFF5F5F5)),
+              Container(height: 6, color: const Color(0xFFF5F5F5)),
 
-              // ✅ 4. 캘린더 섹션
 
               MiniCalendarSection(controller: controller),
 
               // 구분선 (두꺼운 선)
-              Container(height: 8, color: const Color(0xFFF5F5F5)),
+              Container(height: 6, color: const Color(0xFFF5F5F5)),
 
               // 5. 취향 분석
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               const SectionTitle(title: "취향 분석"),
               TasteAnalysisPreview(controller: controller),
 
@@ -72,7 +71,7 @@ class MyReadView extends GetView<MyReadController> {
               // 6. 전체 보기 버튼
               const SeeAllTasteButton(),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 10),
             ],
           ),
         ),
