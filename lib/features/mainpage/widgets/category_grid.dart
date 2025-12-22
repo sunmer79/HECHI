@@ -14,31 +14,15 @@ class CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      return Row(
         children: [
-          _buildCategoryItem(
-              '캘린더', Icons.calendar_today, const Color(0xFF4DB56C),
-              onTap: () => Get.to(() => const CalendarView(), binding: CalendarBinding())
-          ),
-          _buildCategoryItem(
-            '취향분석', Icons.bar_chart, const Color(0xFF4DB56C),
-            onTap: () => Get.to(() => const TasteAnalysisView(), binding: TasteAnalysisBinding()),
-          ),
-          _buildCategoryItem(
-            '보관함', Icons.inventory_2_outlined, const Color(0xFF4DB56C),
-            onTap: () => Get.to(() => const BookStorageView(), binding: BookStorageBinding()),
-          ),
-          _buildCategoryItem(
-              '추천', Icons.auto_awesome, const Color(0xFF4DB56C),
-            onTap: () => Get.to(() => const RecommendationView(), binding: RecommendationBinding()),
-          ),
-          _buildCategoryItem('그룹', Icons.people_outline, const Color(0xFF4DB56C)),
+          Expanded(child: _buildCategoryItem('캘린더', Icons.calendar_today, const Color(0xFF4DB56C), onTap: () => Get.to(() => const CalendarView(), binding: CalendarBinding()))),
+          Expanded(child: _buildCategoryItem('취향분석', Icons.bar_chart, const Color(0xFF4DB56C), onTap: () => Get.to(() => const TasteAnalysisView(), binding: TasteAnalysisBinding()),)),
+          Expanded(child: _buildCategoryItem('보관함', Icons.inventory_2_outlined, const Color(0xFF4DB56C), onTap: () => Get.to(() => const BookStorageView(), binding: BookStorageBinding()),)),
+          Expanded(child: _buildCategoryItem('추천', Icons.auto_awesome, const Color(0xFF4DB56C), onTap: () => Get.to(() => const RecommendationView(), binding: RecommendationBinding()),)),
+          Expanded(child: _buildCategoryItem('그룹', Icons.people_outline, const Color(0xFF4DB56C)),),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildCategoryItem(String label, IconData icon, Color color, {VoidCallback? onTap}) {

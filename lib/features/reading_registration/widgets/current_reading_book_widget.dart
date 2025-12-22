@@ -11,8 +11,10 @@ class CurrentReadingBookWidget extends StatelessWidget {
     required this.item,
   }) : super(key: key);
 
+  static const Color mainColor = Color(0xFF4DB56C);
+
   String _formatTime(int seconds) {
-    if (seconds == 0) return "0분";
+    if (seconds == 0) return "00:00";
     final h = (seconds ~/ 3600).toString().padLeft(2, '0');
     final m = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
     final s = (seconds % 60).toString().padLeft(2, '0');
@@ -24,39 +26,48 @@ class CurrentReadingBookWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ReadingRegistrationController>();
 
-    // 1. 선택된 책이 없을 때 (Placeholder)
-    if (item == null) {
-      return Container(
-        height: 160,
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.menu_book_rounded, size: 40, color: Colors.grey),
-              SizedBox(height: 10),
-              Text(
-                "아래 목록에서 책을 선택하여\n독서를 시작하세요.",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final book = item!.book;
-    final int totalPages = book.totalPages > 0 ? book.totalPages : 1;
-    final double progressValue = (item!.progressPercent / 100).clamp(0.0, 1.0);
-
     return Obx(() {
-      // 현재 이 책이 '세션 진행 중'인 책인지 확인
+      final activeItem = controller.currentActiveBook.value;
+
+      if (activeItem == null) {
+        return Container(
+          height: 160,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.menu_book_rounded, size: 40, color: Colors.grey),
+                SizedBox(height: 10),
+                Text(
+                  "아래 목록에서 책을 선택하여\n독서를 시작하세요.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final book = activeItem.book;
+      final int totalPages = book.totalPages > 0 ? book.totalPages : 1;
+      final double realProgressValue = (activeItem.currentPage / totalPages).clamp(0.0, 1.0);
+      final int displayPercent = (realProgressValue * 100).toInt();
+
       bool isReadingNow = controller.currentSession.value?.bookId == book.id;
+
+      int currentSessionSeconds = 0;
+      int totalAccumulatedSeconds = activeItem.totalSessionSeconds;
+
+      if (isReadingNow) {
+        currentSessionSeconds = controller.elapsedSeconds.value;
+        totalAccumulatedSeconds += currentSessionSeconds;
+      }
 
       return Container(
         padding: const EdgeInsets.all(16.0),
@@ -73,11 +84,9 @@ class CurrentReadingBookWidget extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // [상단] 책 정보 영역
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 책 표지
                 Container(
                   decoration: BoxDecoration(
                     boxShadow: [
@@ -106,62 +115,60 @@ class CurrentReadingBookWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 20),
 
-                // 우측 정보
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 제목
                       Text(
                         book.title,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          height: 1.2,
+                          height: 2,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 12),
 
-                      // 퍼센트 바
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
-                          value: progressValue,
+                          value: realProgressValue,
                           backgroundColor: Colors.grey[200],
-                          color: isReadingNow ? Colors.blueAccent : Colors.black,
-                          minHeight: 8,
+                          color: mainColor,
+                          minHeight: 6,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 15),
 
-                      // 완독률 | 페이지
                       Text(
-                        "${item!.progressPercent}% | ${item!.currentPage}p",
+                        "$displayPercent% | ${activeItem.currentPage}p",
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 10),
 
-                      // 독서 시간 (타이머)
                       Row(
                         children: [
-                          Icon(Icons.access_time_filled, size: 14,
-                              color: isReadingNow ? Colors.blueAccent : Colors.grey[600]),
+                          const Icon(Icons.access_time_filled, size: 14, color: Colors.black87),
                           const SizedBox(width: 4),
-                          Text(
-                            isReadingNow
-                                ? _formatTime(controller.elapsedSeconds.value)
-                                : "0분",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isReadingNow ? FontWeight.bold : FontWeight.normal,
-                              color: isReadingNow ? Colors.blueAccent : Colors.grey[600],
+
+                          Expanded(
+                            child: Text(
+                              isReadingNow
+                                  ? "현재 ${_formatTime(currentSessionSeconds)} | 총 ${_formatTime(totalAccumulatedSeconds)}"
+                                  : "총 ${_formatTime(totalAccumulatedSeconds)}",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -177,40 +184,38 @@ class CurrentReadingBookWidget extends StatelessWidget {
             const SizedBox(height: 10),
 
             if (isReadingNow) ...[
-              // Case 1: 독서 중일 때 (그만 읽기 버튼만 표시)
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
                   onPressed: () => controller.showStopDialog(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    backgroundColor: Colors.redAccent.withOpacity(0.1), // 빨간 배경색 은은하게 추가
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   icon: const Icon(Icons.stop_rounded, size: 26),
                   label: const Text(
                     "그만 읽기",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                   ),
                 ),
               )
             ] else ...[
-              // Case 2: 독서 중이 아닐 때 (독서 시작 버튼)
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
                   onPressed: () => controller.onBookTap(book.id),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.blueAccent,
-                    backgroundColor: Colors.blueAccent.withOpacity(0.05),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    foregroundColor: Colors.white,
+                    backgroundColor: mainColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   icon: const Icon(Icons.play_arrow_rounded, size: 26),
                   label: const Text(
                     "독서 시작",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                   ),
                 ),
               )
