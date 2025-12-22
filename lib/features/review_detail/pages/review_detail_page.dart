@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:hechi/features/review_list/controllers/review_list_controller.dart';
 import '../controllers/review_detail_controller.dart';
 import '../../review_list/widgets/option_bottom_sheet.dart';
 import '../../../core/widgets/bottom_bar.dart';
@@ -11,10 +10,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    ReviewListController? reviewList;
-    if (Get.isRegistered<ReviewListController>()) {
-      reviewList = Get.find<ReviewListController>();
-    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -23,7 +18,17 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            Get.back(result: {
+              "review_id": controller.reviewId,
+              "status": "updated",
+              "is_liked": controller.review['is_liked'],
+              "like_count": controller.review['like_count'],
+              "content": controller.review['content'],
+              "is_spoiler": controller.review['is_spoiler'],
+              "comment_count": controller.review['comment_count'],
+            });
+          },
         ),
         title: const Text(
           '코멘트',
@@ -31,7 +36,10 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         ),
         actions: [
           Obx(() {
-            if (!controller.isMyReview.value) return const SizedBox.shrink();
+            final isMyReview = controller.review['is_my_review'] ?? false;
+
+            if (!isMyReview) return const SizedBox.shrink();
+
             return IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: () {
@@ -86,7 +94,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
     final book = controller.book;
 
     final double rating = (review['rating'] as num?)?.toDouble() ?? 0.0;
-    final String nickname = review['user_nickname'] ?? "User ${review['user_id']}";
+    final String nickname = review['nickname'] ?? "User ${review['user_id']}";
 
     final String date = (review['created_at'] ?? '').toString().split('T')[0];
     final String content = review['content'] ?? "";
@@ -195,7 +203,8 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
               // 좋아요 버튼
               Expanded(
                 child: Obx(() {
-                  final isLiked = controller.isLiked.value;
+                  final isLiked = controller.review['is_liked'] ?? false;
+
                   return InkWell(
                     onTap: controller.toggleLike,
                     child: Row(
@@ -224,7 +233,7 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
               Expanded(
                 child: InkWell(
                   onTap: () {
-                    // 댓글 입력창으로 포커스 이동 기능 등을 넣을 수 있음
+                    // 댓글 입력창으로 포커스 이동 기능 추가
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -252,7 +261,8 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Obx(() => Text(
-        "좋아요 ${controller.likeCount.value}   댓글 ${controller.comments.length}",
+        "좋아요 ${controller.review['like_count'] ?? 0}   "
+            "댓글 ${controller.review['comment_count'] ?? 0}",
         style: const TextStyle(color: Color(0xFF717171), fontSize: 13),
       )),
     );
@@ -262,7 +272,6 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
   // 4. 댓글 리스트 영역
   // ==========================
   Widget _buildCommentList() {
-    final review = controller.review;
     return Obx(() {
       if (controller.isLoadingComments.value) {
         return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
@@ -284,10 +293,8 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         itemBuilder: (context, index) {
           final comment = controller.comments[index];
-          final int myUserId = controller.box.read("user_id") ?? -1;
-          final bool isMyComment =
-              int.tryParse(comment['user_id'].toString()) == myUserId;
-
+          final myUserId = controller.box.read("user_id") ?? -1;
+          final isMyComment = int.tryParse(comment['user_id'].toString()) == myUserId;
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -317,6 +324,19 @@ class ReviewDetailPage extends GetView<ReviewDetailController> {
                             ),
                           ],
                         ),
+                        if (isMyComment)
+                          GestureDetector(
+                            onTap: () =>
+                                controller.deleteComment(comment['id']),
+                            child: const Text(
+                              "삭제",
+                              style: TextStyle(
+                                color: Color(0xFFE53935),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 4),

@@ -9,8 +9,13 @@ class CommentSection extends GetView<BookDetailController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final reviewCount = controller.reviews.length;
-      final hasMoreToReviews = reviewCount > 3;
+      final allReviews = controller.reviews;
+      final int commentCount = allReviews.where((r) {
+        final content = (r['content'] ?? '').toString();
+        return content.trim().isNotEmpty;
+      }).length;
+
+      final hasMoreToReviews = commentCount > 3;
 
       final bestReviews = controller.bestReviews;
 
@@ -25,15 +30,12 @@ class CommentSection extends GetView<BookDetailController> {
           Container(
               height: 55,
               padding: const EdgeInsets.symmetric(horizontal: 17),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(width: 1, color: Color(0xFFABABAB))),
-              ),
               alignment: Alignment.centerLeft,
               child: Row(
                   children: [
                     const Text('코멘트', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
-                    Text("$reviewCount", style: const TextStyle(fontSize: 18, color: Color(0xFF717171), fontWeight: FontWeight.w500)),
+                    Text("$commentCount", style: const TextStyle(fontSize: 18, color: Color(0xFF717171), fontWeight: FontWeight.w500)),
                   ]
               )
           ),
@@ -41,8 +43,14 @@ class CommentSection extends GetView<BookDetailController> {
           // 2. 평점 그래프
           Container(
             width: double.infinity,
-            color: const Color(0x4CD1ECD9),
             padding: const EdgeInsets.fromLTRB(17, 20, 17, 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF5F5F5),
+              border: Border(
+                bottom: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+                top: BorderSide(width: 0.5, color: Color(0xFFD4D4D4)),
+              ),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -60,8 +68,8 @@ class CommentSection extends GetView<BookDetailController> {
             ),
           ),
 
-          // 3. 리뷰 리스트 (ReviewCard 재사용)
-          if (reviewCount == 0)
+          // 3. 리뷰 리스트
+          if (commentCount == 0)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 35),
@@ -74,10 +82,12 @@ class CommentSection extends GetView<BookDetailController> {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
               itemCount: bestReviews.length, // 최대 3개
               itemBuilder: (_, index) => ReviewCard(
                 review: bestReviews[index],
                 type: ReviewCardType.simple,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
                 onLikeToggle: (int id) {
                   controller.toggleLike(id);
                 },
@@ -92,11 +102,11 @@ class CommentSection extends GetView<BookDetailController> {
                 width: double.infinity,
                 height: 50,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Color(0x66D1ECD9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC8E6C9).withValues(alpha: 0.3),
                   border: Border(
-                    top: BorderSide(width: 1, color: Color(0xFFABABAB)),
-                    bottom: BorderSide(width: 1, color: Color(0xFFABABAB)),
+                    top: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
+                    bottom: BorderSide(width: 1, color: Color(0xFFD4D4D4)),
                   ),
                 ),
                 child: const Text('모두보기', style: TextStyle(color: Colors.black, fontSize: 15)),
@@ -113,7 +123,7 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
   final List<double> scores = List.generate(10, (index) => 0.5 + (index * 0.5));
 
   return SizedBox(
-      height: 120 + 18, // 막대 높이 + 점수 텍스
+      height: 120 + 18,
       child: Column(
           children: [
             SizedBox(
@@ -121,7 +131,6 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // 0.5점부터 5점까지 순서대로 막대 생성
                   ...scores.map(
                         (score) => _bar(
                       score,
@@ -159,19 +168,23 @@ Widget _buildRatingGraph(Map<String, dynamic> histogram, int maxCount) {
 
 // 막대 그래프
 Widget _bar(double score, int count, int maxCount) {
-  const double graphMaxHeight = 120.0; // 막대 최대 높이
   final double ratio = maxCount > 0 ? count / maxCount: 0.0;
+
+  const Color DarkGreen = Color(0xFF4EB56D);
+  const Color LightGreen = Color(0xFFC8E6C9);
+
+  final bool isMostFrequent = (maxCount > 0) && (count == maxCount);
 
   return Expanded(
     child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 8),
         child: FractionallySizedBox(
-          heightFactor: ratio, // 비율에 따라 높이 결점 (최대 1.0)
+          heightFactor: ratio,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 1), // bar 간 간격
-            decoration: const BoxDecoration(
-              color: const Color(0xFF4DB56C),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: isMostFrequent ? DarkGreen : LightGreen,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
             ),
           ),
         )

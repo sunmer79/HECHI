@@ -11,16 +11,13 @@ class ReadingStatusOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<BookDetailController>();
 
-    // 내부에서 사용할 타일 위젯
     Widget tile(String label, String status) {
       return InkWell(
         onTap: () {
           final current = controller.readingStatus.value;
-          // 🔥 이미 선택된 상태를 한 번 더 누르면 PENDING 으로 해제
           final String nextStatus = (current == status) ? "PENDING" : status;
 
-          onSelect(
-              nextStatus); // controller.updateReadingStatus(nextStatus) 호출됨
+          onSelect(nextStatus);
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
