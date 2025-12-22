@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/reading_detail_controller.dart';
-import '../widgets/custom_app_header.dart';
 import '../widgets/book_cover_header.dart';
 import '../widgets/book_info_section.dart';
 import '../widgets/action_buttons_row.dart';
