@@ -10,10 +10,10 @@ class RecommendationView extends GetView<RecommendationController> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          '회원님을 위한 추천', // 타이틀 변경
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        title: Obx(() => Text(
+          '${controller.nickname.value}님을 위한 추천',
+          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+        )),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -31,7 +31,6 @@ class RecommendationView extends GetView<RecommendationController> {
           return const Center(child: Text("추천할 도서가 없습니다."));
         }
 
-        // 리스트 UI (기존 페이지들과 동일 스타일)
         return ListView.separated(
           padding: const EdgeInsets.all(20),
           itemCount: controller.recommendedBooks.length,
@@ -41,13 +40,11 @@ class RecommendationView extends GetView<RecommendationController> {
 
             return GestureDetector(
               onTap: () {
-                // 상세 페이지 이동
                 Get.toNamed('/book_detail_page', arguments: book['id']);
               },
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 책 표지
                   Container(
                     width: 60,
                     height: 90,

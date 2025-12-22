@@ -6,6 +6,8 @@ import 'package:get_storage/get_storage.dart';
 class RecommendationController extends GetxController {
   final RxList<Map<String, dynamic>> recommendedBooks = <Map<String, dynamic>>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString nickname = '회원'.obs;
+
   String get _token => GetStorage().read('access_token') ?? "";
 
   Map<String, String> get _headers => {
@@ -17,7 +19,35 @@ class RecommendationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchUserInfo();
     fetchRecommendedBooks();
+  }
+
+  Future<void> fetchUserInfo() async {
+    const String apiUrl = 'https://api.43-202-101-63.sslip.io/auth/me';
+
+    try {
+      if (_token.isEmpty) return; // 토큰 없으면 패스
+
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: _headers, // 토큰 포함 헤더 사용
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+
+        // API 응답에서 nickname 가져오기 (없으면 기본값 유지)
+        if (data['nickname'] != null) {
+          nickname.value = data['nickname'];
+          print("✅ 로그인 유저 닉네임: ${nickname.value}");
+        }
+      } else {
+        print('User Info Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('User Info Network Error: $e');
+    }
   }
 
   Future<void> fetchRecommendedBooks() async {
@@ -25,7 +55,6 @@ class RecommendationController extends GetxController {
     const String apiUrl = 'https://api.43-202-101-63.sslip.io/recommend/for-you?limit=20&offset=0';
 
     try {
-      // 토큰이 없으면 아예 요청을 안 보내고 로그를 찍습니다.
       if (_token.isEmpty) {
         print("🚨 [추천] 토큰이 없습니다. 로그인이 필요합니다.");
         isLoading.value = false;
@@ -34,18 +63,14 @@ class RecommendationController extends GetxController {
 
       print("🚀 [추천 요청] $apiUrl");
 
-      // 3. headers에 위에서 만든 _headers를 넣어줍니다.
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: _headers,
       );
 
       if (response.statusCode == 200) {
-        // 한글 깨짐 방지를 위해 utf8.decode 사용
         final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
 
-        // API 응답 구조에 맞게 items 가져오기
-        // (참고 코드처럼 데이터가 있는지 확인)
         if (data.containsKey('items')) {
           final List<dynamic> items = data['items'];
 
