@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.bookstopper.app"
+    namespace = "com.example.hechi"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.bookstopper.app"
+        applicationId = "com.example.hechi"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
