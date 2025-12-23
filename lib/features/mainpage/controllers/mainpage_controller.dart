@@ -67,11 +67,13 @@ class MainpageController extends GetxController {
           rawTitle = rawTitle.split('-')[0].trim();
         }
         highlightBookTitle.value = rawTitle;
+
         String rawAuthor = data['author'] ?? '';
         if (rawAuthor.contains('(')) {
           rawAuthor = rawAuthor.split('(')[0].trim();
         }
         highlightAuthor.value = rawAuthor;
+        highlightBookId.value = data['book_id'];
         highlightQuote.value = data['sentence'] ?? '문장이 없습니다.';
 
       } else {
