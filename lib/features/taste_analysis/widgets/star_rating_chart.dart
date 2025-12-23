@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class StarRatingChart extends StatelessWidget {
   final List<Map<String, dynamic>> ratingData;
-  final String mostGivenRating;
+  final String mostGivenRating; // Section에서 넘겨주는 값을 받기는 함 (에러 방지)
 
   const StarRatingChart({
     super.key,
@@ -19,18 +19,21 @@ class StarRatingChart extends StatelessWidget {
       );
     }
 
+    // 1. 점수 순으로 정렬 (0.5 -> 5.0)
     var sortedData = List<Map<String, dynamic>>.from(ratingData);
     sortedData.sort((a, b) => (a['score'] as num).compareTo(b['score'] as num));
 
+    // 2. 가장 높은 비율(Max Ratio) 찾기 (이게 핵심!)
     double maxRatio = 0.0;
     for (var d in sortedData) {
       double r = (d['ratio'] as num).toDouble();
       if (r > maxRatio) maxRatio = r;
     }
 
-    double mostFrequentScore = double.tryParse(mostGivenRating) ?? 0.0;
-    const Color figmaDarkGreen = Color(0xFF4EB56D);
-    const Color figmaLightGreen = Color(0xFFC8E6C9);
+    // ✅ 색상 정의
+    const Color activeColor = Color(0xFF4EB56D); // 가장 높은 바 (진한 초록)
+    const Color inactiveColor = Color(0xFFAAD2B6); // 나머지 바 (연한 초록)
+    const Color emptyColor = Color(0xFFF5F5F5);    // 데이터 0
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,8 +52,11 @@ class StarRatingChart extends StatelessWidget {
                 double ratio = (d['ratio'] as num).toDouble();
                 double score = (d['score'] as num).toDouble();
 
-                Color barColor = (score == mostFrequentScore) ? figmaDarkGreen : figmaLightGreen;
-                if (ratio == 0) barColor = const Color(0xFFF5F5F5);
+                // ✅ [수정완료] 외부 값(mostGivenRating) 무시하고, 실제 데이터에서 1등을 찾아 칠함
+                bool isMax = (ratio == maxRatio && ratio > 0);
+
+                Color barColor = isMax ? activeColor : inactiveColor;
+                if (ratio == 0) barColor = emptyColor;
 
                 const double maxHeight = 60.0;
                 double barHeight = 2.0;
@@ -59,10 +65,8 @@ class StarRatingChart extends StatelessWidget {
                   barHeight = (ratio / maxRatio) * maxHeight;
                 }
 
-                bool isMostFrequentBar = (ratio == maxRatio && ratio > 0);
-                bool isFirst = idx == 0;
-                bool isLast = idx == sortedData.length - 1;
-                bool showLabel = isMostFrequentBar || isFirst || isLast;
+                // 라벨 표시 조건: 1등이거나, 맨 처음(0.5)이거나, 맨 끝(5.0)일 때
+                bool showLabel = isMax || idx == 0 || idx == sortedData.length - 1;
 
                 String scoreText = score % 1 == 0 ? score.toInt().toString() : score.toStringAsFixed(1);
 
@@ -76,7 +80,7 @@ class StarRatingChart extends StatelessWidget {
                           Text(
                             scoreText,
                             style: const TextStyle(
-                              fontSize: 12, // 라벨 크기 조정
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF757575),
                             ),
@@ -86,7 +90,7 @@ class StarRatingChart extends StatelessWidget {
                           const SizedBox(height: 20), // 텍스트 공간 확보
 
                         SizedBox(
-                          width: 24, // 막대 너비 조정
+                          width: 24,
                           height: barHeight,
                           child: Container(
                             decoration: BoxDecoration(

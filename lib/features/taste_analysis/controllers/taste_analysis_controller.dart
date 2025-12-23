@@ -71,21 +71,17 @@ class TasteAnalysisController extends GetxController {
       readingRate.value = "${stats.ratingSummary.average100}%";
       mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-      // ✅ [시간 텍스트 포맷팅 로직 수정]
-      String rawTime = stats.readingTime.human; // 예: "총 0분. 감상하였습니다"
-
-      // 1. 불필요한 글자와 마침표 제거
+      // 시간 텍스트 포맷팅
+      String rawTime = stats.readingTime.human;
       String cleaned = rawTime
           .replaceAll("총", "")
           .replaceAll("감상하였습니다", "")
           .replaceAll("감상하셨습니다", "")
           .replaceAll("동안", "")
-          .replaceAll(".", "") // ✅ 마침표 제거
+          .replaceAll(".", "")
           .trim();
 
-      // 2. 시간/분 변환 로직 (1시간 미만은 분, 이상은 시간)
       if (cleaned.contains("분") && !cleaned.contains("시간")) {
-        // "90분" -> "1시간 30분" 변환 시도
         String numStr = cleaned.replaceAll("분", "").trim();
         int? mins = int.tryParse(numStr);
         if (mins != null) {
@@ -105,11 +101,9 @@ class TasteAnalysisController extends GetxController {
         }
       }
       else if (cleaned == "0시간") {
-        // "0시간"으로 올 경우 "0분"으로 변경
         totalReadingTime.value = "0분";
       }
       else {
-        // 이미 "1시간 20분" 형태라면 그대로 사용
         totalReadingTime.value = cleaned;
       }
 
@@ -149,7 +143,6 @@ class TasteAnalysisController extends GetxController {
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
 
-    // (기존 코드 유지)
     final List<Offset> presetPositions = [
       const Offset(0.50, 0.45), const Offset(0.40, 0.60), const Offset(0.60, 0.30),
       const Offset(0.75, 0.50), const Offset(0.25, 0.50), const Offset(0.30, 0.20),
@@ -215,15 +208,16 @@ class TasteAnalysisController extends GetxController {
     }
   }
 
+  // ✅ [최종 수정] 순서 매핑 로직 삭제 -> 값 비교 로직으로 통일
+  // 이제 5점은 무조건 5점 자리에 꽂힙니다.
   void _updateDistribution(List<RatingDist> distData) {
     int maxCount = 0;
-    final bool useIndexMapping = distData.length == 10;
 
+    // 1. 최대 개수(maxCount) 찾기
     for (var d in distData) {
       if (d.count > maxCount) maxCount = d.count;
     }
 
-    double mostFrequentRatingScore = double.tryParse(mostGivenRating.value) ?? 0.0;
     const int darkGreenColor = 0xFF4EB56D;
     const int lightGreenColor = 0xFFAAD2B6;
 
@@ -232,24 +226,20 @@ class TasteAnalysisController extends GetxController {
 
     for (int i = 0; i < starRatingDistribution.length; i++) {
       var item = starRatingDistribution[i];
-      double score = item['score'];
+      double score = (item['score'] as num).toDouble();
       int count = 0;
 
-      if (useIndexMapping) {
-        int distIndex = starRatingDistribution.length - 1 - i;
-        if (distIndex >= 0 && distIndex < distData.length) {
-          count = distData[distIndex].count;
-        }
-      } else {
-        try {
-          var apiData = distData.firstWhere(
-                (d) => (d.rating.toDouble() / 10.0 - score).abs() < 0.001,
-            orElse: () => RatingDist(rating: 0, count: 0),
-          );
-          count = apiData.count;
-        } catch (e) {
-          count = 0;
-        }
+      // 🚨 [수정됨] 순서대로 끼워맞추는 'useIndexMapping' 로직을 삭제했습니다.
+      // 대신 무조건 값을 비교하여 정확한 자리를 찾습니다.
+      try {
+        var apiData = distData.firstWhere(
+          // API의 rating 값(예: 5)과 그래프의 score(예: 5.0)를 직접 비교
+              (d) => (d.rating.toDouble() - score).abs() < 0.001,
+          orElse: () => RatingDist(rating: 0, count: 0),
+        );
+        count = apiData.count;
+      } catch (e) {
+        count = 0;
       }
 
       double ratio = 0.0;
@@ -263,9 +253,11 @@ class TasteAnalysisController extends GetxController {
       }
 
       int color = lightGreenColor;
-      if ((score - mostFrequentRatingScore).abs() < 0.001 && count > 0) {
+      // 가장 높은 막대는 진한 색
+      if (count == maxCount && maxCount > 0) {
         color = darkGreenColor;
       }
+
       newDist.add({'score': score, 'ratio': ratio, 'color': color, 'count': count});
     }
     starRatingDistribution.value = newDist;
