@@ -11,6 +11,7 @@ class TodayHighlight extends GetView<MainpageController> {
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: GestureDetector(
         onTap: () {
+          print("🖱️ [클릭] 하이라이트 책 ID: ${controller.highlightBookId.value}");
           Get.toNamed('/book_detail_page', arguments: controller.highlightBookId.value);
         },
         child: Container(
