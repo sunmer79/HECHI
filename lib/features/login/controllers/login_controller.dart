@@ -24,7 +24,6 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // 화면 빌드 후 리스너 등록 (안전장치)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       emailController.addListener(() {
         if (emailError.isNotEmpty) emailError.value = '';
@@ -35,13 +34,8 @@ class LoginController extends GetxController {
     });
   }
 
-  // 🚨 [핵심 수정] onClose에서 dispose()를 제거했습니다.
-  // 페이지가 전환되는 동안 View가 Controller를 참조할 때 에러가 나는 것을 방지합니다.
-  // Dart의 가비지 컬렉터가 나중에 메모리를 알아서 정리해주므로 안전합니다.
   @override
   void onClose() {
-    // emailController.dispose();  <-- 삭제됨
-    // passwordController.dispose(); <-- 삭제됨
     super.onClose();
   }
 
@@ -97,6 +91,9 @@ class LoginController extends GetxController {
         bool isAnalyzed = profile['taste_analyzed'] ?? false;
 
         if (isAnalyzed) {
+          // ✅ [수정완료] 로그인 성공 시 무조건 홈(0번 탭)으로 설정!
+          appController.changeIndex(0);
+
           Get.offAllNamed(Routes.initial);
         } else {
           Get.offAllNamed(Routes.preference);

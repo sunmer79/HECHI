@@ -12,6 +12,8 @@ class SignUpController extends GetxController {
 
   RxBool isPasswordHidden = true.obs;
   RxBool isEmailFilled = false.obs;
+
+  // true: 사용가능, false: 중복/불가, null: 확인 안 함
   Rxn<bool> isEmailAvailable = Rxn<bool>();
   RxString emailStatusMessage = ''.obs;
   RxBool isLoading = false.obs;
@@ -23,6 +25,7 @@ class SignUpController extends GetxController {
     super.onInit();
     emailController.addListener(() {
       isEmailFilled.value = emailController.text.isNotEmpty;
+      // 이메일 내용이 바뀌면 중복 확인 상태 초기화 (다시 확인 필요)
       if (isEmailAvailable.value != null) {
         isEmailAvailable.value = null;
         emailStatusMessage.value = '';
@@ -30,7 +33,6 @@ class SignUpController extends GetxController {
     });
   }
 
-  // ✅ [수정] 텍스트 컨트롤러는 여기서 dispose 해도 안전합니다. (SignUpView는 1회성이므로)
   @override
   void onClose() {
     nameController.dispose();
@@ -71,11 +73,21 @@ class SignUpController extends GetxController {
   }
 
   Future<void> submitSignUp() async {
+    // 1. 기본 필드 입력 확인
     if (nameController.text.isEmpty ||
         nicknameController.text.isEmpty ||
         !isEmailFilled.value ||
         passwordController.text.isEmpty) {
-      Get.snackbar("알림", "모든 필드를 입력해주세요.", backgroundColor: Colors.white, colorText: Colors.black);
+      Get.snackbar("알림", "모든 필드를 입력해주세요.",
+          backgroundColor: Colors.black87, colorText: Colors.white);
+      return;
+    }
+
+    // ✅ [핵심 수정 부분] 이메일 중복 확인 여부 검사
+    // 중복 확인을 안 했거나(null), 중복된 이메일(false)이면 가입 막음
+    if (isEmailAvailable.value != true) {
+      Get.snackbar("알림", "이메일 중복 확인을 먼저 완료해주세요.",
+          backgroundColor: Colors.black87, colorText: Colors.white);
       return;
     }
 
@@ -143,9 +155,6 @@ class SignUpController extends GetxController {
                   GestureDetector(
                     onTap: () {
                       Get.back(); // 팝업 닫기
-
-                      // 🚨 [수정] 복잡한 로직 제거하고 가장 단순하고 강력한 이동 명령 사용
-                      // offAllNamed는 이전 스택을 다 지우고 이동하므로 가장 깔끔합니다.
                       Get.offAllNamed(Routes.login);
                     },
                     child: Container(
@@ -168,10 +177,12 @@ class SignUpController extends GetxController {
         );
 
       } else {
-        Get.snackbar("가입 실패", "입력 정보를 확인해주세요.", backgroundColor: Colors.white, colorText: Colors.black);
+        Get.snackbar("가입 실패", "입력 정보를 확인해주세요. (${response.statusCode})",
+            backgroundColor: Colors.black87, colorText: Colors.white);
       }
     } catch (e) {
-      Get.snackbar("오류", "서버 연결 실패", backgroundColor: Colors.white, colorText: Colors.black);
+      Get.snackbar("오류", "서버 연결 실패",
+          backgroundColor: Colors.black87, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }
