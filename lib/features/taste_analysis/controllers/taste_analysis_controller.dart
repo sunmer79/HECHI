@@ -13,6 +13,7 @@ class TasteAnalysisController extends GetxController {
 
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
 
+  // 초기값: 색상은 int(Hex code)로 관리
   RxList<Map<String, dynamic>> starRatingDistribution = <Map<String, dynamic>>[
     {'score': 5.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
     {'score': 4.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
@@ -71,21 +72,17 @@ class TasteAnalysisController extends GetxController {
       readingRate.value = "${stats.ratingSummary.average100}%";
       mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-      // ✅ [시간 텍스트 포맷팅 로직 수정]
-      String rawTime = stats.readingTime.human; // 예: "총 0분. 감상하였습니다"
-
-      // 1. 불필요한 글자와 마침표 제거
+      // 시간 텍스트 포맷팅 로직
+      String rawTime = stats.readingTime.human;
       String cleaned = rawTime
           .replaceAll("총", "")
           .replaceAll("감상하였습니다", "")
           .replaceAll("감상하셨습니다", "")
           .replaceAll("동안", "")
-          .replaceAll(".", "") // ✅ 마침표 제거
+          .replaceAll(".", "")
           .trim();
 
-      // 2. 시간/분 변환 로직 (1시간 미만은 분, 이상은 시간)
       if (cleaned.contains("분") && !cleaned.contains("시간")) {
-        // "90분" -> "1시간 30분" 변환 시도
         String numStr = cleaned.replaceAll("분", "").trim();
         int? mins = int.tryParse(numStr);
         if (mins != null) {
@@ -105,11 +102,9 @@ class TasteAnalysisController extends GetxController {
         }
       }
       else if (cleaned == "0시간") {
-        // "0시간"으로 올 경우 "0분"으로 변경
         totalReadingTime.value = "0분";
       }
       else {
-        // 이미 "1시간 20분" 형태라면 그대로 사용
         totalReadingTime.value = cleaned;
       }
 
@@ -149,7 +144,6 @@ class TasteAnalysisController extends GetxController {
   Future<void> _fetchInsightTags(String token) async {
     final url = Uri.parse('$baseUrl/analytics/my-insights');
 
-    // (기존 코드 유지)
     final List<Offset> presetPositions = [
       const Offset(0.50, 0.45), const Offset(0.40, 0.60), const Offset(0.60, 0.30),
       const Offset(0.75, 0.50), const Offset(0.25, 0.50), const Offset(0.30, 0.20),
@@ -215,15 +209,17 @@ class TasteAnalysisController extends GetxController {
     }
   }
 
+  // ✅ [수정완료] 안전한 타입 사용 + 가장 높은 막대 색칠 로직
   void _updateDistribution(List<RatingDist> distData) {
     int maxCount = 0;
     final bool useIndexMapping = distData.length == 10;
 
+    // 1. 최대 개수(maxCount) 찾기
     for (var d in distData) {
       if (d.count > maxCount) maxCount = d.count;
     }
 
-    double mostFrequentRatingScore = double.tryParse(mostGivenRating.value) ?? 0.0;
+    // 색상을 int로 정의 (타입 충돌 방지)
     const int darkGreenColor = 0xFF4EB56D;
     const int lightGreenColor = 0xFFAAD2B6;
 
@@ -232,7 +228,8 @@ class TasteAnalysisController extends GetxController {
 
     for (int i = 0; i < starRatingDistribution.length; i++) {
       var item = starRatingDistribution[i];
-      double score = item['score'];
+      // dynamic으로 올 수 있으니 안전하게 num -> double 변환
+      double score = (item['score'] as num).toDouble();
       int count = 0;
 
       if (useIndexMapping) {
@@ -262,10 +259,15 @@ class TasteAnalysisController extends GetxController {
             : minRatioForOneCount;
       }
 
+      // 기본 색상: 연한 초록
       int color = lightGreenColor;
-      if ((score - mostFrequentRatingScore).abs() < 0.001 && count > 0) {
+
+      // ✅ [로직 수정] 현재 막대(count)가 최대값(maxCount)과 같으면 진한 초록색
+      // (서버의 mostGivenRating 값에 의존하지 않음)
+      if (count == maxCount && maxCount > 0) {
         color = darkGreenColor;
       }
+
       newDist.add({'score': score, 'ratio': ratio, 'color': color, 'count': count});
     }
     starRatingDistribution.value = newDist;
