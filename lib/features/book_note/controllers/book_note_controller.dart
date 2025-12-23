@@ -24,11 +24,11 @@ class BookNoteController extends GetxController with GetSingleTickerProviderStat
   /// ===================== Sort States =====================
   // Bookmark
   RxString sortTypeBookmark = "date".obs; // date | page
-  RxString sortTextBookmark = "날짜 순".obs;
+  RxString sortTextBookmark = "최신 순".obs;
 
   // Highlight
   RxString sortTypeHighlight = "date".obs; // date | page
-  RxString sortTextHighlight = "날짜 순".obs;
+  RxString sortTextHighlight = "최신 순".obs;
 
   @override
   void onInit() {

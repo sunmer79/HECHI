@@ -33,7 +33,8 @@ class OptionBottomSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildOption(
-              label: hasMemo || type == "memo" ? "수정" : "메모 작성",
+              // label: hasMemo || type == "memo" ? "수정" : "메모 작성",
+              label: "수정",
               onTap: () {
                 Get.back();
                 _openEditor();
@@ -156,7 +157,6 @@ class OptionBottomSheet extends StatelessWidget {
       return;
     }
 
-    // memo
     Get.bottomSheet(
       CreationOverlay(
         type: "memo",
