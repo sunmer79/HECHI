@@ -13,6 +13,23 @@ class HighlightItem extends StatelessWidget {
     final memo = data["memo"] ?? "";
     final hasMemo = memo.toString().isNotEmpty;
 
+    void showDetailOverlay() {
+      Get.bottomSheet(
+        CreationOverlay(
+          type: "highlight",
+          isEdit: true,
+          isReadOnly: true,
+          itemId: data['id'],
+          page: data['page'],
+          sentence: data['sentence'],
+          memo: data['memo'],
+          isPublic: data['is_public'],
+        ),
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+      );
+    }
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,13 +72,18 @@ class HighlightItem extends StatelessWidget {
                     ),
                   ),
 
-                  Text(
-                    "“${data["sentence"] ?? ""}”",
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF3F3F3F),
-                      height: 1.6,
+                  GestureDetector(
+                    onTap: showDetailOverlay,
+                    child: Text(
+                      "“${data["sentence"] ?? ""}”",
+                      maxLines: 7,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF3F3F3F),
+                        height: 1.6,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -84,22 +106,7 @@ class HighlightItem extends StatelessWidget {
                   if (hasMemo) ...[
                     const SizedBox(height: 12),
                     GestureDetector(
-                      onTap: () {
-                        Get.bottomSheet(
-                          CreationOverlay(
-                            type: "highlight",
-                            isEdit: true,
-                            isReadOnly: true,
-                            itemId: data['id'],
-                            page: data['page'],
-                            sentence: data['sentence'],
-                            memo: data['memo'],
-                            isPublic: data ['is_public'],
-                          ),
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                        );
-                      },
+                      onTap: showDetailOverlay,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),

@@ -22,7 +22,7 @@ class CommentOverlay extends StatelessWidget {
     final TextEditingController textController = TextEditingController(text: initialText);
 
     return Container(
-      height: Get.height * 0.9,
+      height: Get.height * 0.8,
       // padding: const EdgeInsets.only(bottom: 5),
       decoration: const BoxDecoration(
         color: Colors.white,
