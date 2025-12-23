@@ -13,7 +13,6 @@ class TasteAnalysisController extends GetxController {
 
   RxMap<String, dynamic> get userProfile => Get.find<AppController>().userProfile;
 
-  // 초기값: 색상은 int(Hex code)로 관리
   RxList<Map<String, dynamic>> starRatingDistribution = <Map<String, dynamic>>[
     {'score': 5.0, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
     {'score': 4.5, 'ratio': 0.0, 'color': 0xFFAAD2B6, 'count': 0},
@@ -72,7 +71,7 @@ class TasteAnalysisController extends GetxController {
       readingRate.value = "${stats.ratingSummary.average100}%";
       mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-      // 시간 텍스트 포맷팅 로직
+      // 시간 텍스트 포맷팅
       String rawTime = stats.readingTime.human;
       String cleaned = rawTime
           .replaceAll("총", "")
@@ -209,17 +208,16 @@ class TasteAnalysisController extends GetxController {
     }
   }
 
-  // ✅ [수정완료] 안전한 타입 사용 + 가장 높은 막대 색칠 로직
+  // ✅ [최종 수정] 순서 매핑 로직 삭제 -> 값 비교 로직으로 통일
+  // 이제 5점은 무조건 5점 자리에 꽂힙니다.
   void _updateDistribution(List<RatingDist> distData) {
     int maxCount = 0;
-    final bool useIndexMapping = distData.length == 10;
 
     // 1. 최대 개수(maxCount) 찾기
     for (var d in distData) {
       if (d.count > maxCount) maxCount = d.count;
     }
 
-    // 색상을 int로 정의 (타입 충돌 방지)
     const int darkGreenColor = 0xFF4EB56D;
     const int lightGreenColor = 0xFFAAD2B6;
 
@@ -228,25 +226,20 @@ class TasteAnalysisController extends GetxController {
 
     for (int i = 0; i < starRatingDistribution.length; i++) {
       var item = starRatingDistribution[i];
-      // dynamic으로 올 수 있으니 안전하게 num -> double 변환
       double score = (item['score'] as num).toDouble();
       int count = 0;
 
-      if (useIndexMapping) {
-        int distIndex = starRatingDistribution.length - 1 - i;
-        if (distIndex >= 0 && distIndex < distData.length) {
-          count = distData[distIndex].count;
-        }
-      } else {
-        try {
-          var apiData = distData.firstWhere(
-                (d) => (d.rating.toDouble() / 10.0 - score).abs() < 0.001,
-            orElse: () => RatingDist(rating: 0, count: 0),
-          );
-          count = apiData.count;
-        } catch (e) {
-          count = 0;
-        }
+      // 🚨 [수정됨] 순서대로 끼워맞추는 'useIndexMapping' 로직을 삭제했습니다.
+      // 대신 무조건 값을 비교하여 정확한 자리를 찾습니다.
+      try {
+        var apiData = distData.firstWhere(
+          // API의 rating 값(예: 5)과 그래프의 score(예: 5.0)를 직접 비교
+              (d) => (d.rating.toDouble() - score).abs() < 0.001,
+          orElse: () => RatingDist(rating: 0, count: 0),
+        );
+        count = apiData.count;
+      } catch (e) {
+        count = 0;
       }
 
       double ratio = 0.0;
@@ -259,11 +252,8 @@ class TasteAnalysisController extends GetxController {
             : minRatioForOneCount;
       }
 
-      // 기본 색상: 연한 초록
       int color = lightGreenColor;
-
-      // ✅ [로직 수정] 현재 막대(count)가 최대값(maxCount)과 같으면 진한 초록색
-      // (서버의 mostGivenRating 값에 의존하지 않음)
+      // 가장 높은 막대는 진한 색
       if (count == maxCount && maxCount > 0) {
         color = darkGreenColor;
       }
