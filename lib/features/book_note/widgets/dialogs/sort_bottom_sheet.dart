@@ -95,7 +95,7 @@ class SortBottomSheet extends StatelessWidget {
           isSelected: controller.sortTypeBookmark.value == "date",
           onTap: () {
             controller.sortTypeBookmark.value = "date";
-            controller.sortTextBookmark.value = "날짜 순";
+            controller.sortTextBookmark.value = "최신 순";
             controller.sortBookmarks();
             Get.back();
           },
@@ -123,11 +123,11 @@ class SortBottomSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildOption(
-          label: "날짜 순",
+          label: "최신 순",
           isSelected: controller.sortTypeHighlight.value == "date",
           onTap: () {
             controller.sortTypeHighlight.value = "date";
-            controller.sortTextHighlight.value = "날짜 순";
+            controller.sortTextHighlight.value = "최신 순";
             controller.sortHighlights();
             Get.back();
           },
