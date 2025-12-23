@@ -19,6 +19,9 @@ class PreferenceController extends GetxController {
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
   final box = GetStorage();
 
+  // ✅ [수정됨] 1. 제거할 장르/카테고리 목록 정의
+  final List<String> excludedItems = ['스릴러/공포', '스릴러', '공포', 'SF', '판타지', '시'];
+
   @override
   void onInit() {
     super.onInit();
@@ -43,8 +46,21 @@ class PreferenceController extends GetxController {
 
       if (response.statusCode == 200) {
         var data = jsonDecode(utf8.decode(response.bodyBytes));
-        categories.value = List<String>.from(data['categories'] ?? []);
-        genres.value = List<String>.from(data['genres'] ?? []);
+
+        // 원본 리스트 가져오기
+        List<String> rawCategories = List<String>.from(data['categories'] ?? []);
+        List<String> rawGenres = List<String>.from(data['genres'] ?? []);
+
+        // ✅ [수정됨] 2. API 데이터에서 제외할 항목 필터링 (Where 로직)
+        // 리스트에 있는 단어와 정확히 일치하면 제거합니다.
+        categories.value = rawCategories
+            .where((item) => !excludedItems.contains(item))
+            .toList();
+
+        genres.value = rawGenres
+            .where((item) => !excludedItems.contains(item))
+            .toList();
+
       } else {
         _useFallbackData();
       }
@@ -54,10 +70,12 @@ class PreferenceController extends GetxController {
   }
 
   void _useFallbackData() {
-    categories.value = ['소설', '시', '에세이', '만화'];
+    // ✅ [수정됨] 3. 기본 데이터에서도 '시', '스릴러', '공포', 'SF', '판타지' 제거
+    categories.value = ['소설', '에세이', '만화']; // '시' 제거됨
     genres.value = [
-      '추리', '코미디', '스릴러', '공포', 'SF', '판타지', '로맨스',
-      '액션', '철학', '인문', '역사', '과학', '예술', '자기계발', '여행', '취미'
+      '추리', '코미디', // '스릴러', '공포', 'SF', '판타지' 제거됨
+      '로맨스', '액션', '철학', '인문', '역사',
+      '과학', '예술', '자기계발', '여행', '취미'
     ];
   }
 

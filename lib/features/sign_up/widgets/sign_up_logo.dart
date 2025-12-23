@@ -6,13 +6,17 @@ class SignUpLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'HECHI',
-      style: GoogleFonts.sedgwickAveDisplay(
-        fontSize: 40,
-        fontWeight: FontWeight.w400,
-        color: const Color(0xFF4DB56C),
-        letterSpacing: 1.5,
+    return Center(
+      child: Text(
+        "HECHI",
+        style: const TextStyle(
+
+          fontFamily: 'MoveSans',
+          fontSize: 45,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF4DB56C),
+          letterSpacing: 1.5,
+        ),
       ),
     );
   }
