@@ -71,21 +71,17 @@ class TasteAnalysisController extends GetxController {
       readingRate.value = "${stats.ratingSummary.average100}%";
       mostGivenRating.value = stats.ratingSummary.mostFrequentRating.toStringAsFixed(1);
 
-      // ✅ [시간 텍스트 포맷팅 로직 수정]
-      String rawTime = stats.readingTime.human; // 예: "총 0분. 감상하였습니다"
-
-      // 1. 불필요한 글자와 마침표 제거
+      // 시간 텍스트 포맷팅
+      String rawTime = stats.readingTime.human;
       String cleaned = rawTime
           .replaceAll("총", "")
           .replaceAll("감상하였습니다", "")
           .replaceAll("감상하셨습니다", "")
           .replaceAll("동안", "")
-          .replaceAll(".", "") // ✅ 마침표 제거
+          .replaceAll(".", "")
           .trim();
 
-      // 2. 시간/분 변환 로직 (1시간 미만은 분, 이상은 시간)
       if (cleaned.contains("분") && !cleaned.contains("시간")) {
-        // "90분" -> "1시간 30분" 변환 시도
         String numStr = cleaned.replaceAll("분", "").trim();
         int? mins = int.tryParse(numStr);
         if (mins != null) {
@@ -103,13 +99,9 @@ class TasteAnalysisController extends GetxController {
         } else {
           totalReadingTime.value = cleaned;
         }
-      }
-      else if (cleaned == "0시간") {
-        // "0시간"으로 올 경우 "0분"으로 변경
+      } else if (cleaned == "0시간") {
         totalReadingTime.value = "0분";
-      }
-      else {
-        // 이미 "1시간 20분" 형태라면 그대로 사용
+      } else {
         totalReadingTime.value = cleaned;
       }
 
@@ -123,7 +115,15 @@ class TasteAnalysisController extends GetxController {
       double bizEcoTotalScore = 0.0;
       bool hasBizEco = false;
 
+      // ✅ [수정됨] 1. 제외할 장르 목록 정의
+      final List<String> excludedGenres = ['스릴러','공포','스릴러/공포', 'SF', '판타지', '시'];
+
       for (var genre in sourceList) {
+        // ✅ [수정됨] 2. 제외 목록에 포함되면 건너뛰기
+        if (excludedGenres.contains(genre.name)) {
+          continue;
+        }
+
         if (genre.name.contains('경제') || genre.name.contains('경영')) {
           hasBizEco = true;
           bizEcoCount += genre.reviewCount;
