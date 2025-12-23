@@ -44,7 +44,7 @@ class BookStorageController extends GetxController {
       );
 
       if (currentSortKey.value == 'latest' &&
-          (_currentShelfParam == 'reading' || _currentShelfParam == 'rated')) {
+          (_currentShelfParam == 'rated')) {
         books.assignAll(result.reversed.toList());
       } else {
         books.assignAll(result);
