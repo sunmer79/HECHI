@@ -5,11 +5,10 @@ import 'package:get_storage/get_storage.dart'; // ✅ 토큰 사용을 위해 �
 
 class MainpageController extends GetxController {
   // --- 기존 변수들 ---
-  final RxString highlightQuote =
-      '수소와 산소에 마법적인 요소는 아무것도 없습니다. 당연히 지구의 생명체에는 그 물이 필요하겠죠. 하지만 다른 행성은 환경이 완전히 다를 수 있어요.'.obs;
-  final RxString highlightBookTitle = '프로젝트 헤일메리'.obs;
-  final RxString highlightAuthor = '앤디 위어'.obs;
-  final RxInt highlightBookId = 10.obs;
+  final RxString highlightQuote = '오늘의 문장을 불러오는 중입니다...'.obs;
+  final RxString highlightBookTitle = ''.obs;
+  final RxString highlightAuthor = ''.obs;
+  final RxInt highlightBookId = 0.obs; // 0이면 클릭 안되게 하거나 예외처리
   final RxString headerLogo = 'HECHI'.obs;
   final RxString userProfileUrl = 'https://picsum.photos/30/30'.obs;
 
@@ -48,8 +47,33 @@ class MainpageController extends GetxController {
     fetchBestsellers();
     fetchNewBooks();
     fetchGenreBestsellers();
+    fetchRandomHighlight();
   }
+  Future<void> fetchRandomHighlight() async {
+    const String apiUrl = 'https://api.43-202-101-63.sslip.io/highlights/random-public';
 
+    try {
+      final response = await http.get(Uri.parse(apiUrl), headers: _headers);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+
+        // 🔍 [로그 추가] 서버에서 온 전체 데이터와 ID 확인
+        print("📢 [Highlight API] 전체 데이터: $data");
+        print("📢 [Highlight API] book_id: ${data['book_id']}");
+
+        highlightBookId.value = data['book_id'] ?? 0;
+        highlightBookTitle.value = data['title'] ?? '';
+        highlightAuthor.value = data['author'] ?? '';
+        highlightQuote.value = data['sentence'] ?? '문장이 없습니다.';
+
+      } else {
+        print('Highlight API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Highlight Network Error: $e');
+    }
+  }
   // 1. 인기 순위 API
   Future<void> fetchPopularBooks() async {
     isLoading.value = true;
