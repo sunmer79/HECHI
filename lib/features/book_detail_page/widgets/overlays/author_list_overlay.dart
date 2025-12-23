@@ -9,7 +9,7 @@ class AuthorListOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context){
     return Container(
-        height: Get.height * 0.9,
+        height: Get.height * 0.8,
         padding: const EdgeInsets.only(bottom: 30),
         decoration: const BoxDecoration(
           color: Colors.white,
