@@ -101,7 +101,7 @@ class MainpageView extends GetView<MainpageController> {
               );
             }),
 
-            const SizedBox(height: 10),
+            /*const SizedBox(height: 10),
 
             Obx(() {
               if (controller.genreBestsellerList.isEmpty) return const SizedBox();
@@ -131,7 +131,7 @@ class MainpageView extends GetView<MainpageController> {
                   );
                 }).toList(),
               );
-            }),
+            }),*/
 
             // ==========================================
             // 6️⃣ [Curated] 깊이 있는 추천 (Editorial)
