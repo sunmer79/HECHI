@@ -119,8 +119,10 @@ class ReviewCard extends StatelessWidget {
               // ==========================
               // 1. 헤더
               // ==========================
-              if (type == ReviewCardType.simple)
-                _buildSimpleHeader(rating)
+              if (type == ReviewCardType.simple) ...[
+                _buildSimpleHeader(rating),
+                const SizedBox(height: 5),
+              ]
               else ...[
                 _buildDetailHeader(rating),
                 const SizedBox(height: 12),

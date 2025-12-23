@@ -33,7 +33,7 @@ class BookInfoSection extends GetView<BookDetailController> {
 
           // 평점
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
             child: Row(
               children: [
                 /*

@@ -69,7 +69,7 @@ class _CreationOverlayState extends State<CreationOverlay> {
         alignment: Alignment.bottomCenter,
         child: Container(
           width: double.infinity,
-          height: MediaQuery.of(context).size.height * 0.9,
+          height: MediaQuery.of(context).size.height * 0.8,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
@@ -257,83 +257,89 @@ class _CreationOverlayState extends State<CreationOverlay> {
 
         // --------------------- 내용 영역 ---------------------
         Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
-                  decoration: const BoxDecoration(
-                    color: Color(0x7FD1ECD9),
+          child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(
+                  maxHeight: 160,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+                decoration: const BoxDecoration(
+                  color: Color(0x7FD1ECD9),
+                ),
+                child: TextField(
+                  controller: sentenceController,
+                  readOnly: _isReadOnly,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  decoration: const InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    hintText: "하이라이트 문장을 입력해주세요.",
+                    hintStyle: TextStyle(
+                      color: Color(0xFFABABAB),
+                      fontSize: 13,
+                      height: 1.9,
+                    ),
                   ),
-                  child: TextField(
-                    controller: sentenceController,
-                    readOnly: _isReadOnly,
-                    maxLines: null,
-                    decoration: const InputDecoration(
-                      isCollapsed: true,
-                      border: InputBorder.none,
-                      hintText: "하이라이트 문장을 입력해주세요.",
-                      hintStyle: TextStyle(
-                        color: Color(0xFFABABAB),
-                        fontSize: 13,
-                        height: 1.9,
-                      ),
-                    ),
-                    style: const TextStyle(
-                      color: Color(0xFF3F3F3F),
-                      fontSize: 15,
-                      height: 1.67,
-                    ),
+                  style: const TextStyle(
+                    color: Color(0xFF3F3F3F),
+                    fontSize: 15,
+                    height: 1.67,
                   ),
                 ),
+              ),
 
-                // // --------------------- 페이지 입력 ---------------------
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(17, 14, 17, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "p.",
-                        style: TextStyle(
-                          color: Color(0xFFABABAB),
+
+              // --------------------- 페이지 입력 ---------------------
+              Padding(
+                padding: const EdgeInsets.fromLTRB(17, 14, 17, 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "p.",
+                      style: TextStyle(
+                        color: Color(0xFFABABAB),
+                        fontSize: 15,
+                        height: 1.67,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: TextField(
+                        controller: pageController,
+                        readOnly: _isReadOnly,
+                        maxLines: 1,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isCollapsed: true,
+                          hintText: "페이지 번호",
+                          hintStyle: TextStyle(
+                            color: Color(0xFFABABAB),
+                            fontSize: 13,
+                            height: 1.9,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFF3F3F3F),
                           fontSize: 15,
                           height: 1.67,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: TextField(
-                          controller: pageController,
-                          readOnly: _isReadOnly,
-                          maxLines: 1,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isCollapsed: true,
-                            hintText: "페이지 번호",
-                            hintStyle: TextStyle(
-                              color: Color(0xFFABABAB),
-                              fontSize: 13,
-                              height: 1.9,
-                            ),
-                          ),
-                          style: const TextStyle(
-                            color: Color(0xFF3F3F3F),
-                            fontSize: 15,
-                            height: 1.67,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                // // --------------------- 메모 입력 ---------------------
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+              // --------------------- 메모 입력 ---------------------
+              Expanded(
+                child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
                   child: TextField(
                     controller: memoController,
                     readOnly: _isReadOnly,
@@ -353,14 +359,12 @@ class _CreationOverlayState extends State<CreationOverlay> {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 100),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
 
-        // // --------------------- 공개 여부 ---------------------
+        // --------------------- 공개 여부 ---------------------
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
           child: Row(
