@@ -23,7 +23,6 @@ class BookGridItem extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            // TODO: API 이미지 로딩 실패 시 처리 로직 추가 권장
           ),
         ),
         const SizedBox(height: 8),
@@ -41,17 +40,6 @@ class BookGridItem extends StatelessWidget {
         ),
         const SizedBox(height: 4),
 
-        // 3. 별점 (상태에 따라 다르게 표시)
-        if (book.myRating != null)
-          Text(
-            '평가함 ★${book.myRating}',
-            style: const TextStyle(color: Color(0xFFFF7F00), fontSize: 12, fontWeight: FontWeight.bold),
-          )
-        else if (book.avgRating != null)
-          Text(
-            '예상 ★${book.avgRating}',
-            style: const TextStyle(color: Color(0xFF4DB56C), fontSize: 12, fontWeight: FontWeight.bold),
-          ),
       ],
     );
   }
