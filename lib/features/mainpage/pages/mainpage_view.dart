@@ -55,7 +55,7 @@ class MainpageView extends GetView<MainpageController> {
               );
             }),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
 
             // ==========================================
             // 4️⃣ [Social Proof] 평점/리뷰 기반
@@ -74,7 +74,7 @@ class MainpageView extends GetView<MainpageController> {
               );
             }),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
 
             // ==========================================
             // 5️⃣ [Discovery] 발견 & 트렌드
@@ -89,7 +89,7 @@ class MainpageView extends GetView<MainpageController> {
               );
             }),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
 
             // 급상승 검색어 (현재 이슈)
             Obx(() {
@@ -101,7 +101,7 @@ class MainpageView extends GetView<MainpageController> {
               );
             }),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
 
             Obx(() {
               if (controller.genreBestsellerList.isEmpty) return const SizedBox();
@@ -126,7 +126,7 @@ class MainpageView extends GetView<MainpageController> {
                           );
                         },
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 10),
                     ],
                   );
                 }).toList(),
@@ -152,14 +152,14 @@ class MainpageView extends GetView<MainpageController> {
                           Get.to(() => const ThemeListPage());
                         },
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 10),
                     ],
                   );
                 }).toList(),
               );
             }),
 
-            const SizedBox(height: 40), // 하단 여백
+            const SizedBox(height: 10), // 하단 여백
           ],
         ),
       ),
