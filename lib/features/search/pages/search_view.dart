@@ -31,14 +31,14 @@ class SearchView extends GetView<BookSearchController> {
                 ),
 
                 Positioned(
-                  top: 60.0,
+                  top: 14.0,
                   left: 0,
                   right: 0,
                   child: const SearchHeaderWidget(),
                 ),
 
                 Positioned(
-                  top: 125.0,
+                  top: 93.0,
                   left: 0,
                   right: 0,
                   bottom: 0,

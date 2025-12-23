@@ -33,6 +33,7 @@ class ReadingLibraryItem {
   final int currentPage;
   final int progressPercent;
   final double? myRating;
+  final int totalSessionSeconds; // [추가] 총 읽은 시간
 
   ReadingLibraryItem({
     required this.book,
@@ -40,15 +41,17 @@ class ReadingLibraryItem {
     required this.currentPage,
     required this.progressPercent,
     this.myRating,
+    this.totalSessionSeconds = 0, // [추가] 기본값 0
   });
 
   factory ReadingLibraryItem.fromJson(Map<String, dynamic> json) {
     return ReadingLibraryItem(
       book: ReadingBook.fromJson(json['book'] ?? {}),
       status: json['status'] ?? '',
-      currentPage: json['current_page'] ?? 0,
+      currentPage: (json['current_page'] as num?)?.toInt() ?? 0,
       progressPercent: json['progress_percent'] ?? 0,
       myRating: (json['my_rating'] as num?)?.toDouble(),
+      totalSessionSeconds: (json['total_session_seconds'] as num?)?.toInt() ?? 0,
     );
   }
 }
