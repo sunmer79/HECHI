@@ -62,9 +62,16 @@ class MainpageController extends GetxController {
         print("📢 [Highlight API] 전체 데이터: $data");
         print("📢 [Highlight API] book_id: ${data['book_id']}");
 
-        highlightBookId.value = data['book_id'] ?? 0;
-        highlightBookTitle.value = data['title'] ?? '';
-        highlightAuthor.value = data['author'] ?? '';
+        String rawTitle = data['title'] ?? '';
+        if (rawTitle.contains('-')) {
+          rawTitle = rawTitle.split('-')[0].trim();
+        }
+        highlightBookTitle.value = rawTitle;
+        String rawAuthor = data['author'] ?? '';
+        if (rawAuthor.contains('(')) {
+          rawAuthor = rawAuthor.split('(')[0].trim();
+        }
+        highlightAuthor.value = rawAuthor;
         highlightQuote.value = data['sentence'] ?? '문장이 없습니다.';
 
       } else {
