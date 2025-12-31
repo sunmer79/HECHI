@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hechi/app/main_app.dart';
 import 'package:get/get.dart';
-import 'features/home/home_page.dart';
+import 'package:get_storage/get_storage.dart'; // ✅ 추가
+import 'app/routes.dart';
+import 'app/bindings/app_binding.dart';
 
-void main() {
+void main() async {
+  await GetStorage.init();
   runApp(const MyApp());
 }
 
@@ -22,11 +26,19 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          titleTextStyle: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
           iconTheme: IconThemeData(color: Colors.black),
         ),
       ),
-      home: const HomePage(),
+
+      // ✅ 앱 실행 시 AppBinding 실행 (하단바 컨트롤러 등 준비)
+      initialBinding: AppBinding(),
+      initialRoute: Routes.splash,
+      getPages: AppPages.pages,
     );
   }
 }

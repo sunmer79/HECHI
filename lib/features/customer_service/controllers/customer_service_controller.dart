@@ -1,52 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/cs_model.dart';
+import '../services/cs_provider.dart';
 
 class CustomerServiceController extends GetxController {
-  // 현재 활성화된 뷰 상태 (0: 메인/FAQ, 1: 문의내역, 2: 문의등록)
-  var currentViewIndex = 0.obs;
+  final CsProvider _provider = Get.put(CsProvider());
 
-  // 텍스트 필드 컨트롤러
+  var currentViewIndex = 0.obs;
+  var isLoading = false.obs;
+  var isAdminMode = false.obs;
+
+  var faqList = <FaqModel>[].obs;
+  var myInquiries = <TicketModel>[].obs;
+  var adminInquiries = <TicketModel>[].obs;
+
+  var selectedInquiry = Rxn<TicketModel>();
+  var selectedFaq = Rxn<FaqModel>();
+
   final titleController = TextEditingController();
   final contentController = TextEditingController();
+  final answerController = TextEditingController();
 
-  // 더미 데이터: FAQ 리스트
-  final faqList = <String>[
-    '자주 묻는 질문 리스트업 해야됩니다 1',
-    '자주 묻는 질문 리스트업 해야됩니다 2',
-    '자주 묻는 질문 리스트업 해야됩니다 3',
-    '자주 묻는 질문 리스트업 해야됩니다 4',
-    '배송은 언제 되나요?',
-  ].obs;
+  @override
+  void onInit() {
+    super.onInit();
+    fetchData();
+  }
 
-  // 더미 데이터: 나의 문의 내역
-  final myInquiries = <Map<String, String>>[
-    {'title': '문의내역1', 'status': '답변대기', 'date': '2025.11.01'},
-    {'title': '로그인이 안돼요', 'status': '답변완료', 'date': '2025.10.28'},
-  ].obs;
+  void fetchData() async {
+    isLoading.value = true;
+    try {
+      await Future.wait([
+        fetchFaqs(),
+        fetchMyTickets(),
+        if (isAdminMode.value) fetchAdminTickets(),
+      ]);
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
-  // 뷰 전환 메서드
+  Future<void> fetchFaqs() async {
+    final response = await _provider.getFaqs();
+    if (!response.status.hasError && response.body != null) {
+      List<dynamic> data = response.body;
+      faqList.value = data.map((json) => FaqModel.fromJson(json)).toList();
+    }
+  }
+
+  Future<void> fetchMyTickets() async {
+    final response = await _provider.getMyTickets();
+    if (!response.status.hasError && response.body != null) {
+      List<dynamic> data = response.body;
+      var list = data.map((json) => TicketModel.fromJson(json)).toList();
+      list.sort((a, b) => b.id.compareTo(a.id));
+      myInquiries.value = list;
+    }
+  }
+
+  Future<void> fetchAdminTickets() async {
+    final response = await _provider.getAdminTickets();
+    if (!response.status.hasError && response.body != null) {
+      List<dynamic> data = response.body;
+      adminInquiries.value = data.map((json) => TicketModel.fromJson(json)).toList();
+    }
+  }
+
+  void toggleAdminMode() {
+    isAdminMode.value = !isAdminMode.value;
+    fetchData();
+    currentViewIndex.value = 0;
+  }
+
   void changeView(int index) {
+    if (index == 1) isAdminMode.value ? fetchAdminTickets() : fetchMyTickets();
     currentViewIndex.value = index;
   }
 
-  // 문의 등록 메서드 (기능 시뮬레이션)
-  void submitInquiry() {
-    if (titleController.text.isNotEmpty && contentController.text.isNotEmpty) {
-      myInquiries.insert(0, {
-        'title': titleController.text,
-        'status': '접수완료',
-        'date': DateTime.now().toString().substring(0, 10),
-      });
+  void viewDetail(TicketModel inquiry) {
+    selectedInquiry.value = inquiry;
+    changeView(3);
+  }
 
-      // 입력창 초기화 및 내역 페이지로 이동
+  void viewFaqDetail(FaqModel faq) {
+    selectedFaq.value = faq;
+    changeView(4);
+  }
+
+  Future<void> submitInquiry() async {
+    if (titleController.text.isEmpty || contentController.text.isEmpty) {
+      Get.snackbar('알림', '제목과 내용을 입력해주세요.');
+      return;
+    }
+    isLoading.value = true;
+    final response = await _provider.createTicket(titleController.text, contentController.text);
+    isLoading.value = false;
+    if (!response.status.hasError) {
+      Get.snackbar('성공', '문의가 등록되었습니다.');
       titleController.clear();
       contentController.clear();
-      Get.snackbar('성공', '문의가 등록되었습니다.',
-          backgroundColor: const Color(0xFF4DB56C), colorText: Colors.white);
-      changeView(1); // 내역 페이지로 이동
-    } else {
-      Get.snackbar('알림', '제목과 내용을 입력해주세요.',
-          snackPosition: SnackPosition.BOTTOM);
+      await fetchMyTickets();
+      changeView(1);
+    }
+  }
+
+  Future<void> submitAdminAnswer() async {
+    if (answerController.text.isEmpty || selectedInquiry.value == null) return;
+    isLoading.value = true;
+    final response = await _provider.postAdminAnswer(selectedInquiry.value!.id, answerController.text);
+    isLoading.value = false;
+    if (!response.status.hasError) {
+      Get.snackbar('성공', '답변이 등록되었습니다.');
+      answerController.clear();
+      fetchAdminTickets();
+      changeView(1);
     }
   }
 
@@ -54,6 +121,7 @@ class CustomerServiceController extends GetxController {
   void onClose() {
     titleController.dispose();
     contentController.dispose();
+    answerController.dispose();
     super.onClose();
   }
 }

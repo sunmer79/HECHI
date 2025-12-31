@@ -6,7 +6,6 @@ import '../widgets/inquiry_tile.dart';
 
 class CustomerServicePage extends StatelessWidget {
   CustomerServicePage({Key? key}) : super(key: key);
-
   final controller = Get.put(CustomerServiceController());
 
   @override
@@ -15,267 +14,128 @@ class CustomerServicePage extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: Obx(() {
+        if (controller.isLoading.value) return const Center(child: CircularProgressIndicator());
         switch (controller.currentViewIndex.value) {
-          case 0:
-            return _buildMainView();
-          case 1:
-            return _buildHistoryView();
-          case 2:
-            return _buildRegisterView();
-          default:
-            return _buildMainView();
+          case 0: return _buildMainView();
+          case 1: return _buildHistoryView();
+          case 2: return _buildRegisterView();
+          case 3: return _buildDetailView();
+          case 4: return _buildFaqDetailView();
+          default: return _buildMainView();
         }
       }),
     );
   }
 
-  // 상단 앱바 (공통)
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
+      centerTitle: true,
+      actions: [
+        Obx(() => IconButton(
+          icon: Icon(controller.isAdminMode.value ? Icons.admin_panel_settings : Icons.person, color: Colors.black),
+          onPressed: controller.toggleAdminMode,
+        ))
+      ],
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () {
-          // 뒤로가기 로직: 메인이 아니면 메인으로, 메인이면 앱 종료 등
-          if (controller.currentViewIndex.value != 0) {
-            controller.changeView(0);
-          } else {
-            // Get.back(); // 네비게이션 스택이 있다면
-          }
-        },
+        onPressed: () => controller.currentViewIndex.value == 0 ? Get.back() : controller.changeView(0),
       ),
-      centerTitle: true,
       title: Obx(() {
+        String prefix = controller.isAdminMode.value ? "[관리자] " : "";
         String title = '고객센터';
         if (controller.currentViewIndex.value == 1) title = '문의내역';
         if (controller.currentViewIndex.value == 2) title = '문의등록';
-        return Text(
-          title,
-          style: const TextStyle(
-              color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-        );
+        return Text(prefix + title, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold));
       }),
     );
   }
 
-  // 1. 메인 뷰 (FAQ 및 메뉴 버튼)
   Widget _buildMainView() {
     return SingleChildScrollView(
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          // 상단 버튼 영역 (문의내역 / 문의등록)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _buildActionButton(
-                  text: '문의내역',
-                  isFilled: false,
-                  onTap: () => controller.changeView(1),
-                ),
-                const SizedBox(width: 10),
-                _buildActionButton(
-                  text: '문의등록',
-                  isFilled: true,
-                  onTap: () => controller.changeView(2),
-                ),
+                _buildActionButton('문의목록', false, () => controller.changeView(1)),
+                if (!controller.isAdminMode.value) ...[
+                  const SizedBox(width: 10),
+                  _buildActionButton('문의등록', true, () => controller.changeView(2)),
+                ]
               ],
             ),
           ),
-          const SizedBox(height: 30),
-          // 검색창
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            height: 45,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: const [
-                Icon(Icons.search, color: Color(0xFFABABAB)),
-                SizedBox(width: 10),
-                Text('검색', style: TextStyle(color: Color(0xFFABABAB))),
-              ],
-            ),
-          ),
-          const SizedBox(height: 30),
-          // FAQ 섹션 타이틀
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.only(left: 20),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFF4DB56C), width: 2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'FAQ',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // FAQ 리스트
-          Obx(() => ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.faqList.length,
-            itemBuilder: (context, index) {
-              return FaqTile(title: controller.faqList[index]);
-            },
+          Obx(() => Column(
+            children: controller.faqList.map((faq) => FaqTile(title: faq.question, onTap: () => controller.viewFaqDetail(faq))).toList(),
           )),
-          const SizedBox(height: 50),
-          // 로고 (HECHI)
-          const Text(
-            'HECHI',
-            style: TextStyle(
-              color: Color(0xFF4DB56C),
-              fontSize: 25,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 50),
         ],
       ),
     );
   }
 
-  // 2. 문의 내역 뷰
   Widget _buildHistoryView() {
-    return Obx(() => controller.myInquiries.isEmpty
-        ? const Center(child: Text("문의 내역이 없습니다."))
-        : ListView.builder(
-      padding: const EdgeInsets.only(top: 10),
-      itemCount: controller.myInquiries.length,
-      itemBuilder: (context, index) {
-        final item = controller.myInquiries[index];
-        return InquiryTile(
-          title: item['title']!,
-          status: item['status']!,
-          date: item['date']!,
-        );
-      },
-    ));
+    return Obx(() {
+      var list = controller.isAdminMode.value ? controller.adminInquiries : controller.myInquiries;
+      if (list.isEmpty) return const Center(child: Text("내역이 없습니다."));
+      return ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: list.length,
+        itemBuilder: (context, index) {
+          final item = list[index];
+          return InquiryTile(title: item.title, status: item.displayStatus, date: item.formattedDate, onTap: () => controller.viewDetail(item));
+        },
+      );
+    });
   }
 
-  // 3. 문의 등록 뷰
   Widget _buildRegisterView() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          TextField(controller: controller.titleController, decoration: const InputDecoration(hintText: '제목')),
+          const SizedBox(height: 20),
+          TextField(controller: controller.contentController, maxLines: 8, decoration: const InputDecoration(hintText: '내용')),
+          const SizedBox(height: 40),
+          ElevatedButton(onPressed: controller.submitInquiry, child: const Text('제출')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailView() {
+    final item = controller.selectedInquiry.value;
+    if (item == null) return const SizedBox();
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInputLabel('제목'),
-          const SizedBox(height: 10),
-          TextField(
-            controller: controller.titleController,
-            decoration: InputDecoration(
-              hintText: '제목을 입력하세요',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFABABAB)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildInputLabel('설명'),
-          const SizedBox(height: 10),
-          TextField(
-            controller: controller.contentController,
-            maxLines: 8,
-            decoration: InputDecoration(
-              hintText: '문의 내용을 자세히 적어주세요',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFABABAB)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildInputLabel('첨부 파일'),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            height: 50,
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFABABAB)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                '+ 파일 추가',
-                style: TextStyle(
-                  color: const Color(0xFF4DB56C),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: controller.submitInquiry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4DB56C),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: const Text('제출',
-                  style: TextStyle(color: Colors.white, fontSize: 16)),
-            ),
-          ),
+          Text(item.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Divider(height: 40),
+          Text(item.description),
+          if (controller.isAdminMode.value) ...[
+            const SizedBox(height: 40),
+            const Text("답변 작성", style: TextStyle(fontWeight: FontWeight.bold)),
+            TextField(controller: controller.answerController, maxLines: 5),
+            ElevatedButton(onPressed: controller.submitAdminAnswer, child: const Text("답변 등록")),
+          ]
         ],
       ),
     );
   }
 
-  // 헬퍼 위젯: 입력 라벨
-  Widget _buildInputLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.black,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-      ),
-    );
+  Widget _buildFaqDetailView() {
+    final faq = controller.selectedFaq.value;
+    if (faq == null) return const SizedBox();
+    return Padding(padding: const EdgeInsets.all(20), child: Text(faq.answer));
   }
 
-  // 헬퍼 위젯: 상단 액션 버튼 (문의내역/문의등록)
-  Widget _buildActionButton({
-    required String text,
-    required bool isFilled,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isFilled ? const Color(0xFF4DB56C) : Colors.white,
-          border: Border.all(color: const Color(0xFF4DB56C)),
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isFilled ? Colors.white : const Color(0xFF4DB56C),
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
+  Widget _buildActionButton(String text, bool isFilled, VoidCallback onTap) {
+    return ElevatedButton(onPressed: onTap, child: Text(text));
   }
 }

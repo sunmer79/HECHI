@@ -1,0 +1,285 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../services/api_service.dart';
+
+class BookNoteController extends GetxController with GetSingleTickerProviderStateMixin {
+  final ApiService api = ApiService();
+  late TabController tabController;
+
+  late int bookId;
+  late int tabIndex;
+
+  /// ===================== Loading States =====================
+  RxBool isLoadingBookInfo = true.obs;
+  RxBool isLoadingBookmarks = true.obs;
+  RxBool isLoadingHighlights = true.obs;
+  RxBool isLoadingNotes = true.obs;
+
+  /// ===================== Data Lists =====================
+  RxMap<String, dynamic> bookInfo = <String, dynamic>{}.obs;
+  RxList<Map<String, dynamic>> bookmarks = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> highlights = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> notes = <Map<String, dynamic>>[].obs;
+
+  /// ===================== Sort States =====================
+  // Bookmark
+  RxString sortTypeBookmark = "date".obs; // date | page
+  RxString sortTextBookmark = "최신 순".obs;
+
+  // Highlight
+  RxString sortTypeHighlight = "date".obs; // date | page
+  RxString sortTextHighlight = "최신 순".obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    final args = Get.arguments ?? {};
+    bookId = args['bookId'] ?? 0;
+    tabIndex = args['tabIndex'] ?? 0;
+
+    tabController = TabController(length: 3, vsync: this, initialIndex: tabIndex);
+
+    fetchBookInfo();
+    fetchAll();
+  }
+
+  @override
+  void onClose() {
+    tabController.dispose();
+    super.onClose();
+  }
+
+  /// ===================== FETCH ALL =====================
+  void fetchAll() {
+    fetchBookmarks();
+    fetchHighlights();
+    fetchNotes();
+  }
+
+  /// ===================== BOOK INFO =====================
+  Future<void> fetchBookInfo() async {
+    isLoadingBookInfo.value = true;
+    try {
+      final data = await api.get("/books/$bookId");
+      bookInfo.value = Map<String, dynamic>.from(data);
+    } catch (e) {
+      print("❌ Fetch Book Info Error: $e");
+    }
+    isLoadingBookInfo.value = false;
+  }
+
+  /// =====================================================
+  /// 📌 BOOKMARK API
+  /// =====================================================
+
+  Future<void> fetchBookmarks() async {
+    isLoadingBookmarks.value = true;
+    try {
+      final data = await api.get("/bookmarks/books/$bookId");
+      bookmarks.value = List<Map<String, dynamic>>.from(data);
+      sortBookmarks();
+    } catch (e) {
+      print("❌ Fetch Bookmarks Error: $e");
+    }
+    isLoadingBookmarks.value = false;
+  }
+
+  Future<void> createBookmark(int page, String memo) async {
+    final isDuplicate = bookmarks.any((element) => element['page'] == page);
+
+    if (isDuplicate){
+      return;
+    }
+
+    try {
+      await api.post(
+        "/bookmarks/",
+        {
+          "book_id": bookId,
+          "page": page,
+          "memo": memo.isEmpty ? null : memo,
+        },
+      );
+
+      fetchBookmarks();
+      Get.back();
+    } catch (e) {
+      print("❌ Create Bookmark Error: $e");
+    }
+  }
+
+  Future<void> updateBookmark(int id, int page, String memo) async {
+    try {
+      await api.put(
+        "/bookmarks/$id",
+        {
+          "page": page,
+          "memo": memo,
+        },
+      );
+
+      fetchBookmarks();
+      Get.back();
+    } catch (e) {
+      print("❌ Update Bookmark Error: $e");
+    }
+  }
+
+  Future<void> deleteBookmark(int id) async {
+    try {
+      await api.delete("/bookmarks/$id");
+      fetchBookmarks();
+    } catch (e) {
+      print("❌ Delete Bookmark Error: $e");
+    }
+  }
+
+  /// ===================== BOOKMARK SORT =====================
+  void sortBookmarks() {
+    if (sortTypeBookmark.value == "date") {
+      bookmarks.sort((a, b) => b["id"].compareTo(a["id"]));
+    } else {
+      bookmarks.sort((a, b) => a["page"].compareTo(b["page"]));
+    }
+    bookmarks.refresh();
+  }
+
+  /// =====================================================
+  /// 📌 HIGHLIGHT API
+  /// =====================================================
+
+  Future<void> fetchHighlights() async {
+    isLoadingHighlights.value = true;
+    try {
+      final data = await api.get("/highlights/books/$bookId");
+      highlights.value = List<Map<String, dynamic>>.from(data);
+      sortHighlights();
+    } catch (e) {
+      print("❌ Fetch Highlights Error: $e");
+    }
+    isLoadingHighlights.value = false;
+  }
+
+  Future<void> createHighlight(int page, String sentence, String memo, bool isPublic) async {
+    try {
+      await api.post(
+        "/highlights/",
+        {
+          "book_id": bookId,
+          "page": page,
+          "sentence": sentence,
+          "memo": memo.isEmpty ? null : memo,
+          "is_public": isPublic,
+        },
+      );
+
+      fetchHighlights();
+      Get.back();
+    } catch (e) {
+      print("❌ Create Highlight Error: $e");
+    }
+  }
+
+  Future<void> updateHighlight(int id, int page, String sentence, String memo, bool isPublic) async {
+    try {
+      await api.put(
+        "/highlights/$id",
+        {
+          "page": page,
+          "sentence": sentence,
+          "memo": memo,
+          "is_public": isPublic,
+        },
+      );
+
+      fetchHighlights();
+      Get.back();
+    } catch (e) {
+      print("❌ Update Highlight Error: $e");
+    }
+  }
+
+  Future<void> deleteHighlight(int id) async {
+    try {
+      await api.delete("/highlights/$id");
+      fetchHighlights();
+    } catch (e) {
+      print("❌ Delete Highlight Error: $e");
+    }
+  }
+
+  /// ===================== HIGHLIGHT SORT =====================
+  void sortHighlights() {
+    if (sortTypeHighlight.value == "date") {
+      highlights.sort((a, b) => b["id"].compareTo(a["id"]));
+    } else {
+      highlights.sort((a, b) => a["page"].compareTo(b["page"]));
+    }
+    highlights.refresh();
+  }
+
+  /// =====================================================
+  /// 📌 NOTES API (MEMO)
+  /// =====================================================
+
+  Future<void> fetchNotes() async {
+    isLoadingNotes.value = true;
+    try {
+      final data = await api.get("/notes/books/$bookId");
+      notes.value = List<Map<String, dynamic>>.from(data);
+      sortMemos();
+    } catch (e) {
+      print("❌ Fetch Notes Error: $e");
+    }
+    isLoadingNotes.value = false;
+  }
+
+  Future<void> createMemo(String content) async {
+    try {
+      await api.post(
+        "/notes/",
+        {
+          "book_id": bookId,
+          "content": content,
+        },
+      );
+      fetchNotes();
+      Get.back();
+    } catch (e) {
+      print("❌ Create Memo Error: $e");
+    }
+  }
+
+  Future<void> updateMemo(int id, String content) async {
+    try {
+      await api.put(
+        "/notes/$id",
+        {
+          "content": content,
+        },
+      );
+      fetchNotes();
+      Get.back();
+    } catch (e) {
+      print("❌ Update Memo Error: $e");
+    }
+  }
+
+  Future<void> deleteMemo(int id) async {
+    try {
+      await api.delete("/notes/$id");
+      fetchNotes();
+    } catch (e) {
+      print("❌ Delete Memo Error: $e");
+    }
+  }
+
+  /// ===================== MEMO SORT =====================
+  void sortMemos() {
+    notes.sort((a, b) =>
+        DateTime.parse(b["created_date"])
+            .compareTo(DateTime.parse(a["created_date"])));
+    notes.refresh();
+  }
+}
