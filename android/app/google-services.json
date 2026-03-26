@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "999191142208",
-    "project_id": "bookstopper-c6236",
-    "storage_bucket": "bookstopper-c6236.firebasestorage.app"
+    "project_number": "146312337575",
+    "project_id": "hechibrown-4eecf",
+    "storage_bucket": "hechibrown-4eecf.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:999191142208:android:9d33b6c8c77c0efbf7a4a5",
+        "mobilesdk_app_id": "1:146312337575:android:4c6f6621ada8bbbc65e382",
         "android_client_info": {
-          "package_name": "com.example.hechi"
+          "package_name": "com.hechibrown.hechi"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyArPdJxsKfmcTTekLASt2rZe7bqnMqWEjk"
+          "current_key": "AIzaSyCcQO_sAjlzyfSqCeY-d7Ptt2g8gtoP52k"
         }
       ],
       "services": {

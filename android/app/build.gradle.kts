@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hechi"
+    namespace = "com.hechibrown.hechi"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.hechi"
+        applicationId = "com.hechibrown.hechi"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
