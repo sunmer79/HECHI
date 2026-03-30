@@ -8,14 +8,15 @@ import 'package:hechi/app/controllers/app_controller.dart';
 import '../../my_read/controllers/my_read_controller.dart';
 
 class LoginController extends GetxController {
-  final emailController = TextEditingController();
+  // ✅ emailController -> loginIdController 로 변경
+  final loginIdController = TextEditingController();
   final passwordController = TextEditingController();
 
   RxBool isPasswordHidden = true.obs;
   RxBool isLoading = false.obs;
   RxBool isAutoLogin = false.obs;
 
-  RxString emailError = ''.obs;
+  RxString loginIdError = ''.obs;
   RxString passwordError = ''.obs;
 
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
@@ -25,8 +26,8 @@ class LoginController extends GetxController {
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      emailController.addListener(() {
-        if (emailError.isNotEmpty) emailError.value = '';
+      loginIdController.addListener(() {
+        if (loginIdError.isNotEmpty) loginIdError.value = '';
       });
       passwordController.addListener(() {
         if (passwordError.isNotEmpty) passwordError.value = '';
@@ -34,20 +35,15 @@ class LoginController extends GetxController {
     });
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
-
   void togglePasswordVisibility() => isPasswordHidden.value = !isPasswordHidden.value;
   void toggleAutoLogin() => isAutoLogin.value = !isAutoLogin.value;
 
   Future<void> login() async {
-    String email = emailController.text.trim();
+    String loginId = loginIdController.text.trim();
     String password = passwordController.text.trim();
 
-    if (!GetUtils.isEmail(email)) {
-      emailError.value = "이메일 형식이 올바르지 않습니다.";
+    if (loginId.isEmpty) {
+      loginIdError.value = "아이디를 입력해주세요.";
       return;
     }
     if (password.isEmpty) {
@@ -63,7 +59,7 @@ class LoginController extends GetxController {
         loginUrl,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": email,
+          "login_id": loginId, // ✅ "email" 대신 "login_id" 전송
           "password": password,
           "remember_me": isAutoLogin.value,
         }),
@@ -77,12 +73,11 @@ class LoginController extends GetxController {
         await box.write('is_auto_login', isAutoLogin.value);
         await box.remove('is_taste_analyzed_local');
 
-        print("✅ 로그인 성공");
+        debugPrint("✅ 로그인 성공");
 
         final appController = Get.find<AppController>();
         await appController.fetchUserProfile();
 
-        // 재진입 시 데이터 갱신을 위해 기존 컨트롤러 삭제
         if (Get.isRegistered<MyReadController>()) {
           Get.delete<MyReadController>();
         }
@@ -91,16 +86,24 @@ class LoginController extends GetxController {
         bool isAnalyzed = profile['taste_analyzed'] ?? false;
 
         if (isAnalyzed) {
-          // ✅ [수정완료] 로그인 성공 시 무조건 홈(0번 탭)으로 설정!
           appController.changeIndex(0);
-
           Get.offAllNamed(Routes.initial);
         } else {
           Get.offAllNamed(Routes.preference);
         }
 
+      } else if (loginResponse.statusCode == 403) {
+        // ✅ 403 (이메일 미인증 상태) 처리 로직
+        Get.snackbar(
+          "알림", "이메일 인증이 완료되지 않은 계정입니다.\n인증을 진행해주세요.",
+          backgroundColor: Colors.orange, colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+        // 로그인 아이디를 들고 이메일 인증 화면으로 이동
+        Get.toNamed(Routes.emailVerify, arguments: {'login_id': loginId});
+
       } else {
-        passwordError.value = "이메일 혹은 비밀번호를 확인해주세요.";
+        passwordError.value = "아이디 혹은 비밀번호를 확인해주세요.";
       }
     } catch (e) {
       Get.snackbar("오류", "서버와 연결할 수 없습니다.", snackPosition: SnackPosition.BOTTOM);

@@ -7,15 +7,25 @@ import 'package:get_storage/get_storage.dart';
 import 'app/routes.dart';
 import 'app/bindings/app_binding.dart';
 
+// ✅ 1. 파이어베이스 옵션 파일 임포트 추가
+import 'firebase_options.dart';
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  // ✅ 2. 백그라운드 초기화에도 옵션 추가
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   print("🔥 백그라운드 알림 수신: ${message.messageId}");
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  // ✅ 3. 메인 초기화에도 옵션 추가 (이게 없어서 크롬에서 뻗었던 겁니다!)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await setupFirebaseMessaging();

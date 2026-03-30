@@ -7,15 +7,18 @@ import 'package:hechi/app/routes.dart';
 class SignUpController extends GetxController {
   final nameController = TextEditingController();
   final nicknameController = TextEditingController();
+  // ✅ 추가: 로그인 아이디 컨트롤러
+  final loginIdController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   RxBool isPasswordHidden = true.obs;
-  RxBool isEmailFilled = false.obs;
+  // ✅ 이메일 대신 아이디 입력 여부 감지로 변경
+  RxBool isLoginIdFilled = false.obs;
 
   // true: 사용가능, false: 중복/불가, null: 확인 안 함
-  Rxn<bool> isEmailAvailable = Rxn<bool>();
-  RxString emailStatusMessage = ''.obs;
+  Rxn<bool> isLoginIdAvailable = Rxn<bool>();
+  RxString loginIdStatusMessage = ''.obs;
   RxBool isLoading = false.obs;
 
   final String baseUrl = "https://api.43-202-101-63.sslip.io";
@@ -23,12 +26,12 @@ class SignUpController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    emailController.addListener(() {
-      isEmailFilled.value = emailController.text.isNotEmpty;
-      // 이메일 내용이 바뀌면 중복 확인 상태 초기화 (다시 확인 필요)
-      if (isEmailAvailable.value != null) {
-        isEmailAvailable.value = null;
-        emailStatusMessage.value = '';
+    // ✅ 아이디 입력창 리스너 (글자가 바뀌면 중복확인 초기화)
+    loginIdController.addListener(() {
+      isLoginIdFilled.value = loginIdController.text.isNotEmpty;
+      if (isLoginIdAvailable.value != null) {
+        isLoginIdAvailable.value = null;
+        loginIdStatusMessage.value = '';
       }
     });
   }
@@ -37,6 +40,7 @@ class SignUpController extends GetxController {
   void onClose() {
     nameController.dispose();
     nicknameController.dispose();
+    loginIdController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.onClose();
@@ -44,31 +48,27 @@ class SignUpController extends GetxController {
 
   void togglePasswordVisibility() => isPasswordHidden.value = !isPasswordHidden.value;
 
-  Future<void> checkEmailDuplicate() async {
-    if (!isEmailFilled.value) return;
-
-    if (!GetUtils.isEmail(emailController.text)) {
-      isEmailAvailable.value = false;
-      emailStatusMessage.value = '이메일 형식이 올바르지 않습니다.';
-      return;
-    }
+  // ✅ 이메일 중복 확인 -> 아이디 중복 확인으로 변경
+  Future<void> checkLoginIdDuplicate() async {
+    if (!isLoginIdFilled.value) return;
 
     try {
-      final url = Uri.parse('$baseUrl/auth/email-check?email=${emailController.text}');
+      // ✅ API 엔드포인트 변경: /auth/login-id-check
+      final url = Uri.parse('$baseUrl/auth/login-id-check?login_id=${loginIdController.text}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if(data['available'] == true) {
-          isEmailAvailable.value = true;
-          emailStatusMessage.value = '사용 가능한 이메일입니다.';
-        } else {
-          isEmailAvailable.value = false;
-          emailStatusMessage.value = '이미 가입된 이메일입니다.';
-        }
+        // 서버 응답 구조에 맞춰 조정 (일반적으로 200이면 사용 가능, 아니면 400/409 에러)
+        // 만약 서버가 { "available": true } 형태를 준다면 아래를 유지합니다.
+        isLoginIdAvailable.value = true;
+        loginIdStatusMessage.value = '사용 가능한 아이디입니다.';
+      } else {
+        isLoginIdAvailable.value = false;
+        loginIdStatusMessage.value = '이미 사용 중인 아이디입니다.';
       }
     } catch(e) {
-      print(e);
+      debugPrint(e.toString());
+      Get.snackbar("오류", "서버와 연결할 수 없습니다.", backgroundColor: Colors.black87, colorText: Colors.white);
     }
   }
 
@@ -76,17 +76,17 @@ class SignUpController extends GetxController {
     // 1. 기본 필드 입력 확인
     if (nameController.text.isEmpty ||
         nicknameController.text.isEmpty ||
-        !isEmailFilled.value ||
+        loginIdController.text.isEmpty ||
+        emailController.text.isEmpty ||
         passwordController.text.isEmpty) {
       Get.snackbar("알림", "모든 필드를 입력해주세요.",
           backgroundColor: Colors.black87, colorText: Colors.white);
       return;
     }
 
-    // ✅ [핵심 수정 부분] 이메일 중복 확인 여부 검사
-    // 중복 확인을 안 했거나(null), 중복된 이메일(false)이면 가입 막음
-    if (isEmailAvailable.value != true) {
-      Get.snackbar("알림", "이메일 중복 확인을 먼저 완료해주세요.",
+    // 2. 아이디 중복 확인 여부 검사
+    if (isLoginIdAvailable.value != true) {
+      Get.snackbar("알림", "아이디 중복 확인을 먼저 완료해주세요.",
           backgroundColor: Colors.black87, colorText: Colors.white);
       return;
     }
@@ -99,6 +99,7 @@ class SignUpController extends GetxController {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
+          "login_id": loginIdController.text, // ✅ login_id 추가
           "email": emailController.text,
           "name": nameController.text,
           "nickname": nicknameController.text,
@@ -146,16 +147,17 @@ class SignUpController extends GetxController {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '환영합니다. 로그인을 진행해주세요.',
+                    '환영합니다.\n이메일 인증을 진행해주세요.', // ✅ 텍스트 변경
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F), fontFamily: 'Roboto'),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF3F3F3F), fontFamily: 'Roboto', height: 1.5),
                   ),
                   const SizedBox(height: 24),
 
                   GestureDetector(
                     onTap: () {
                       Get.back(); // 팝업 닫기
-                      Get.offAllNamed(Routes.login);
+                      // ✅ 로그인 화면 대신 이메일 인증 화면으로 이동 (이메일 정보 전달)
+                      Get.offAllNamed(Routes.emailVerify, arguments: {'email': emailController.text});
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -164,7 +166,7 @@ class SignUpController extends GetxController {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: const Text(
-                        '로그인하러 가기',
+                        '이메일 인증하러 가기', // ✅ 버튼 텍스트 변경
                         style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ),
