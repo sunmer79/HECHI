@@ -25,22 +25,19 @@ class LoginView extends GetView<LoginController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-
-                  // 1. 로고
                   const LoginLogo(),
                   const SizedBox(height: 60),
 
-                  // 2. 이메일 입력
+                  // ✅ 이메일 -> 아이디 입력으로 변경
                   Obx(() => LoginTextField(
-                    label: '이메일(아이디)',
-                    controller: controller.emailController,
-                    hintText: "이메일을 입력해주세요",
-                    keyboardType: TextInputType.emailAddress,
-                    errorText: controller.emailError.value,
+                    label: '아이디',
+                    controller: controller.loginIdController,
+                    hintText: "아이디를 입력해주세요",
+                    keyboardType: TextInputType.text,
+                    errorText: controller.loginIdError.value,
                   )),
                   const SizedBox(height: 20),
 
-                  // 3. 비밀번호 입력
                   Obx(() => LoginTextField(
                     label: '비밀번호',
                     controller: controller.passwordController,
@@ -52,21 +49,18 @@ class LoginView extends GetView<LoginController> {
                   )),
                   const SizedBox(height: 12),
 
-                  // 4. 자동 로그인 체크박스
                   Obx(() => AutoLoginCheckbox(
                     isChecked: controller.isAutoLogin.value,
                     onTap: controller.toggleAutoLogin,
                   )),
                   const SizedBox(height: 30),
 
-                  // 5. 로그인 버튼
                   Obx(() => LoginButton(
                     isLoading: controller.isLoading.value,
                     onPressed: () => controller.login(),
                   )),
                   const SizedBox(height: 24),
 
-                  // 6. 하단 링크
                   LoginBottomLinks(
                     onSignUp: controller.goToSignUp,
                     onFindPassword: controller.goToForgetPassword,

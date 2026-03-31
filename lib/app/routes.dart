@@ -35,13 +35,16 @@ import '../features/review_detail/pages/review_detail_page.dart';
 import '../features/calendar/pages/calendar_view.dart';
 import '../features/calendar/bindings/calendar_binding.dart';
 
-// ✅ 추가
 import '../features/book_note/bindings/book_note_binding.dart';
 import '../features/book_note/pages/book_note_page.dart';
 import '../features/reading_registration/bindings/reading_registration_binding.dart';
 import '../features/reading_registration/pages/reading_registration_view.dart';
 import '../features/recommendation/pages/recommendation_view.dart';
 import '../features/recommendation/bindings/recommendation_binding.dart';
+
+// ✅ 이메일 인증 바인딩 및 뷰 임포트 추가
+import '../features/email_verify/bindings/email_verify_binding.dart';
+import '../features/email_verify/pages/email_verify_view.dart';
 
 abstract class Routes {
   static const splash = '/splash';
@@ -67,10 +70,12 @@ abstract class Routes {
 
   static const calendar = '/calendar';
 
-  // ✅ 추가
   static const bookNote = '/book_note';
   static const readingRegistration = '/reading_registration';
   static const recommendation = '/recommendation';
+
+  // ✅ 이메일 인증 라우트 추가
+  static const emailVerify = '/email_verify';
 }
 
 class AppPages {
@@ -97,9 +102,11 @@ class AppPages {
     GetPage(name: Routes.reviewDetail, page: () => const ReviewDetailPage(), binding: ReviewDetailBinding()),
     GetPage(name: Routes.calendar, page: () => const CalendarView(), binding: CalendarBinding()),
 
-    // ✅ 추가
     GetPage(name: Routes.bookNote, page: () => const BookNotePage(), binding: BookNoteBinding()),
     GetPage(name: Routes.readingRegistration, page: () => const ReadingRegistrationView(), binding: ReadingRegistrationBinding(),),
     GetPage(name: Routes.recommendation, page: () => const RecommendationView(), binding: RecommendationBinding()),
+
+    // ✅ 이메일 인증 페이지 등록
+    GetPage(name: Routes.emailVerify, page: () => const EmailVerifyView(), binding: EmailVerifyBinding()),
   ];
 }
