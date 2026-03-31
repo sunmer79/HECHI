@@ -8,11 +8,14 @@ import 'package:get_storage/get_storage.dart';
 class PreferenceController extends GetxController {
   RxInt currentStep = 0.obs;
 
-  RxList<String> selectedCategories = <String>[].obs;
-  RxList<String> selectedGenres = <String>[].obs;
+  // ✅ UI용: 모든 선택지(소설, 시 + 장르 전부)를 담는 리스트
+  RxList<String> allOptions = <String>[].obs;
+  // ✅ UI용: 사용자가 클릭해서 선택한 항목들
+  RxList<String> selectedOptions = <String>[].obs;
 
-  RxList<String> categories = <String>[].obs;
-  RxList<String> genres = <String>[].obs;
+  // 백엔드 API 유지를 위해 원본 데이터는 보이지 않는 곳에 보관
+  List<String> _originalCategories = [];
+  List<String> _originalGenres = [];
 
   RxBool isLoading = false.obs;
 
@@ -43,8 +46,11 @@ class PreferenceController extends GetxController {
 
       if (response.statusCode == 200) {
         var data = jsonDecode(utf8.decode(response.bodyBytes));
-        categories.value = List<String>.from(data['categories'] ?? []);
-        genres.value = List<String>.from(data['genres'] ?? []);
+        _originalCategories = List<String>.from(data['categories'] ?? []);
+        _originalGenres = List<String>.from(data['genres'] ?? []);
+
+        // ✅ 두 리스트를 하나로 뭉쳐서 UI에 제공
+        allOptions.value = [..._originalCategories, ..._originalGenres];
       } else {
         _useFallbackData();
       }
@@ -54,51 +60,37 @@ class PreferenceController extends GetxController {
   }
 
   void _useFallbackData() {
-    categories.value = ['소설', '시', '에세이', '만화'];
-    genres.value = [
-      '추리', '코미디', '스릴러', '공포', 'SF', '판타지', '로맨스',
-      '액션', '철학', '인문', '역사', '과학', '예술', '자기계발', '여행', '취미'
+    _originalCategories = ['소설', '시', '에세이', '만화'];
+    _originalGenres = [
+      '추리', '코미디', '스릴러/공포', 'SF', '판타지', '로맨스',
+      '액션', '철학', '인문', '역사', '과학', '사회/정치', '경제/경영', '예술', '자기계발', '여행', '취미'
     ];
+    // ✅ 두 리스트를 하나로 뭉침
+    allOptions.value = [..._originalCategories, ..._originalGenres];
   }
 
   void nextStep() {
-    // 1단계: 카테고리 (최소 1개)
+    // 이제 1단계(통합 페이지) 하나뿐이므로, 바로 완료(submit) 처리
     if (currentStep.value == 1) {
-      if (selectedCategories.isEmpty) {
-        _showError("카테고리를 최소 1개 선택해주세요.");
-        return;
-      }
-    }
-    // 2단계: 장르 (최소 1개)
-    else if (currentStep.value == 2) {
-      if (selectedGenres.isEmpty) {
-        _showError("장르를 최소 1개 선택해주세요.");
+      if (selectedOptions.isEmpty) {
+        _showError("장르를 최소 1개 이상 선택해주세요.");
         return;
       }
       submitPreferences();
       return;
     }
 
-    if (currentStep.value < 2) {
+    if (currentStep.value < 1) {
       currentStep.value++;
     }
   }
 
-
-  void toggleCategory(String item) {
-    if (selectedCategories.contains(item)) {
-      selectedCategories.remove(item);
+  // ✅ 선택/해제 토글 로직
+  void toggleOption(String item) {
+    if (selectedOptions.contains(item)) {
+      selectedOptions.remove(item);
     } else {
-      selectedCategories.add(item);
-    }
-  }
-
-
-  void toggleGenre(String item) {
-    if (selectedGenres.contains(item)) {
-      selectedGenres.remove(item);
-    } else {
-      selectedGenres.add(item);
+      selectedOptions.add(item);
     }
   }
 
@@ -117,6 +109,10 @@ class PreferenceController extends GetxController {
     }
 
     try {
+      // ✅ [핵심] 백엔드 에러가 안 나게, 선택된 항목들을 다시 카테고리와 장르로 똑똑하게 분류합니다.
+      List<String> finalCategories = selectedOptions.where((e) => _originalCategories.contains(e)).toList();
+      List<String> finalGenres = selectedOptions.where((e) => _originalGenres.contains(e)).toList();
+
       final url = Uri.parse('$baseUrl/taste/submit');
       final response = await http.post(
         url,
@@ -125,8 +121,8 @@ class PreferenceController extends GetxController {
           "Authorization": "Bearer $token"
         },
         body: jsonEncode({
-          "categories": selectedCategories.toList(),
-          "genres": selectedGenres.toList()
+          "categories": finalCategories,
+          "genres": finalGenres
         }),
       );
 
